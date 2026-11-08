@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
@@ -24,7 +25,7 @@ import {
 import type { Category, ResolvedBuild } from "@/types/parts";
 import { clampDelta } from "@/lib/viewer/spring";
 import { Animated } from "./animated";
-import { CameraRig } from "./camera-rig";
+import { CameraRig, type CameraKeys } from "./camera-rig";
 import { CaseShell } from "./case-shell";
 import { ACCENT, type Flag } from "./palette";
 import { PartMesh } from "./part-mesh";
@@ -45,6 +46,8 @@ export interface SceneProps {
   paused?: boolean;
   /** Pull the parts out toward the glass so each one is visible. */
   exploded?: boolean;
+  /** Keyboard camera controls, filled in by the camera rig (builder only). */
+  cameraKeysRef?: RefObject<CameraKeys | null>;
 }
 
 type Item =
@@ -191,6 +194,7 @@ function SceneCanvas({
   reducedMotion,
   paused = false,
   exploded = false,
+  cameraKeysRef,
 }: SceneProps) {
   const scene = useMemo(() => layoutBuild(parts), [parts]);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -284,6 +288,7 @@ function SceneCanvas({
         focus={focus}
         interactive={mode === "builder"}
         exploded={exploded}
+        keysRef={cameraKeysRef}
       />
     </Canvas>
   );

@@ -5,7 +5,7 @@ import { Outlines, useGLTF } from "@react-three/drei";
 import { fitModel } from "@/lib/viewer/fit-model";
 import type { Vec3 } from "@/lib/viewer/layout";
 import { DRACO_DECODER_PATH, MODELS, type ModelId } from "@/lib/viewer/models";
-import { MODEL_RECOLOUR } from "./palette";
+import { TONES } from "./palette";
 
 /** If a model file fails to load, keep showing the placeholder box. */
 class ModelBoundary extends Component<
@@ -42,7 +42,8 @@ function FittedModel({
   return (
     <>
       {meshes.map((m, i) => {
-        const look = MODEL_RECOLOUR[m.materialName] ?? m;
+        const tone = MODELS[id].recolour[m.materialName];
+        const look = tone ? TONES[tone] : m;
         return (
           <mesh key={i} geometry={m.geometry}>
             <meshStandardMaterial

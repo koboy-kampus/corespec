@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type ComponentRef } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  type ComponentRef,
+  type RefObject,
+} from "react";
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Vector3, type PerspectiveCamera } from "three";
+import { MathUtils, Spherical, Vector3, type PerspectiveCamera } from "three";
 import type { Vec3 } from "@/lib/viewer/layout";
 import { clampDelta, easeInOutCubic } from "@/lib/viewer/spring";
 
@@ -14,6 +20,20 @@ const TWEEN_S = 0.7;
 const FOCUS_ZOOM = 0.72;
 /** Home view: in front of the glass, a little above and toward the front of the case. */
 const HOME_DIR = new Vector3(-0.32, 0.26, 1).normalize();
+const MIN_POLAR = Math.PI * 0.12;
+const MAX_POLAR = Math.PI * 0.62;
+const MIN_ZOOM = 0.3;
+const MAX_ZOOM = 1.6;
+
+/** Keyboard camera moves, called by the viewer when its canvas has focus. */
+export interface CameraKeys {
+  /** Orbit by these angles (radians). */
+  rotate: (azimuth: number, polar: number) => void;
+  /** Multiply the distance to the target (below 1 zooms in). */
+  zoom: (factor: number) => void;
+  /** Ease back to the home view. */
+  reset: () => void;
+}
 
 interface CameraRigProps {
   /** Case outer size in scene units, used to frame it. */
@@ -23,6 +43,8 @@ interface CameraRigProps {
   interactive: boolean;
   /** Pull back a little so exploded parts stay in frame. */
   exploded?: boolean;
+  /** Filled with keyboard controls while mounted (builder only). */
+  keysRef?: RefObject<CameraKeys | null>;
 }
 
 /** Distance that fits the case's bounding sphere in both the vertical and horizontal field of view. */
@@ -42,6 +64,7 @@ export function CameraRig({
   focus,
   interactive,
   exploded = false,
+  keysRef,
 }: CameraRigProps) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
@@ -100,6 +123,49 @@ export function CameraRig({
     return () => c.removeEventListener("start", cancel);
   }, [interactive]);
 
+  useEffect(() => {
+    if (!keysRef) return;
+    // Same limits as the orbit controls, applied in spherical coordinates around the target.
+    const move = (change: (s: Spherical) => void) => {
+      tween.current = null;
+      const target = controls.current?.target ?? lookAt.current;
+      const s = new Spherical().setFromVector3(
+        camera.position.clone().sub(target),
+      );
+      change(s);
+      s.phi = MathUtils.clamp(s.phi, MIN_POLAR, MAX_POLAR);
+      s.radius = MathUtils.clamp(s.radius, dist * MIN_ZOOM, dist * MAX_ZOOM);
+      camera.position.copy(target).add(new Vector3().setFromSpherical(s));
+      camera.lookAt(target);
+      controls.current?.update();
+      invalidate();
+    };
+    keysRef.current = {
+      rotate: (azimuth, polar) =>
+        move((s) => {
+          s.theta += azimuth;
+          s.phi += polar;
+        }),
+      zoom: (factor) =>
+        move((s) => {
+          s.radius *= factor;
+        }),
+      reset: () => {
+        tween.current = {
+          fromPos: camera.position.clone(),
+          fromTarget: (controls.current?.target ?? lookAt.current).clone(),
+          toPos: HOME_DIR.clone().multiplyScalar(dist),
+          toTarget: new Vector3(0, 0, 0),
+          t: 0,
+        };
+        invalidate();
+      },
+    };
+    return () => {
+      keysRef.current = null;
+    };
+  }, [keysRef, camera, dist, invalidate]);
+
   useFrame((_, rawDelta) => {
     const delta = clampDelta(rawDelta);
     const tw = tween.current;
@@ -125,10 +191,10 @@ export function CameraRig({
       enableDamping
       dampingFactor={0.08}
       enablePan={false}
-      minDistance={dist * 0.3}
-      maxDistance={dist * 1.6}
-      minPolarAngle={Math.PI * 0.12}
-      maxPolarAngle={Math.PI * 0.62}
+      minDistance={dist * MIN_ZOOM}
+      maxDistance={dist * MAX_ZOOM}
+      minPolarAngle={MIN_POLAR}
+      maxPolarAngle={MAX_POLAR}
       rotateSpeed={0.7}
     />
   );

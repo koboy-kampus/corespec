@@ -20,7 +20,7 @@ function radiusFor(size: Vec3): number {
 }
 
 /** A fan as a frame ring, a dark blade disc and a hub, sitting just off the face. */
-function FanDisc({ pos, radius, facing }: Fan) {
+export function FanDisc({ pos, radius, facing }: Fan) {
   const { rot, normal } = FACE[facing];
   const at = pos.map((p, i) => p + normal[i] * 0.8) as Vec3;
   return (
@@ -88,9 +88,10 @@ export function PartMesh({
           <BoxBlock key={i} block={b} glow={glow} />
         ),
       )}
-      {layout.fans.map((f, i) => (
-        <FanDisc key={i} {...f} />
-      ))}
+      {/* A model (the GPU) brings its own fans; the rings are for the box look. */}
+      {layout.blocks.some((b) => b.model)
+        ? null
+        : layout.fans.map((f, i) => <FanDisc key={i} {...f} />)}
     </>
   );
 }

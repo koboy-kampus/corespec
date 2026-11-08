@@ -35,6 +35,8 @@ export function fitModel(
     new Vector3(...basis[1]),
     new Vector3(...basis[2]),
   );
+  // A mirrored basis turns triangles inside out; flip their winding back afterwards.
+  const mirrored = rotate.determinant() < 0;
   root.updateMatrixWorld(true);
 
   const out: FittedMesh[] = [];
@@ -45,6 +47,7 @@ export function fitModel(
       .clone()
       .applyMatrix4(mesh.matrixWorld)
       .applyMatrix4(rotate);
+    if (mirrored) flipWinding(geometry);
     const raw = mesh.material as Material | Material[];
     const mat = (Array.isArray(raw) ? raw[0] : raw) as
       Partial<MeshStandardMaterial> | undefined;
@@ -75,4 +78,29 @@ export function fitModel(
     m.geometry.computeVertexNormals();
   }
   return out;
+}
+
+/** Reverses every triangle's vertex order, so front faces stay front faces after a mirror. */
+export function flipWinding(geometry: BufferGeometry): void {
+  const index = geometry.getIndex();
+  if (index) {
+    for (let i = 0; i < index.count; i += 3) {
+      const b = index.getX(i + 1);
+      index.setX(i + 1, index.getX(i + 2));
+      index.setX(i + 2, b);
+    }
+    index.needsUpdate = true;
+    return;
+  }
+  for (const attr of Object.values(geometry.attributes)) {
+    const size = attr.itemSize;
+    for (let i = 0; i + 2 < attr.count; i += 3) {
+      for (let k = 0; k < size; k++) {
+        const b = attr.getComponent(i + 1, k);
+        attr.setComponent(i + 1, k, attr.getComponent(i + 2, k));
+        attr.setComponent(i + 2, k, b);
+      }
+    }
+    attr.needsUpdate = true;
+  }
 }

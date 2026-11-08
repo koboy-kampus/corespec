@@ -21,7 +21,16 @@ export const MM_TO_UNITS = 0.01; // 1 scene unit = 100 mm
 
 export type Vec3 = [number, number, number];
 export type Tone =
-  "pcb" | "silver" | "dark" | "fin" | "ram" | "storage" | "psu" | "steel";
+  | "pcb"
+  | "silver"
+  | "dark"
+  | "fin"
+  | "ram"
+  | "storage"
+  | "psu"
+  | "steel"
+  | "gold"
+  | "black";
 export type Facing = "+x" | "-x" | "+y" | "-y" | "+z" | "-z";
 
 /** A rounded box, positioned relative to its part's origin. */
@@ -57,6 +66,8 @@ export interface CaseLayout {
   shroud: { pos: Vec3; size: Vec3 } | null;
   /** True when no case is picked and a default outline is shown instead. */
   ghost: boolean;
+  /** Front intake and rear exhaust fans, relative to the case centre. */
+  fans: Fan[];
 }
 
 export interface AnchorMap {
@@ -114,6 +125,40 @@ const BOARD_POINTS: Record<
   ITX: { socketU: 0.45, socketV: 0.38, ramU: 0.3, pcieV: 0.82 },
 };
 
+/**
+ * Case fans: up to three 120 mm intakes on the front panel (92 mm in narrow cases),
+ * stacked from the top down above whatever sits at the bottom front, plus one rear
+ * exhaust beside the I/O. Drawn as rings facing into the case.
+ */
+function caseFans(
+  shell: CaseLayout,
+  frontFloor: number,
+  boardTop: number,
+): Fan[] {
+  const { min, max } = shell.inner;
+  const width = max[2] - min[2];
+  const d = width >= 125 ? 120 : 92;
+  const gap = 8;
+  const fans: Fan[] = [];
+  const avail = max[1] - 10 - (frontFloor + 10);
+  const count = Math.max(0, Math.min(3, Math.floor((avail + gap) / (d + gap))));
+  for (let i = 0; i < count; i++) {
+    fans.push({
+      pos: [min[0] + 1, max[1] - 10 - d / 2 - i * (d + gap), 0],
+      radius: d / 2,
+      facing: "+x",
+    });
+  }
+  if (max[1] - boardTop + d < max[1] - min[1]) {
+    fans.push({
+      pos: [max[0] - 1, max[1] - 10 - d / 2, (min[2] + max[2]) / 2 + 10],
+      radius: d / 2,
+      facing: "-x",
+    });
+  }
+  return fans;
+}
+
 function caseLayout(pcCase: Case | undefined): CaseLayout {
   const d = pcCase?.dims ?? DEFAULT_CASE_DIMS;
   const [X, Y, Z] = [d.l / 2, d.h / 2, d.w / 2];
@@ -126,6 +171,7 @@ function caseLayout(pcCase: Case | undefined): CaseLayout {
     },
     shroud: null, // filled in once the board position is known
     ghost: !pcCase,
+    fans: [],
   };
 }
 
@@ -172,6 +218,16 @@ export function anchorMap(
 
   // Without a shroud the PSU goes rear-bottom if it clears the board, else front-bottom.
   const psuSide = hasShroud || roomBelow >= psuHeight + 4 ? "rear" : "front";
+  if (!shell.ghost)
+    shell.fans = caseFans(
+      shell,
+      hasShroud
+        ? shroudTop
+        : psuSide === "front"
+          ? min[1] + psuHeight + 8
+          : min[1],
+      top,
+    );
 
   return {
     case: shell,
@@ -214,6 +270,16 @@ function spread(count: number, length: number): number[] {
   );
 }
 
+/** Evenly spaced fin plates up a tower cooler's stack, from z0 to z0 + height. */
+function finRibs(z0: number, height: number, w: number, l: number): Block[] {
+  const count = Math.max(2, Math.floor(height / 14));
+  return Array.from({ length: count }, (_, i) => ({
+    pos: [0, 0, z0 + ((i + 0.5) * height) / count] as Vec3,
+    size: [w + 3, l + 3, 1.6] as Vec3,
+    tone: "steel" as const,
+  }));
+}
+
 function layoutPart(
   part: Part,
   a: AnchorMap,
@@ -245,6 +311,17 @@ function layoutPart(
         size: [56, 56, 3],
         tone: "steel",
       };
+      // VRM heatsinks along the top and rear edges of the socket.
+      const vrmTop: Block = {
+        pos: rel([a.socket[0], a.socket[1] + 45, 0], 6),
+        size: [62, 14, 12],
+        tone: "steel",
+      };
+      const vrmRear: Block = {
+        pos: rel([a.socket[0] + 40, a.socket[1], 0], 6),
+        size: [14, 58, 12],
+        tone: "steel",
+      };
       const dimms = Array.from({ length: part.ramSlots }, (_, i): Block => ({
         pos: rel([a.ramSlot[0] - i * a.ramPitch, a.ramSlot[1], 0], 3),
         size: [6, 142, 6],
@@ -262,6 +339,8 @@ function layoutPart(
           { pos: [0, 0, 0], size: [d.w, d.l, PCB], tone: "pcb" },
           io,
           socket,
+          vrmTop,
+          vrmRear,
           ...dimms,
           pcieSlot,
         ],
@@ -338,6 +417,8 @@ function layoutPart(
             size: [d.w, d.l, stackH],
             tone: "fin",
           },
+          // Fin plates: thin ribs that stand slightly proud of the stack.
+          ...finRibs(cpuH + 30, stackH, d.w, d.l),
         ],
         fans: [
           {
@@ -367,15 +448,14 @@ function layoutPart(
         pos: [-d.l / 2, -d.w / 2, d.h / 2],
         size: [d.l, d.w, d.h],
         tone: "dark",
+        model: "gpu",
       };
       const count = fanCount(d.l);
       return {
         ...base,
         origin: a.pcie,
-        blocks: [
-          body,
-          { pos: [-1, -d.w / 2, d.h / 2], size: [2, d.w, d.h], tone: "silver" },
-        ],
+        // The model brings its own bracket and fans; the fans below are for the box fallback.
+        blocks: [body],
         fans: spread(count, d.l).map((x) => ({
           pos: [-d.l / 2 + x, -d.w, d.h / 2],
           radius: Math.min(d.h * 0.38, (d.l / count) * 0.45),
@@ -391,6 +471,12 @@ function layoutPart(
           origin: a.m2,
           blocks: [
             { pos: [0, 0, d.h / 2], size: [d.l, d.w, d.h], tone: "storage" },
+            // label sticker over the flash chips
+            {
+              pos: [-6, 0, d.h + 0.4],
+              size: [d.l * 0.62, d.w * 0.7, 0.8],
+              tone: "black",
+            },
           ],
         };
       }
@@ -412,6 +498,12 @@ function layoutPart(
         origin: [x, a.psu.y, 0],
         blocks: [
           { pos: [0, d.h / 2 + 4, 0], size: [d.l, d.h, d.w], tone: "psu" },
+          // Vent ribs on the side that faces the glass.
+          ...Array.from({ length: 5 }, (_, i): Block => ({
+            pos: [-d.l * 0.12, 4 + d.h * (0.22 + i * 0.14), d.w / 2 + 0.8],
+            size: [d.l * 0.62, 2.4, 1.6],
+            tone: "steel",
+          })),
         ],
       };
     }

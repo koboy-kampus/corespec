@@ -9,7 +9,7 @@
     "url": "https://poly.pizza/m/oF0cAyddAI",
     "licence": "CC0 1.0",
     "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "changes": "Draco-compressed; recoloured at runtime to the CoreSpec palette; scaled to each part's dimensions."
+    "changes": "Scaled to each part's dimensions; re-materialed to the CoreSpec palette; Draco-compressed."
   },
   {
     "id": "ram",
@@ -21,6 +21,18 @@
     "url": "https://poly.pizza/m/obBMPOGYvy",
     "licence": "CC0 1.0",
     "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "changes": "Draco-compressed; recoloured at runtime to the CoreSpec palette; scaled to each part's dimensions."
+    "changes": "Scaled to each part's dimensions; re-materialed to the CoreSpec palette; Draco-compressed."
+  },
+  {
+    "id": "gpu",
+    "file": "/models/gpu.glb",
+    "source": "models-src/gpu-pgonarg.glb",
+    "usedFor": "Graphics card (every GPU)",
+    "title": "Graphics card",
+    "author": "pgonarg",
+    "url": "https://poly.pizza/m/i45v5trpyR",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "changes": "Scaled to each card's dimensions; mirrored so the fans face down in the case; re-materialed to the CoreSpec palette; Draco-compressed."
   }
 ]

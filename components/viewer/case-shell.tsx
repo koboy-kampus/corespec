@@ -3,6 +3,7 @@
 import { Edges, RoundedBox } from "@react-three/drei";
 import type { CaseLayout, Vec3 } from "@/lib/viewer/layout";
 import { CASE_TONE, GLOW, type Flag } from "./palette";
+import { FanDisc } from "./part-mesh";
 
 interface Panel {
   pos: Vec3;
@@ -87,6 +88,10 @@ export function CaseShell({ shell, flag }: { shell: CaseLayout; flag?: Flag }) {
           depthWrite={false}
         />
       </mesh>
+
+      {shell.fans.map((f, i) => (
+        <FanDisc key={i} {...f} />
+      ))}
 
       {outline}
     </>

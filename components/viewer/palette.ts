@@ -19,19 +19,8 @@ export const TONES: Record<
   storage: { color: "#4a474c", roughness: 0.5, metalness: 0.4 },
   psu: { color: "#2b282e", roughness: 0.6, metalness: 0.4 },
   steel: { color: "#5a575b", roughness: 0.35, metalness: 0.85 },
+  gold: { color: "#b8913a", roughness: 0.35, metalness: 0.9 },
+  black: { color: "#141215", roughness: 0.5, metalness: 0.3 },
 };
 
 export const CASE_TONE = { color: "#221f23", roughness: 0.55, metalness: 0.55 };
-
-/**
- * Bundled models arrive with bright "PCB green" materials. These names are
- * recoloured to the CoreSpec palette; any other material keeps its own look.
- */
-export const MODEL_RECOLOUR: Record<
-  string,
-  { color: string; roughness: number; metalness: number }
-> = {
-  Green: TONES.pcb,
-  black: { color: "#141215", roughness: 0.5, metalness: 0.3 },
-  conduct: { color: "#b8913a", roughness: 0.35, metalness: 0.9 },
-};

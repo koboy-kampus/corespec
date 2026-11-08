@@ -1,9 +1,17 @@
 "use client";
 
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Component,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import dynamic from "next/dynamic";
 import { cn } from "cn";
 import { useMediaQuery } from "@/hooks/use-build";
+import type { CameraKeys } from "./camera-rig";
 import type { SceneProps } from "./scene";
 
 /** Shown while three.js and the scene load. */
@@ -45,15 +53,57 @@ class SceneBoundary extends Component<
   }
 }
 
-type ViewerProps = Omit<SceneProps, "reducedMotion" | "paused"> & {
+type ViewerProps = Omit<
+  SceneProps,
+  "reducedMotion" | "paused" | "cameraKeysRef"
+> & {
   className?: string;
+  /** Called when R resets the camera, so the page can clear its selected slot too. */
+  onResetView?: () => void;
 };
 
+const ROTATE_STEP = 0.18; // radians per key press
+const ZOOM_STEP = 0.85;
+
+/** Arrow keys orbit, +/- zoom, R resets. Returns true when the key was handled. */
+function handleCameraKey(key: string, cam: CameraKeys): boolean {
+  switch (key) {
+    case "ArrowLeft":
+      cam.rotate(ROTATE_STEP, 0);
+      return true;
+    case "ArrowRight":
+      cam.rotate(-ROTATE_STEP, 0);
+      return true;
+    case "ArrowUp":
+      cam.rotate(0, -ROTATE_STEP * 0.7);
+      return true;
+    case "ArrowDown":
+      cam.rotate(0, ROTATE_STEP * 0.7);
+      return true;
+    case "+":
+    case "=":
+      cam.zoom(ZOOM_STEP);
+      return true;
+    case "-":
+    case "_":
+      cam.zoom(1 / ZOOM_STEP);
+      return true;
+    case "r":
+    case "R":
+      cam.reset();
+      return true;
+    default:
+      return false;
+  }
+}
+
 /** Sizes the canvas to its box, respects reduced motion and pauses the spin when off screen. */
-export function Viewer({ className, ...props }: ViewerProps) {
+export function Viewer({ className, onResetView, ...props }: ViewerProps) {
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const ref = useRef<HTMLDivElement>(null);
   const [onScreen, setOnScreen] = useState(true);
+  const cameraKeysRef = useRef<CameraKeys | null>(null);
+  const interactive = props.mode === "builder";
 
   useEffect(() => {
     const el = ref.current;
@@ -64,9 +114,37 @@ export function Viewer({ className, ...props }: ViewerProps) {
   }, [props.mode]);
 
   return (
-    <div ref={ref} className={cn("relative size-full", className)}>
+    <div
+      ref={ref}
+      className={cn(
+        "relative size-full rounded-card focus-visible:-outline-offset-2",
+        className,
+      )}
+      {...(interactive
+        ? {
+            // A focusable 3D widget with its own keys, so screen readers pass them through.
+            tabIndex: 0,
+            role: "application",
+            "aria-label":
+              "3D build preview. Arrow keys rotate, plus and minus zoom, R resets the view.",
+            onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+              if (e.altKey || e.ctrlKey || e.metaKey || !cameraKeysRef.current)
+                return;
+              if (handleCameraKey(e.key, cameraKeysRef.current)) {
+                e.preventDefault();
+                if (e.key === "r" || e.key === "R") onResetView?.();
+              }
+            },
+          }
+        : {})}
+    >
       <SceneBoundary fallback={props.fallback}>
-        <Scene {...props} reducedMotion={reducedMotion} paused={!onScreen} />
+        <Scene
+          {...props}
+          reducedMotion={reducedMotion}
+          paused={!onScreen}
+          cameraKeysRef={interactive ? cameraKeysRef : undefined}
+        />
       </SceneBoundary>
     </div>
   );

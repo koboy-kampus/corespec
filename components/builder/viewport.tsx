@@ -66,6 +66,7 @@ export function Viewport({ className }: { className?: string }) {
         flags={severityByCategory}
         activeSlot={activeSlot}
         exploded={exploded}
+        onResetView={() => setActiveSlot(null)}
         className={cn(
           "absolute inset-0 transition-opacity duration-300",
           empty && "opacity-30",
@@ -85,7 +86,7 @@ export function Viewport({ className }: { className?: string }) {
         <>
           <p className="pointer-events-none absolute top-3.5 left-3.5 hidden items-center gap-1.5 label-micro text-micro-sm text-fg-3 sm:flex">
             <Move3d className="size-3.5" aria-hidden />
-            Drag to rotate · Scroll or pinch to zoom
+            Drag or arrow keys to rotate · Scroll or +/− to zoom · R resets
           </p>
           <div className="absolute top-3 right-3 flex gap-2">
             <ExplodeToggle exploded={exploded} onChange={setExploded} />
