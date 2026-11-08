@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PriceTag } from "@/components/ui/price-tag";
 import { CATEGORIES, CATEGORY_LABEL } from "@/lib/categories";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { deriveBuild } from "@/lib/derive";
 import { formatShortDate } from "@/lib/format";
 import { useBuildStore } from "@/store/build";
@@ -58,6 +59,8 @@ export function BuildCard({
   const d = useMemo(() => deriveBuild(build.parts), [build.parts]);
   const [modal, setModal] = useState<Modal>(null);
   const [draft, setDraft] = useState(build.name);
+  // After a delete the card is gone, so focus falls back to the page content.
+  const focus = useReturnFocus(() => document.getElementById("main"));
 
   const open = () => {
     openBuild(build.id);
@@ -180,7 +183,7 @@ export function BuildCard({
         open={modal === "rename"}
         onOpenChange={(o) => setModal(o ? "rename" : null)}
       >
-        <DialogContent>
+        <DialogContent {...focus}>
           <form
             className="flex flex-col gap-4"
             onSubmit={(e) => {
@@ -219,7 +222,7 @@ export function BuildCard({
         open={modal === "delete"}
         onOpenChange={(o) => setModal(o ? "delete" : null)}
       >
-        <DialogContent>
+        <DialogContent {...focus}>
           <DialogHeader>
             <DialogTitle>Delete “{build.name}”?</DialogTitle>
             <DialogDescription>

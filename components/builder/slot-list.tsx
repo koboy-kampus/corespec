@@ -51,10 +51,8 @@ function SlotRow({
       <button
         type="button"
         onClick={() => openPicker(category)}
+        data-slot-category={category}
         className="min-w-0 flex-1 rounded-input text-left after:absolute after:inset-0 after:rounded-btn focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent"
-        aria-label={
-          part ? `${label}: ${partLabel(part)}. Change` : `Choose ${label}`
-        }
       >
         <span className="flex items-center gap-1.5">
           <span className="label-micro text-micro-sm text-fg-3">{label}</span>
@@ -81,6 +79,8 @@ function SlotRow({
               </span>
               <PriceTag value={part.priceIDR} size="sm" tone="default" />
             </span>
+            {/* The button's name is its visible text plus what it does. */}
+            <span className="sr-only">, change</span>
           </>
         ) : (
           <span className="block text-[13px] leading-[18px] text-fg-2">

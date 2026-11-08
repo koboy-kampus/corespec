@@ -110,13 +110,17 @@ export function BuilderApp() {
 
   return (
     <div className="flex flex-1 flex-col">
+      <h1 className="sr-only">PC builder</h1>
       {desktop ? (
         <div className="mx-auto grid h-[calc(100dvh-4rem-2.5rem)] min-h-[620px] w-full max-w-[1600px] grid-cols-[340px_1fr_340px] gap-3 px-6 py-4">
-          <aside className="min-h-0 overflow-y-auto pr-1">
+          <aside aria-label="Parts" className="min-h-0 overflow-y-auto pr-1">
             <SlotList />
           </aside>
           <Viewport />
-          <aside className="min-h-0 overflow-y-auto rounded-card border border-line bg-surface p-5 shadow-edge">
+          <aside
+            aria-label="Summary"
+            className="min-h-0 overflow-y-auto rounded-card border border-line bg-surface p-5 shadow-edge"
+          >
             <BuildSummary />
           </aside>
         </div>

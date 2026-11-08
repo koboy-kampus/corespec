@@ -14,6 +14,10 @@ interface UiState {
   /** Last slot the user focused; the 3D camera eases toward it (Phase 5). */
   activeSlot: Category | null;
   setActiveSlot: (category: Category | null) => void;
+
+  /** 3D exploded view: parts pulled out toward the glass. */
+  exploded: boolean;
+  setExploded: (exploded: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -27,4 +31,7 @@ export const useUiStore = create<UiState>((set) => ({
 
   activeSlot: null,
   setActiveSlot: (activeSlot) => set({ activeSlot }),
+
+  exploded: false,
+  setExploded: (exploded) => set({ exploded }),
 }));

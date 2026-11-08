@@ -3,3 +3,4 @@ node_modules
 package-lock.json
 REI.md
 AGENTS.md
+public/draco

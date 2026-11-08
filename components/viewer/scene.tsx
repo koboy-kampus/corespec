@@ -13,8 +13,10 @@ import { Environment, Lightformer } from "@react-three/drei";
 import type { Group } from "three";
 import {
   MM_TO_UNITS,
+  explodedOrigin,
   focusPoint,
   layoutBuild,
+  partBounds,
   type CaseLayout,
   type PartLayout,
   type Vec3,
@@ -26,6 +28,7 @@ import { CameraRig } from "./camera-rig";
 import { CaseShell } from "./case-shell";
 import { ACCENT, type Flag } from "./palette";
 import { PartMesh } from "./part-mesh";
+import { PartTooltip } from "./part-tooltip";
 
 export interface SceneProps {
   parts: ResolvedBuild;
@@ -40,6 +43,8 @@ export interface SceneProps {
   reducedMotion: boolean;
   /** Stop the showcase spin while it's off screen. */
   paused?: boolean;
+  /** Pull the parts out toward the glass so each one is visible. */
+  exploded?: boolean;
 }
 
 type Item =
@@ -156,6 +161,27 @@ function Lights() {
   );
 }
 
+/** Tooltip just above the part's top edge, relative to its group. */
+function HoverLabel({
+  layout,
+  parts,
+  flag,
+}: {
+  layout: PartLayout;
+  parts: ResolvedBuild;
+  flag?: Flag;
+}) {
+  const part = parts[layout.category];
+  if (!part) return null;
+  const { min, max } = partBounds(layout);
+  const top: Vec3 = [
+    (min[0] + max[0]) / 2 - layout.origin[0],
+    max[1] - layout.origin[1],
+    (min[2] + max[2]) / 2 - layout.origin[2],
+  ];
+  return <PartTooltip part={part} position={top} flag={flag} />;
+}
+
 function SceneCanvas({
   parts,
   flags = NO_FLAGS,
@@ -164,8 +190,11 @@ function SceneCanvas({
   fallback,
   reducedMotion,
   paused = false,
+  exploded = false,
 }: SceneProps) {
   const scene = useMemo(() => layoutBuild(parts), [parts]);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const interactive = mode === "builder";
   const items = useMemo<Item[]>(
     () => [
       {
@@ -195,7 +224,9 @@ function SceneCanvas({
   const render = (item: Item, isLeaving: boolean) => (
     <Animated
       key={item.key}
-      target={item.kind === "case" ? [0, 0, 0] : item.layout.origin}
+      target={
+        item.kind === "case" ? [0, 0, 0] : explodedOrigin(item.layout, exploded)
+      }
       drop={item.kind === "case" ? CASE_DROP : PART_DROP}
       leaving={isLeaving}
       onExited={() => done(item.key)}
@@ -204,7 +235,27 @@ function SceneCanvas({
       {item.kind === "case" ? (
         <CaseShell shell={item.shell} flag={item.flag} />
       ) : (
-        <PartMesh layout={item.layout} flag={item.flag} />
+        <group
+          // Hover tooltips in the builder; the hero has no pointer interaction.
+          onPointerOver={
+            interactive && !isLeaving
+              ? (e) => {
+                  e.stopPropagation();
+                  setHovered(item.key);
+                }
+              : undefined
+          }
+          onPointerOut={
+            interactive
+              ? () => setHovered((h) => (h === item.key ? null : h))
+              : undefined
+          }
+        >
+          <PartMesh layout={item.layout} flag={item.flag} />
+          {hovered === item.key && !isLeaving ? (
+            <HoverLabel layout={item.layout} parts={parts} flag={item.flag} />
+          ) : null}
+        </group>
       )}
     </Animated>
   );
@@ -232,6 +283,7 @@ function SceneCanvas({
         caseSize={caseSize}
         focus={focus}
         interactive={mode === "builder"}
+        exploded={exploded}
       />
     </Canvas>
   );

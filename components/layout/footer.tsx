@@ -15,7 +15,7 @@ function FooterLink({ link }: { link: NavLink }) {
     return (
       <span className="text-ui text-fg-3">
         {link.label}
-        <span className="ml-2 inline-block label-micro text-micro-sm whitespace-nowrap text-fg-3/70">
+        <span className="ml-2 inline-block label-micro text-micro-sm whitespace-nowrap text-fg-3">
           Soon
         </span>
       </span>

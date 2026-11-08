@@ -30,7 +30,10 @@ import { PriceTag } from "@/components/ui/price-tag";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Tip } from "@/components/ui/tooltip";
 
-export const metadata: Metadata = { title: "Style guide" };
+export const metadata: Metadata = {
+  title: "Style guide",
+  robots: { index: false },
+};
 
 const colours = [
   { token: "--bg", value: "#0F0E0E", use: "Page background" },

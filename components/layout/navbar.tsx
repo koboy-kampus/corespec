@@ -41,12 +41,12 @@ export function Navbar() {
             variant="ghost"
             size="sm"
             onClick={() => setPaletteOpen(true)}
-            aria-label="Search"
             aria-keyshortcuts="Control+K"
             className="hidden gap-2 px-2.5 md:inline-flex"
             icon={<Search />}
           >
-            <span className="hidden lg:inline">Search</span>
+            {/* Visible on wide screens; still read out (and voice-clickable) when hidden. */}
+            <span className="sr-only lg:not-sr-only">Search</span>
             <KbdGroup>
               <Kbd>Ctrl</Kbd>
               <Kbd>K</Kbd>

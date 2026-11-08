@@ -1,0 +1,78 @@
+import {
+  Box3,
+  Matrix4,
+  Vector3,
+  type BufferGeometry,
+  type Material,
+  type Mesh,
+  type MeshStandardMaterial,
+  type Object3D,
+} from "three";
+import type { Vec3 } from "./layout";
+
+export interface FittedMesh {
+  geometry: BufferGeometry;
+  /** Name of the model's original material, used to pick a colour. */
+  materialName: string;
+  /** The original material's look, kept for materials we don't recolour. */
+  color: string;
+  roughness: number;
+  metalness: number;
+}
+
+/**
+ * Bakes a loaded model into plain geometries that exactly fill a part's box:
+ * rotate with `basis`, then scale each axis to `size` and centre on the origin.
+ * The caller owns (and disposes) the returned geometries.
+ */
+export function fitModel(
+  root: Object3D,
+  basis: [Vec3, Vec3, Vec3],
+  size: Vec3,
+): FittedMesh[] {
+  const rotate = new Matrix4().makeBasis(
+    new Vector3(...basis[0]),
+    new Vector3(...basis[1]),
+    new Vector3(...basis[2]),
+  );
+  root.updateMatrixWorld(true);
+
+  const out: FittedMesh[] = [];
+  root.traverse((o) => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh) return;
+    const geometry = mesh.geometry
+      .clone()
+      .applyMatrix4(mesh.matrixWorld)
+      .applyMatrix4(rotate);
+    const raw = mesh.material as Material | Material[];
+    const mat = (Array.isArray(raw) ? raw[0] : raw) as
+      Partial<MeshStandardMaterial> | undefined;
+    out.push({
+      geometry,
+      materialName: mat?.name ?? "",
+      color: mat?.color ? `#${mat.color.getHexString()}` : "#808080",
+      roughness: mat?.roughness ?? 0.6,
+      metalness: mat?.metalness ?? 0.2,
+    });
+  });
+
+  const box = new Box3();
+  for (const m of out) {
+    m.geometry.computeBoundingBox();
+    if (m.geometry.boundingBox) box.union(m.geometry.boundingBox);
+  }
+  const center = box.getCenter(new Vector3());
+  const extent = box.getSize(new Vector3());
+  const scale = new Vector3(
+    ...size.map((s, i) => s / Math.max(extent.getComponent(i), 1e-6)),
+  );
+  const fit = new Matrix4()
+    .makeScale(scale.x, scale.y, scale.z)
+    .multiply(new Matrix4().makeTranslation(-center.x, -center.y, -center.z));
+  for (const m of out) {
+    m.geometry.applyMatrix4(fit);
+    m.geometry.computeVertexNormals();
+  }
+  return out;
+}

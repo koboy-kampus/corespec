@@ -17,6 +17,8 @@ export async function generateMetadata({
   return {
     title: shared.name,
     description,
+    // Personal snapshots: fine to preview, not to list in search results.
+    robots: { index: false, follow: true },
     openGraph: { title: shared.name, description, type: "website" },
     twitter: { card: "summary_large_image", title: shared.name, description },
   };

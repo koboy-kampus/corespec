@@ -1,7 +1,8 @@
 "use client";
 
 import { Outlines, RoundedBox } from "@react-three/drei";
-import type { Facing, Fan, PartLayout, Vec3 } from "@/lib/viewer/layout";
+import type { Block, Facing, Fan, PartLayout, Vec3 } from "@/lib/viewer/layout";
+import { ModelBlock } from "./model-block";
 import { GLOW, TONES, type Flag } from "./palette";
 
 const FACE: Record<Facing, { rot: Vec3; normal: Vec3 }> = {
@@ -40,7 +41,29 @@ function FanDisc({ pos, radius, facing }: Fan) {
   );
 }
 
-/** A placeholder part: rounded boxes sized from its dims, glowing when check() flags it. */
+/** A rounded box in one of the palette tones. */
+function BoxBlock({ block: b, glow }: { block: Block; glow?: string }) {
+  return (
+    <RoundedBox
+      args={b.size}
+      radius={radiusFor(b.size)}
+      smoothness={3}
+      position={b.pos}
+    >
+      <meshStandardMaterial
+        {...TONES[b.tone]}
+        emissive={glow ?? "#000000"}
+        emissiveIntensity={glow ? 0.25 : 0}
+      />
+      {glow ? <Outlines thickness={2.5} color={glow} /> : null}
+    </RoundedBox>
+  );
+}
+
+/**
+ * A part: bundled models where we have one (CPU, RAM), rounded boxes sized from its
+ * dims everywhere else. Glows when check() flags it.
+ */
 export function PartMesh({
   layout,
   flag,
@@ -51,22 +74,20 @@ export function PartMesh({
   const glow = flag ? GLOW[flag] : undefined;
   return (
     <>
-      {layout.blocks.map((b, i) => (
-        <RoundedBox
-          key={i}
-          args={b.size}
-          radius={radiusFor(b.size)}
-          smoothness={3}
-          position={b.pos}
-        >
-          <meshStandardMaterial
-            {...TONES[b.tone]}
-            emissive={glow ?? "#000000"}
-            emissiveIntensity={glow ? 0.25 : 0}
+      {layout.blocks.map((b, i) =>
+        b.model ? (
+          <ModelBlock
+            key={i}
+            id={b.model}
+            pos={b.pos}
+            size={b.size}
+            glow={glow}
+            fallback={<BoxBlock block={{ ...b, pos: [0, 0, 0] }} glow={glow} />}
           />
-          {glow ? <Outlines thickness={2.5} color={glow} /> : null}
-        </RoundedBox>
-      ))}
+        ) : (
+          <BoxBlock key={i} block={b} glow={glow} />
+        ),
+      )}
       {layout.fans.map((f, i) => (
         <FanDisc key={i} {...f} />
       ))}

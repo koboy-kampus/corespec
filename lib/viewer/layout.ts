@@ -6,6 +6,7 @@ import type {
   Part,
   ResolvedBuild,
 } from "@/types/parts";
+import type { ModelId } from "./models";
 
 /**
  * Where every part sits inside the case, in millimetres.
@@ -28,6 +29,8 @@ export interface Block {
   pos: Vec3;
   size: Vec3;
   tone: Tone;
+  /** Draw this 3D model (fitted to `size`) instead of the box, once it has loaded. */
+  model?: ModelId;
 }
 /** A fan drawn as a ring on one face of a block. */
 export interface Fan {
@@ -230,10 +233,38 @@ function layoutPart(
         size: [26, 70, d.h - PCB],
         tone: "dark",
       };
+      // Socket frame, DIMM slots and the PCIe x16 slot, placed from the same
+      // anchors as the parts, so a CPU, RAM or GPU always lands on its slot.
+      const rel = (p: Vec3, z: number): Vec3 => [
+        p[0] - a.board.pos[0],
+        p[1] - a.board.pos[1],
+        PCB / 2 + z,
+      ];
+      const socket: Block = {
+        pos: rel(a.socket, 1.5),
+        size: [56, 56, 3],
+        tone: "steel",
+      };
+      const dimms = Array.from({ length: part.ramSlots }, (_, i): Block => ({
+        pos: rel([a.ramSlot[0] - i * a.ramPitch, a.ramSlot[1], 0], 3),
+        size: [6, 142, 6],
+        tone: "dark",
+      }));
+      const pcieSlot: Block = {
+        pos: rel([a.pcie[0] - 46 - 44.5, a.pcie[1] - 4, 0], 3),
+        size: [89, 8, 6],
+        tone: "dark",
+      };
       return {
         ...base,
         origin: a.board.pos,
-        blocks: [{ pos: [0, 0, 0], size: [d.w, d.l, PCB], tone: "pcb" }, io],
+        blocks: [
+          { pos: [0, 0, 0], size: [d.w, d.l, PCB], tone: "pcb" },
+          io,
+          socket,
+          ...dimms,
+          pcieSlot,
+        ],
       };
     }
 
@@ -242,7 +273,12 @@ function layoutPart(
         ...base,
         origin: a.socket,
         blocks: [
-          { pos: [0, 0, d.h / 2], size: [d.l, d.w, d.h], tone: "silver" },
+          {
+            pos: [0, 0, d.h / 2],
+            size: [d.l, d.w, d.h],
+            tone: "silver",
+            model: "cpu",
+          },
         ],
       };
 
@@ -321,6 +357,7 @@ function layoutPart(
           pos: [-i * a.ramPitch, 0, d.h / 2] as Vec3,
           size: [d.w, d.l, d.h] as Vec3,
           tone: "ram" as const,
+          model: "ram" as const,
         })),
       };
 
@@ -432,4 +469,27 @@ export function focusPoint(scene: SceneLayout, category: Category): Vec3 {
     case "case":
       return [0, 0, 0];
   }
+}
+
+/**
+ * Exploded view: how far each part moves out of the case (mm). Every part comes
+ * toward the glass, and also spreads up, down or to the front so it reads from the
+ * default camera; the cooler lifts clear so the CPU underneath shows.
+ * The board and case stay put.
+ */
+export const EXPLODE_MM: Record<Category, Vec3> = {
+  case: [0, 0, 0],
+  motherboard: [0, 0, 0],
+  cpu: [0, 0, 80],
+  cooler: [0, 200, 140],
+  ram: [-70, 40, 110],
+  gpu: [-40, -100, 170],
+  storage: [-130, -40, 90],
+  psu: [-60, -120, 170],
+};
+
+export function explodedOrigin(p: PartLayout, exploded: boolean): Vec3 {
+  if (!exploded) return p.origin;
+  const o = EXPLODE_MM[p.category];
+  return [p.origin[0] + o[0], p.origin[1] + o[1], p.origin[2] + o[2]];
 }

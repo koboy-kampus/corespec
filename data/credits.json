@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cpu",
+    "file": "/models/cpu.glb",
+    "source": "models-src/cpu-ipoly3d.glb",
+    "usedFor": "CPU",
+    "title": "CPU",
+    "author": "iPoly3D",
+    "url": "https://poly.pizza/m/oF0cAyddAI",
+    "licence": "CC0 1.0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Draco-compressed; recoloured at runtime to the CoreSpec palette; scaled to each part's dimensions."
+  },
+  {
+    "id": "ram",
+    "file": "/models/ram.glb",
+    "source": "models-src/ram-ipoly3d.glb",
+    "usedFor": "Memory (one model per stick)",
+    "title": "RAM",
+    "author": "iPoly3D",
+    "url": "https://poly.pizza/m/obBMPOGYvy",
+    "licence": "CC0 1.0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Draco-compressed; recoloured at runtime to the CoreSpec palette; scaled to each part's dimensions."
+  }
+]

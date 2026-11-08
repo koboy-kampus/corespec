@@ -21,6 +21,8 @@ interface CameraRigProps {
   /** Point to ease toward (scene units), or null for the home view. */
   focus: Vec3 | null;
   interactive: boolean;
+  /** Pull back a little so exploded parts stay in frame. */
+  exploded?: boolean;
 }
 
 /** Distance that fits the case's bounding sphere in both the vertical and horizontal field of view. */
@@ -35,7 +37,12 @@ function fitDistance(size: Vec3, fovDeg: number, aspect: number): number {
  * Frames the case, eases the camera toward the selected slot, and (in the builder)
  * adds orbit controls with damping and limits. Dragging cancels any running ease.
  */
-export function CameraRig({ caseSize, focus, interactive }: CameraRigProps) {
+export function CameraRig({
+  caseSize,
+  focus,
+  interactive,
+  exploded = false,
+}: CameraRigProps) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
   const invalidate = useThree((s) => s.invalidate);
@@ -52,8 +59,8 @@ export function CameraRig({ caseSize, focus, interactive }: CameraRigProps) {
 
   const [sx, sy, sz] = caseSize;
   const dist = useMemo(
-    () => fitDistance([sx, sy, sz], camera.fov, aspect),
-    [sx, sy, sz, camera.fov, aspect],
+    () => fitDistance([sx, sy, sz], camera.fov, aspect) * (exploded ? 1.25 : 1),
+    [sx, sy, sz, camera.fov, aspect, exploded],
   );
   const [fx, fy, fz] = focus ?? [NaN, NaN, NaN];
 

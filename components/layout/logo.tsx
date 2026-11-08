@@ -47,7 +47,6 @@ export function Logo({ showBeta = true, className, ...props }: LogoProps) {
   return (
     <Link
       href="/"
-      aria-label="CoreSpec home"
       className={cn(
         "inline-flex shrink-0 items-center gap-2.5 rounded-input",
         className,
@@ -67,6 +66,8 @@ export function Logo({ showBeta = true, className, ...props }: LogoProps) {
           Beta
         </Badge>
       ) : null}
+      {/* The visible text stays part of the name, so voice control can "click CoreSpec". */}
+      <span className="sr-only">home</span>
     </Link>
   );
 }

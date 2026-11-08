@@ -26,6 +26,7 @@ import {
   type SortKey,
 } from "@/lib/picker";
 import { useBuildStore } from "@/store/build";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { useUiStore } from "@/store/ui";
 import type { Category } from "@/types/parts";
 import { PartRow } from "./part-row";
@@ -223,10 +224,21 @@ function PickerBody({ category }: { category: Category }) {
 export function PartPicker() {
   const category = useUiStore((s) => s.pickerCategory);
   const closePicker = useUiStore((s) => s.closePicker);
+  // Back to the opener, or else to the slot that was being edited.
+  const [lastCategory, setLastCategory] = useState(category);
+  if (category && category !== lastCategory) setLastCategory(category);
+  const focus = useReturnFocus(() =>
+    document.querySelector<HTMLElement>(
+      `[data-slot-category="${lastCategory}"]`,
+    ),
+  );
 
   return (
     <Dialog open={category !== null} onOpenChange={(o) => !o && closePicker()}>
-      <DialogContent className="flex h-[min(88dvh,760px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent
+        {...focus}
+        className="flex h-[min(88dvh,760px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+      >
         {/* key resets filters when switching category */}
         {category ? <PickerBody key={category} category={category} /> : null}
       </DialogContent>

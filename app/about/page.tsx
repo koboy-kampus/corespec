@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { ComingSoon } from "@/components/layout/coming-soon";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "What CoreSpec is, how prices and compatibility checks work, and who made it.",
+};
 
 export default function Page() {
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "cn";
 import { useMediaQuery } from "@/hooks/use-build";
@@ -25,6 +25,26 @@ const Scene = dynamic(() => import("./scene"), {
   loading: () => <ViewerSkeleton />,
 });
 
+/** If the 3D scene crashes (lost GPU, driver bug), show the static drawing instead. */
+class SceneBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn(
+      "3D viewer failed; showing the static drawing instead.",
+      error,
+    );
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 type ViewerProps = Omit<SceneProps, "reducedMotion" | "paused"> & {
   className?: string;
 };
@@ -45,7 +65,9 @@ export function Viewer({ className, ...props }: ViewerProps) {
 
   return (
     <div ref={ref} className={cn("relative size-full", className)}>
-      <Scene {...props} reducedMotion={reducedMotion} paused={!onScreen} />
+      <SceneBoundary fallback={props.fallback}>
+        <Scene {...props} reducedMotion={reducedMotion} paused={!onScreen} />
+      </SceneBoundary>
     </div>
   );
 }

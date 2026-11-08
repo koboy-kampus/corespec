@@ -36,10 +36,13 @@ export function PartRow({ part, issues, selected, onSelect }: PartRowProps) {
           "group flex w-full cursor-pointer flex-col gap-2 rounded-btn border px-4 py-3 text-left transition-colors duration-150",
           selected
             ? "border-accent/50 bg-accent-soft"
-            : "border-line bg-surface hover:border-line-hover hover:bg-surface-2",
+            : error
+              ? // Marked with a red edge, not dimmed: it can still be picked, so it must stay readable.
+                "border-accent/25 border-l-accent/70 bg-surface hover:border-accent/40 hover:bg-surface-2"
+              : "border-line bg-surface hover:border-line-hover hover:bg-surface-2",
         )}
       >
-        <div className={cn("flex items-start gap-3", error && "opacity-55")}>
+        <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[14px] leading-5 font-medium text-fg">
               {partLabel(part)}

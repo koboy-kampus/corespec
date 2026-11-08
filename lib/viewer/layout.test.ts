@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getPart, resolveBuild } from "@/lib/parts";
 import { presets } from "@/lib/presets";
 import type { ResolvedBuild } from "@/types/parts";
-import { focusPoint, layoutBuild, partBounds } from "./layout";
+import { explodedOrigin, focusPoint, layoutBuild, partBounds } from "./layout";
 import { clampDelta, easeInOutCubic, isSettled, stepSpring } from "./spring";
 
 const TOLERANCE = 1; // mm
@@ -127,5 +127,36 @@ describe("clampDelta", () => {
     expect(clampDelta(4.2)).toBeCloseTo(1 / 30);
     expect(clampDelta(0.01)).toBe(0.01);
     expect(clampDelta(-1)).toBe(0);
+  });
+});
+
+describe("board details and exploded view", () => {
+  it("draws one DIMM slot per board slot and keeps them on the board", () => {
+    const scene = layoutBuild(
+      resolveBuild({ motherboard: "motherboard-asrock-b550m-hdv" }),
+    );
+    const board = scene.parts.find((p) => p.category === "motherboard");
+    const dimms = board?.blocks.filter(
+      (b) => b.tone === "dark" && b.size[1] === 142,
+    );
+    expect(dimms).toHaveLength(2);
+    const [pcb] = board?.blocks ?? [];
+    for (const b of board?.blocks.slice(2) ?? []) {
+      for (const i of [0, 1]) {
+        expect(Math.abs(b.pos[i]) + b.size[i] / 2).toBeLessThanOrEqual(
+          pcb.size[i] / 2 + 1,
+        );
+      }
+    }
+  });
+
+  it("moves parts out toward the glass, but never the board", () => {
+    const scene = layoutBuild(resolveBuild(presets[0].parts));
+    for (const p of scene.parts) {
+      const out = explodedOrigin(p, true);
+      if (p.category === "motherboard") expect(out).toEqual(p.origin);
+      else expect(out[2]).toBeGreaterThan(p.origin[2]);
+      expect(explodedOrigin(p, false)).toEqual(p.origin);
+    }
   });
 });

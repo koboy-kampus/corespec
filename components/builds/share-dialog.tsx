@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { sharePath } from "@/lib/share";
 import type { Build } from "@/types/parts";
 
@@ -22,6 +23,7 @@ interface ShareDialogProps {
 /** A read-only link to the build, with a copy button. The link is a snapshot. */
 export function ShareDialog({ build, open, onOpenChange }: ShareDialogProps) {
   const [copied, setCopied] = useState(false);
+  const focus = useReturnFocus();
   const path = sharePath(build);
   // Only rendered in the browser (the dialog content mounts when opened).
   const url =
@@ -46,7 +48,7 @@ export function ShareDialog({ build, open, onOpenChange }: ShareDialogProps) {
         if (!o) setCopied(false);
       }}
     >
-      <DialogContent>
+      <DialogContent {...focus}>
         <DialogHeader>
           <DialogTitle>Share “{build.name}”</DialogTitle>
           <DialogDescription>
