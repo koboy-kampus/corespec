@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/coming-soon";
+import { Suspense } from "react";
+import { BuilderApp } from "@/components/builder/builder-app";
+import { BuilderSkeleton } from "@/components/builder/builder-skeleton";
 
-export const metadata: Metadata = { title: "Builder" };
+export const metadata: Metadata = {
+  title: "Builder",
+  description:
+    "Pick parts for your PC, see compatibility checks and the total in Rupiah, live.",
+};
 
-export default function Page() {
+export default function BuilderPage() {
   return (
-    <ComingSoon
-      title="Builder"
-      description="The 3D builder is under construction. Soon you will pick parts, watch them snap into a case and see compatibility and the total in Rupiah, live."
-      tag="Coming soon · Phase 4"
-    />
+    // BuilderApp reads ?preset= (useSearchParams) and localStorage, so it renders on
+    // the client behind a skeleton.
+    <Suspense fallback={<BuilderSkeleton />}>
+      <BuilderApp />
+    </Suspense>
   );
 }

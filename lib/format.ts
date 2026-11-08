@@ -36,3 +36,14 @@ export function formatMM(mm: number): string {
 export function formatWatts(watts: number): string {
   return `${plain.format(watts)} W`;
 }
+
+/** "2026-11-08" → "8 November 2026" (timezone-safe for date-only strings). */
+export function formatDate(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}

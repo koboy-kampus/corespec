@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatIDR, formatIDRCompact, formatMM, formatWatts } from "./format";
+import {
+  formatDate,
+  formatIDR,
+  formatIDRCompact,
+  formatMM,
+  formatWatts,
+} from "./format";
 
 // Intl puts a non-breaking space after "Rp"; normalise it for readable asserts.
 const norm = (s: string) => s.replace(/\u00a0/g, " ");
@@ -27,5 +33,11 @@ describe("unit helpers", () => {
   it("formats millimetres and watts", () => {
     expect(formatMM(357)).toBe("357 mm");
     expect(formatWatts(1000)).toBe("1.000 W");
+  });
+});
+
+describe("formatDate", () => {
+  it("formats an ISO date in long English form", () => {
+    expect(formatDate("2026-11-08")).toBe("8 November 2026");
   });
 });

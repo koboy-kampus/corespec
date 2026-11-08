@@ -99,8 +99,8 @@ export function CaseDrawing({
   psuWatts,
 }: {
   className?: string;
-  gpuLengthMm: number;
-  psuWatts: number;
+  gpuLengthMm?: number;
+  psuWatts?: number;
 }) {
   return (
     <svg
@@ -258,8 +258,18 @@ export function CaseDrawing({
       {/* Callouts */}
       <Callout y={131} toX={266} index="01" label="COOLER" />
       <Callout y={201} toX={250} index="02" label="M.2 NVME" />
-      <Callout y={248} toX={196} index="03" label={`GPU ${gpuLengthMm}MM`} />
-      <Callout y={401} toX={180} index="04" label={`PSU ${psuWatts}W`} />
+      <Callout
+        y={248}
+        toX={196}
+        index="03"
+        label={gpuLengthMm ? `GPU ${gpuLengthMm}MM` : "GPU —"}
+      />
+      <Callout
+        y={401}
+        toX={180}
+        index="04"
+        label={psuWatts ? `PSU ${psuWatts}W` : "PSU —"}
+      />
 
       {/* Dimension: height */}
       <g stroke="rgba(255,255,255,0.3)" strokeWidth="1">
