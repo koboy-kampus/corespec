@@ -26,7 +26,6 @@ function SlotRow({
   const removePart = useBuildStore((s) => s.removePart);
   const openPicker = useUiStore((s) => s.openPicker);
   const activeSlot = useUiStore((s) => s.activeSlot);
-  const setActiveSlot = useUiStore((s) => s.setActiveSlot);
 
   const label = CATEGORY_LABEL[category];
 
@@ -42,7 +41,6 @@ function SlotRow({
         severity === "warning" && "border-warn/40",
         activeSlot === category && "ring-1 ring-accent/40",
       )}
-      onMouseEnter={() => part && setActiveSlot(category)}
     >
       <CategoryIcon
         category={category}

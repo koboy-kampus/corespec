@@ -1,22 +1,22 @@
 "use client";
 
-import { Box, Cpu } from "lucide-react";
+import { Cpu, Move3d, RotateCcw } from "lucide-react";
 import { cn } from "cn";
 import { CaseDrawing } from "@/components/landing/case-drawing";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tooltip";
+import { Viewer } from "@/components/viewer/viewer";
 import { useBuildDerived } from "@/hooks/use-build";
 import { presets } from "@/lib/presets";
 import { useBuildStore } from "@/store/build";
 import { useUiStore } from "@/store/ui";
 
-/**
- * Centre viewport. Until Phase 5 swaps in the 3D scene, it shows the technical
- * drawing with callouts taken from the current build.
- */
+/** Centre viewport: the live 3D build, with the empty state on top when nothing is picked. */
 export function Viewport({ className }: { className?: string }) {
-  const { resolved, filled } = useBuildDerived();
+  const { resolved, filled, severityByCategory } = useBuildDerived();
   const openPicker = useUiStore((s) => s.openPicker);
+  const activeSlot = useUiStore((s) => s.activeSlot);
+  const setActiveSlot = useUiStore((s) => s.setActiveSlot);
   const loadPreset = useBuildStore((s) => s.loadPreset);
   const empty = filled === 0;
 
@@ -24,7 +24,7 @@ export function Viewport({ className }: { className?: string }) {
     <section
       aria-label="Build preview"
       className={cn(
-        "relative isolate flex items-center justify-center overflow-hidden rounded-card border border-line bg-surface/40",
+        "relative isolate overflow-hidden rounded-card border border-line bg-surface/40",
         className,
       )}
     >
@@ -38,22 +38,46 @@ export function Viewport({ className }: { className?: string }) {
         className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_center,black_35%,transparent_75%)] bg-[size:28px_28px]"
       />
 
-      <div className="absolute top-3 left-3 flex items-center gap-2">
-        <Badge variant="outline" icon={<Box />}>
-          3D viewer · Phase 5
-        </Badge>
-      </div>
-
-      <CaseDrawing
-        gpuLengthMm={resolved.gpu?.lengthMm}
-        psuWatts={resolved.psu?.watts}
+      <Viewer
+        mode="builder"
+        parts={resolved}
+        flags={severityByCategory}
+        activeSlot={activeSlot}
         className={cn(
-          "h-full max-h-[min(78%,560px)] w-auto max-w-[92%] transition-opacity duration-300",
-          empty && "opacity-25",
+          "absolute inset-0 transition-opacity duration-300",
+          empty && "opacity-30",
         )}
+        fallback={
+          <div className="flex size-full items-center justify-center">
+            <CaseDrawing
+              gpuLengthMm={resolved.gpu?.lengthMm}
+              psuWatts={resolved.psu?.watts}
+              className="h-full max-h-[min(78%,560px)] w-auto max-w-[92%]"
+            />
+          </div>
+        }
       />
 
-      {empty ? (
+      {!empty ? (
+        <>
+          <p className="pointer-events-none absolute top-3.5 left-3.5 flex items-center gap-1.5 label-micro text-micro-sm text-fg-3">
+            <Move3d className="size-3.5" aria-hidden />
+            Drag to rotate · Scroll or pinch to zoom
+          </p>
+          {activeSlot ? (
+            <Tip content="Back to the full view">
+              <Button
+                variant="glass"
+                size="icon-sm"
+                aria-label="Reset view"
+                className="absolute top-3 right-3"
+                onClick={() => setActiveSlot(null)}
+                icon={<RotateCcw />}
+              />
+            </Tip>
+          ) : null}
+        </>
+      ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
           <span className="flex size-11 items-center justify-center rounded-btn bg-accent-soft text-accent">
             <Cpu className="size-5" aria-hidden />
@@ -78,7 +102,7 @@ export function Viewport({ className }: { className?: string }) {
             ))}
           </div>
         </div>
-      ) : null}
+      )}
     </section>
   );
 }

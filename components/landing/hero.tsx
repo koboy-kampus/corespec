@@ -3,7 +3,7 @@ import { ArrowRight, Boxes, ShieldCheck, Wallet, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BuildSummaryCard } from "./build-summary-card";
-import { CaseDrawing } from "./case-drawing";
+import { HeroViewer } from "./hero-viewer";
 import { Reveal } from "./reveal";
 import { CATALOG_STATS } from "@/lib/parts";
 import { showcase } from "@/lib/showcase";
@@ -89,11 +89,7 @@ export function Hero() {
           />
 
           <Reveal delay={0.1} className="relative">
-            <CaseDrawing
-              gpuLengthMm={showcase.gpu.lengthMm}
-              psuWatts={showcase.psuWatts}
-              className="mx-auto max-w-[600px] lg:mr-auto lg:ml-0 lg:max-w-[540px]"
-            />
+            <HeroViewer />
           </Reveal>
 
           <Reveal

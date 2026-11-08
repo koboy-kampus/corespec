@@ -55,6 +55,8 @@ function costSplit() {
 
 export const showcase = {
   presetId: PRESET_ID,
+  /** The resolved parts, for the hero 3D scene. */
+  parts,
   name: preset.name,
   totalIDR,
   partCount: Object.keys(parts).length,
