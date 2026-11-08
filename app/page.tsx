@@ -1,11 +1,15 @@
-import { ComingSoon } from "@/components/layout/coming-soon";
+import { ClosingCTA } from "@/components/landing/closing-cta";
+import { FeatureBento } from "@/components/landing/feature-bento";
+import { Hero } from "@/components/landing/hero";
+import { QuickStart } from "@/components/landing/quick-start";
 
 export default function Home() {
   return (
-    <ComingSoon
-      title="Build your PC in 3D."
-      description="The landing page arrives in Phase 2. For now, the shell, navbar, footer and the component gallery at /styleguide are ready to review."
-      tag="Phase 1 · Shell"
-    />
+    <>
+      <Hero />
+      <QuickStart />
+      <FeatureBento />
+      <ClosingCTA />
+    </>
   );
 }

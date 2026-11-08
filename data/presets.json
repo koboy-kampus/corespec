@@ -1,0 +1,26 @@
+[
+  {
+    "id": "budget-1080p",
+    "name": "Budget 1080p",
+    "tagline": "High-refresh esports and indie games without overspending.",
+    "highlights": ["1080p", "AM4 · DDR4", "~400 W"],
+    "targetIDR": 9000000,
+    "parts": {}
+  },
+  {
+    "id": "sweet-spot-1440p",
+    "name": "1440p Sweet Spot",
+    "tagline": "The best frames per rupiah for modern games at 1440p.",
+    "highlights": ["1440p", "AM5 · DDR5", "~550 W"],
+    "targetIDR": 18000000,
+    "parts": {}
+  },
+  {
+    "id": "creator-workstation",
+    "name": "Creator Workstation",
+    "tagline": "Many cores, lots of memory and a big GPU for render and edit work.",
+    "highlights": ["Render · Edit", "64 GB DDR5", "~750 W"],
+    "targetIDR": 35000000,
+    "parts": {}
+  }
+]

@@ -180,6 +180,7 @@
   }
   html {
     @apply bg-canvas font-sans;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-canvas text-body text-fg-2;
