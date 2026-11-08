@@ -35,7 +35,7 @@ Zustand · Motion · Vitest · Vercel Analytics · Sentry (optional).
 
 ## Getting started
 
-Requirements: **Node.js 20.9 or newer** and npm.
+Requirements: **Node.js 20.9 or newer** (24 recommended, see `.nvmrc`) and npm.
 
 ```bash
 npm install
@@ -46,17 +46,26 @@ Open <http://localhost:3000>. No environment variables or API keys are needed.
 
 ### Scripts
 
-| Command          | What it does                                                   |
-| ---------------- | -------------------------------------------------------------- |
-| `npm run dev`    | Development server with hot reload                             |
-| `npm run build`  | Production build                                               |
-| `npm start`      | Serve the production build                                     |
-| `npm test`       | Unit tests (Vitest)                                            |
-| `npm run lint`   | ESLint                                                         |
-| `npm run format` | Format everything with Prettier (`format:check` to only check) |
-| `npm run models` | Compress `models-src/` into `public/models/` (see 3D models)   |
+| Command            | What it does                                                   |
+| ------------------ | -------------------------------------------------------------- |
+| `npm run dev`      | Development server with hot reload                             |
+| `npm run build`    | Production build                                               |
+| `npm start`        | Serve the production build                                     |
+| `npm test`         | Unit tests (Vitest)                                            |
+| `npm run test:e2e` | End-to-end, keyboard and axe tests (Playwright, see below)     |
+| `npm run lint`     | ESLint                                                         |
+| `npm run format`   | Format everything with Prettier (`format:check` to only check) |
+| `npm run models`   | Compress `models-src/` into `public/models/` (see 3D models)   |
 
 Before committing: `npm run build && npm run lint && npm test`.
+
+### End-to-end tests
+
+`npm run test:e2e` builds the app, serves it on port 3124 and runs `tests/e2e/` in
+your installed Google Chrome: the builder flow, presets, sharing, My builds,
+keyboard-only use and an axe-core audit of every page. If a server is already
+running on 3124 it is reused. To use Playwright's own Chromium instead, run
+`npx playwright install chromium` and set `PLAYWRIGHT_CHANNEL=chromium`.
 
 ## Project structure
 

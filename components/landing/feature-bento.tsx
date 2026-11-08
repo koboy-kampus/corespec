@@ -5,9 +5,9 @@ import { SectionHeader } from "@/components/ui/section-header";
 import {
   CompatVisual,
   CostVisual,
-  FpsVisual,
+  ExplodedVisual,
   PowerVisual,
-  PriceVisual,
+  ShareVisual,
   ViewerVisual,
 } from "./bento-visuals";
 import { Reveal } from "./reveal";
@@ -43,15 +43,15 @@ const row1: Tile[] = [
 const row2: Tile[] = [
   {
     index: "04",
-    title: "FPS estimates",
-    body: "Rough frame-rate ranges to sanity-check a build. Not a benchmark.",
-    visual: <FpsVisual />,
+    title: "Exploded view",
+    body: "Pull every part out toward the glass to see what goes where, then snap it back together.",
+    visual: <ExplodedVisual />,
   },
   {
     index: "05",
-    title: "Compare prices",
-    body: "Approximate prices from different stores side by side. Always check the store before buying.",
-    visual: <PriceVisual />,
+    title: "Share your build",
+    body: "The whole build fits in one link. Friends see it in 3D and can copy it to their own builds.",
+    visual: <ShareVisual />,
   },
   {
     index: "06",

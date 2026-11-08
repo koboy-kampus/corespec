@@ -4,6 +4,7 @@ import { formatMM } from "@/lib/format";
 import { buildTotalIDR, partLabel, resolveBuild } from "@/lib/parts";
 import { estimateDrawW } from "@/lib/power";
 import { getPreset } from "@/lib/presets";
+import { sharePath } from "@/lib/share";
 import type { Category } from "@/types/parts";
 
 /**
@@ -80,5 +81,7 @@ export const showcase = {
       value: `${formatMM(cooler.heightMm)} / ${formatMM(pcCase.maxCoolerMm)}`,
     },
   ],
+  /** The share link the builder would make for this build. */
+  sharePath: sharePath({ name: preset.name, parts: preset.parts }),
   gpu: { name: partLabel(gpu), priceIDR: gpu.priceIDR, lengthMm: gpu.lengthMm },
 };

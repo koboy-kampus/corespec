@@ -29,11 +29,11 @@ export default function Page() {
     >
       <DocSection title="Where the prices come from">
         <p>
-          Every price is an approximate, typical Indonesian street price in
-          Rupiah, entered by hand. The current prices were last updated on{" "}
-          <strong>{formatDate(PRICES_AS_OF)}</strong>, and that date also
-          appears at the bottom of the builder. They are not live and don&apos;t
-          come from any retailer&apos;s feed.
+          Prices are estimates and are being checked against Indonesian stores.
+          Always confirm in the store before buying. The current prices were
+          last updated on <strong>{formatDate(PRICES_AS_OF)}</strong>, and that
+          date also appears at the bottom of the builder. They are not live and
+          don&apos;t come from any retailer&apos;s feed.
         </p>
       </DocSection>
 

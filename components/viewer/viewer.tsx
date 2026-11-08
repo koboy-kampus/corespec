@@ -62,6 +62,11 @@ type ViewerProps = Omit<
   className?: string;
   /** Called when R resets the camera, so the page can clear its selected slot too. */
   onResetView?: () => void;
+  /**
+   * Zoom only with Ctrl+wheel (also what a trackpad pinch sends) or a touch pinch,
+   * so a plain wheel scrolls the page. For viewers inside a scrolling page.
+   */
+  zoomNeedsCtrl?: boolean;
 };
 
 const ROTATE_STEP = 0.18; // radians per key press
@@ -100,7 +105,12 @@ function handleCameraKey(key: string, cam: CameraKeys): boolean {
 }
 
 /** Sizes the canvas to its box, respects reduced motion and pauses the spin when off screen. */
-export function Viewer({ className, onResetView, ...props }: ViewerProps) {
+export function Viewer({
+  className,
+  onResetView,
+  zoomNeedsCtrl = false,
+  ...props
+}: ViewerProps) {
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const ref = useRef<HTMLDivElement>(null);
   const [onScreen, setOnScreen] = useState(true);
@@ -114,6 +124,19 @@ export function Viewer({ className, onResetView, ...props }: ViewerProps) {
     io.observe(el);
     return () => io.disconnect();
   }, [props.mode]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !zoomNeedsCtrl) return;
+    // Capture phase on the wrapper runs before the orbit controls' listener on the
+    // canvas. Stopping it there (without preventDefault) leaves the browser free to
+    // scroll the page as usual.
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) e.stopPropagation();
+    };
+    el.addEventListener("wheel", onWheel, { capture: true });
+    return () => el.removeEventListener("wheel", onWheel, { capture: true });
+  }, [zoomNeedsCtrl]);
 
   return (
     <div

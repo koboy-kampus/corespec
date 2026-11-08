@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Store } from "lucide-react";
+import { AlertTriangle, Check, Copy, Link2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatIDR, formatWatts } from "@/lib/format";
 import { POWER } from "@/lib/power";
@@ -163,77 +163,111 @@ export function CompatVisual() {
   );
 }
 
-const FPS = [
-  { label: "Esports · 1080p", fps: 240, max: 260 },
-  { label: "AAA · 1440p", fps: 96, max: 260 },
-  { label: "Open world · 4K", fps: 54, max: 260 },
+/**
+ * The case pulled apart into layers along one axis, like the builder's exploded
+ * view: back panel, motherboard, graphics card and the glass side panel.
+ */
+const PLANE = "0,0 90,40 90,130 0,90";
+const LAYERS = [
+  {
+    label: "CASE",
+    shape: PLANE,
+    fill: "rgba(255,255,255,0.04)",
+    stroke: "rgba(255,255,255,0.22)",
+  },
+  {
+    label: "BOARD",
+    shape: "12,16 76,44 76,106 12,78",
+    fill: "rgba(254,46,75,0.14)",
+    stroke: "rgba(254,46,75,0.7)",
+  },
+  {
+    label: "GPU",
+    shape: "4,66 86,102 86,120 4,84",
+    fill: "rgba(254,46,75,0.28)",
+    stroke: "#FE2E4B",
+  },
+  {
+    label: "GLASS",
+    shape: PLANE,
+    fill: "rgba(255,255,255,0.02)",
+    stroke: "rgba(255,255,255,0.3)",
+  },
 ];
+const STEP = { x: 46, y: -20 };
 
-export function FpsVisual() {
+export function ExplodedVisual() {
+  const ox = 34;
+  const oy = 96;
+  const last = LAYERS.length - 1;
   return (
-    <div className="flex w-full flex-col gap-4">
-      <Badge variant="outline">Illustrative estimate</Badge>
-      <ul className="flex flex-col gap-3">
-        {FPS.map((f) => (
-          <li key={f.label} className="flex flex-col gap-1.5">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[12px] leading-4 text-fg-2">{f.label}</span>
-              <span className="spec text-spec-sm text-fg">~{f.fps} FPS</span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-accent-strong to-accent"
-                style={{ width: `${(f.fps / f.max) * 100}%` }}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <svg
+      viewBox="0 0 320 250"
+      className="h-full max-h-[220px] w-full"
+      role="img"
+      aria-label="Exploded view: the case, motherboard, graphics card and glass panel pulled apart in layers"
+    >
+      {/* guide lines through the corners */}
+      {[
+        [0, 0],
+        [90, 130],
+      ].map(([cx, cy]) => (
+        <path
+          key={`${cx}-${cy}`}
+          d={`M${ox + cx} ${oy + cy} l${STEP.x * last} ${STEP.y * last}`}
+          stroke="rgba(254,46,75,0.45)"
+          strokeDasharray="2 4"
+        />
+      ))}
+      {LAYERS.map((l, i) => {
+        const x = ox + STEP.x * i;
+        const y = oy + STEP.y * i;
+        return (
+          <g key={l.label} transform={`translate(${x} ${y})`}>
+            <polygon points={l.shape} fill={l.fill} stroke={l.stroke} />
+            <text
+              x="0"
+              y="-8"
+              fontSize="9"
+              fill="#8C898C"
+              letterSpacing="0.08em"
+              style={MONO}
+            >
+              {l.label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
-// Generic stores, illustrative spread around the catalogue price (no real retailers).
-const STORES = [
-  { store: "Store A", price: showcase.gpu.priceIDR, lowest: true },
-  { store: "Store B", price: showcase.gpu.priceIDR + 250_000 },
-  { store: "Marketplace C", price: showcase.gpu.priceIDR + 400_000 },
-];
-
-export function PriceVisual() {
+/** The real share link of the example build, so the tile shows exactly what the builder makes. */
+export function ShareVisual() {
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="flex w-full flex-col gap-3" aria-hidden>
       <div className="flex items-center justify-between gap-3">
         <span className="truncate text-[13px] leading-5 font-medium text-fg">
-          {showcase.gpu.name}
+          {showcase.name}
         </span>
-        <span className="shrink-0 label-micro text-micro-sm text-fg-3">
-          Approx.
+        <Badge variant="outline">View-only</Badge>
+      </div>
+      <div className="flex items-center gap-2 rounded-input border border-line bg-canvas/60 px-3 py-2">
+        <Link2 className="size-3.5 shrink-0 text-accent" />
+        <span className="min-w-0 truncate spec text-spec-sm text-fg-2">
+          corespec{showcase.sharePath}
         </span>
       </div>
-      <ul className="flex flex-col gap-2">
-        {STORES.map((s) => (
-          <li
-            key={s.store}
-            className={`flex items-center gap-3 rounded-input border px-3 py-2 ${
-              s.lowest ? "border-ok/30 bg-ok/5" : "border-line bg-canvas/50"
-            }`}
-          >
-            <span className="inline-flex items-center gap-1.5 rounded-chip border border-line bg-surface-2 px-2 py-0.5 font-plex text-micro-sm text-fg-2 uppercase">
-              <Store className="size-3" aria-hidden />
-              {s.store}
-            </span>
-            {s.lowest ? (
-              <span className="label-micro text-micro-sm text-ok">Lowest</span>
-            ) : null}
-            <span
-              className={`ml-auto spec text-spec ${s.lowest ? "text-fg" : "text-fg-2"}`}
-            >
-              {formatIDR(s.price)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="flex gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-btn bg-accent-strong px-3 py-1.5 text-[12px] font-semibold text-white">
+          <Copy className="size-3.5" />
+          Copy link
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-btn border border-line bg-surface-2 px-3 py-1.5 text-[12px] font-medium text-fg-2">
+          <Plus className="size-3.5" />
+          Copy to my builds
+        </span>
+      </div>
     </div>
   );
 }

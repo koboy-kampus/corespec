@@ -8,6 +8,7 @@ export const INDEXED_PATHS = [
   "/",
   "/builder",
   "/builds",
+  "/about",
   "/prices",
   "/credits",
   "/privacy",
