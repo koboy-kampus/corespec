@@ -29,7 +29,6 @@ export const footerNav: { title: string; links: NavLink[] }[] = [
       { label: "About", href: "/about" },
       { label: "Style guide", href: "/styleguide" },
       { label: "Compatibility rules" },
-      { label: "Price notes" },
     ],
   },
   {
@@ -39,9 +38,9 @@ export const footerNav: { title: string; links: NavLink[] }[] = [
   {
     title: "Legal",
     links: [
-      { label: "Privacy" },
-      { label: "Credits" },
-      { label: "Price disclaimer" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Credits", href: "/credits" },
+      { label: "Price disclaimer", href: "/prices" },
     ],
   },
 ];

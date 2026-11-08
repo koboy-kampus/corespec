@@ -1,15 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
+import { reportError } from "@/lib/sentry";
+
 /**
  * Last-resort error page, used when the root layout itself fails. It replaces the
  * whole document, so it brings its own <html> and inline styles (no app CSS).
  */
 export default function GlobalError({
+  error,
   retry,
 }: {
   error: unknown;
   retry: () => void;
 }) {
+  useEffect(() => reportError(error), [error]);
   return (
     <html lang="en">
       <body

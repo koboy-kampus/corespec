@@ -11,6 +11,7 @@ import {
 import dynamic from "next/dynamic";
 import { cn } from "cn";
 import { useMediaQuery } from "@/hooks/use-build";
+import { reportError } from "@/lib/sentry";
 import type { CameraKeys } from "./camera-rig";
 import type { SceneProps } from "./scene";
 
@@ -47,6 +48,7 @@ class SceneBoundary extends Component<
       "3D viewer failed; showing the static drawing instead.",
       error,
     );
+    reportError(error);
   }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;

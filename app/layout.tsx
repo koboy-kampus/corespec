@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono, IBM_Plex_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navbar } from "@/components/layout/navbar";
@@ -73,6 +74,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Footer />
           <CommandPalette />
         </TooltipProvider>
+        {/* Cookieless page-view counts. Vercel serves the script, so only render it there. */}
+        {process.env.VERCEL ? <Analytics /> : null}
       </body>
     </html>
   );

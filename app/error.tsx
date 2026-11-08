@@ -6,6 +6,7 @@ import { ArrowLeft, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { reportError } from "@/lib/sentry";
 
 /** Catches errors in any page below the root layout; the navbar and footer stay. */
 export default function Error({
@@ -17,6 +18,7 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error(error);
+    reportError(error);
   }, [error]);
 
   const digest =
