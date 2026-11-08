@@ -1,17 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Layers, RotateCcw } from "lucide-react";
+import { ChevronDown, Layers, Plus, Share2 } from "lucide-react";
+import { ShareDialog } from "@/components/builds/share-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,15 +11,20 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tip } from "@/components/ui/tooltip";
 import { formatIDRCompact } from "@/lib/format";
 import { presets, presetSummary } from "@/lib/presets";
-import { useBuildStore } from "@/store/build";
+import { isBlank, useBuildStore } from "@/store/build";
 
-/** "Load preset" menu and "Reset" (with confirmation). */
+/**
+ * "Load preset", "Share" and "New build". New build keeps the current one in
+ * My builds, so nothing is ever thrown away from here (deleting lives on /builds).
+ */
 export function BuildActions({ hasParts }: { hasParts: boolean }) {
+  const build = useBuildStore((s) => s.build);
   const loadPreset = useBuildStore((s) => s.loadPreset);
-  const reset = useBuildStore((s) => s.reset);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const newBuild = useBuildStore((s) => s.newBuild);
+  const [shareOpen, setShareOpen] = useState(false);
 
   return (
     <div className="flex gap-2">
@@ -60,38 +57,27 @@ export function BuildActions({ hasParts }: { hasParts: boolean }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <Button
+        variant="secondary"
+        size="sm"
+        icon={<Share2 />}
+        disabled={!hasParts}
+        onClick={() => setShareOpen(true)}
+      >
+        Share
+      </Button>
+      <ShareDialog build={build} open={shareOpen} onOpenChange={setShareOpen} />
+
+      <Tip content="Keep this build in My builds and start a new one">
         <Button
           variant="ghost"
-          size="sm"
-          icon={<RotateCcw />}
-          disabled={!hasParts}
-          onClick={() => setConfirmOpen(true)}
-        >
-          Reset
-        </Button>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Start over?</DialogTitle>
-            <DialogDescription>
-              This clears every slot and the build name.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
-            </DialogClose>
-            <Button
-              onClick={() => {
-                reset();
-                setConfirmOpen(false);
-              }}
-            >
-              Reset build
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          size="icon-sm"
+          aria-label="New build"
+          disabled={isBlank(build)}
+          onClick={newBuild}
+          icon={<Plus />}
+        />
+      </Tip>
     </div>
   );
 }

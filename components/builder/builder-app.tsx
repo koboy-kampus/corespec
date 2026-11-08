@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useBuildDerived,
@@ -19,18 +19,25 @@ import { PartPicker } from "./part-picker";
 import { SlotList } from "./slot-list";
 import { Viewport } from "./viewport";
 
-/** /builder?preset=<id> (from the landing page) loads that preset once, then cleans the URL. */
+/**
+ * /builder?preset=<id> (landing cards, empty library) starts a new build from that
+ * preset, keeping the open build in My builds, then cleans the URL.
+ */
 function usePresetFromUrl(hydrated: boolean) {
   const params = useSearchParams();
   const router = useRouter();
-  const loadPreset = useBuildStore((s) => s.loadPreset);
+  const importBuild = useBuildStore((s) => s.importBuild);
   const presetId = params.get("preset");
+  // Strict Mode runs effects twice in dev; only start one build per link.
+  const handled = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!hydrated || !presetId) return;
-    if (getPreset(presetId)) loadPreset(presetId);
+    if (!hydrated || !presetId || handled.current === presetId) return;
+    handled.current = presetId;
+    const preset = getPreset(presetId);
+    if (preset) importBuild({ name: preset.name, parts: preset.parts });
     router.replace("/builder", { scroll: false });
-  }, [hydrated, presetId, loadPreset, router]);
+  }, [hydrated, presetId, importBuild, router]);
 }
 
 function StatusBar() {

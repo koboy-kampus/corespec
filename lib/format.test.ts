@@ -41,3 +41,11 @@ describe("formatDate", () => {
     expect(formatDate("2026-11-08")).toBe("8 November 2026");
   });
 });
+
+describe("formatShortDate", () => {
+  it("formats a timestamp and ignores junk", async () => {
+    const { formatShortDate } = await import("./format");
+    expect(formatShortDate("2026-11-08T12:00:00.000Z")).toBe("8 Nov 2026");
+    expect(formatShortDate("nope")).toBe("");
+  });
+});

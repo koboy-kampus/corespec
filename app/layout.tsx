@@ -22,7 +22,13 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+// Absolute URLs for share previews. Vercel sets this (it is not a secret).
+const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "CoreSpec · Build your PC in 3D",
     template: "%s · CoreSpec",

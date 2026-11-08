@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/coming-soon";
+import { BuildsLibrary } from "@/components/builds/builds-library";
 
-export const metadata: Metadata = { title: "Builds" };
+export const metadata: Metadata = {
+  title: "My builds",
+  description: "Your saved PC builds: rename, duplicate, share or delete them.",
+};
 
 export default function Page() {
-  return (
-    <ComingSoon
-      title="Builds"
-      description="Your saved builds will live here, with rename, duplicate and share links."
-      tag="Coming soon · Phase 6"
-    />
-  );
+  return <BuildsLibrary />;
 }

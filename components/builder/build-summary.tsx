@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import Link from "next/link";
+import { Check, Pencil } from "lucide-react";
 import { cn } from "cn";
 import { PriceTag } from "@/components/ui/price-tag";
 import { useBuildDerived } from "@/hooks/use-build";
@@ -55,7 +56,16 @@ export function BuildSummary({ className }: { className?: string }) {
       className={cn("flex flex-col gap-6", className)}
     >
       <div className="flex flex-col gap-3">
-        <p className="label-micro text-fg-3">Your build</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="label-micro text-fg-3">Your build</p>
+          <Link
+            href="/builds"
+            className="inline-flex items-center gap-1 text-[12px] leading-4 text-fg-3 hover:text-fg"
+          >
+            <Check className="size-3 text-ok" aria-hidden />
+            Saved · My builds
+          </Link>
+        </div>
         <BuildName />
         <div className="flex items-end justify-between gap-3">
           <PriceTag value={totalIDR} size="lg" label="Total" />

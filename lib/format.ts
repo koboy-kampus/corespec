@@ -47,3 +47,14 @@ export function formatDate(isoDate: string): string {
     year: "numeric",
   });
 }
+
+/** "2026-11-08T17:30:00.000Z" → "8 Nov 2026" in the viewer's own time zone. */
+export function formatShortDate(isoDateTime: string): string {
+  const d = new Date(isoDateTime);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}

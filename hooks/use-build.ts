@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { check, flaggedPartIds } from "@/lib/compat/check";
-import { buildTotalIDR, resolveBuild } from "@/lib/parts";
-import { estimateDrawW } from "@/lib/power";
+import { deriveBuild } from "@/lib/derive";
 import { useBuildStore } from "@/store/build";
-import type { Category } from "@/types/parts";
 
 /**
  * Loads the saved build from localStorage after mount (the store uses skipHydration),
@@ -30,32 +27,7 @@ export function useBuildHydration(): boolean {
 /** Everything the builder derives from the current parts, computed once per change. */
 export function useBuildDerived() {
   const parts = useBuildStore((s) => s.build.parts);
-  return useMemo(() => {
-    const resolved = resolveBuild(parts);
-    const results = check(parts);
-    const flagged = flaggedPartIds(results);
-    const severityByCategory: Partial<Record<Category, "error" | "warning">> =
-      {};
-    for (const r of results) {
-      if (r.severity === "info") continue;
-      for (const part of Object.values(resolved)) {
-        if (!r.partIds.includes(part.id)) continue;
-        if (severityByCategory[part.category] !== "error") {
-          severityByCategory[part.category] = r.severity;
-        }
-      }
-    }
-    return {
-      parts,
-      resolved,
-      results,
-      flagged,
-      severityByCategory,
-      totalIDR: buildTotalIDR(parts),
-      drawW: estimateDrawW(resolved),
-      filled: Object.keys(resolved).length,
-    };
-  }, [parts]);
+  return useMemo(() => deriveBuild(parts), [parts]);
 }
 
 /** True when the media query matches; false on the server. */

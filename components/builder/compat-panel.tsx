@@ -34,8 +34,17 @@ const GROUPS: {
   { severity: "info", title: "To do", icon: Info, tone: "text-fg-3" },
 ];
 
-/** Compatibility results grouped by severity. Clicking an issue opens the picker for the part to change. */
-export function CompatPanel({ results }: { results: CompatResult[] }) {
+/**
+ * Compatibility results grouped by severity. In the builder, clicking an issue opens
+ * the picker for the part to change; `readOnly` (shared builds) shows plain rows.
+ */
+export function CompatPanel({
+  results,
+  readOnly = false,
+}: {
+  results: CompatResult[];
+  readOnly?: boolean;
+}) {
   const openPicker = useUiStore((s) => s.openPicker);
 
   if (results.length === 0) {
@@ -75,7 +84,9 @@ export function CompatPanel({ results }: { results: CompatResult[] }) {
               {items.map((r) => {
                 // Errors and warnings: offer to swap the first part involved.
                 const target =
-                  r.severity !== "info" ? getPart(r.partIds[0]) : undefined;
+                  !readOnly && r.severity !== "info"
+                    ? getPart(r.partIds[0])
+                    : undefined;
                 const body = (
                   <>
                     <Icon
