@@ -19,12 +19,14 @@ export interface PartBase {
 }
 
 export interface Cpu extends PartBase {
+  category: "cpu";
   socket: Socket;
   cores: number;
   threads: number;
   tdpW: number;
 }
 export interface Motherboard extends PartBase {
+  category: "motherboard";
   socket: Socket;
   formFactor: BoardFF;
   ddr: "DDR4" | "DDR5";
@@ -32,36 +34,61 @@ export interface Motherboard extends PartBase {
   m2Slots: number;
 }
 export interface Ram extends PartBase {
+  category: "ram";
   ddr: "DDR4" | "DDR5";
   capacityGb: number;
   sticks: number;
   speedMts: number;
 }
 export interface Gpu extends PartBase {
+  category: "gpu";
   lengthMm: number;
   tdpW: number;
   vramGb: number;
 }
 export interface Storage extends PartBase {
+  category: "storage";
   kind: "M.2" | "SATA";
   capacityGb: number;
 }
 export interface Psu extends PartBase {
+  category: "psu";
   watts: number;
   formFactor: "ATX" | "SFX";
   rating: string;
 }
 export interface Case extends PartBase {
+  category: "case";
   formFactors: BoardFF[];
   maxGpuMm: number;
   maxCoolerMm: number;
   psuFF: "ATX" | "SFX";
 }
 export interface Cooler extends PartBase {
+  category: "cooler";
   type: "Air" | "AIO";
   heightMm: number;
   sockets: Socket[];
 }
+
+/** Any part, discriminated by `category`. */
+export type Part =
+  Cpu | Motherboard | Ram | Gpu | Storage | Psu | Case | Cooler;
+
+/** Category → its part type, e.g. PartByCategory["gpu"] is Gpu. */
+export type PartByCategory = {
+  cpu: Cpu;
+  motherboard: Motherboard;
+  ram: Ram;
+  gpu: Gpu;
+  storage: Storage;
+  psu: Psu;
+  case: Case;
+  cooler: Cooler;
+};
+
+/** A build with ids swapped for the actual part objects. */
+export type ResolvedBuild = { [K in Category]?: PartByCategory[K] };
 
 export interface Build {
   id: string;

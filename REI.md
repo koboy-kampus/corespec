@@ -222,7 +222,7 @@ Container: `max-width 1248px`, `padding 0 24px`. Sections separated by 1px `--li
 
 1. **Hero** — two columns (text ~40%, visual ~60%), stacks on mobile.
    - H1: "Build your PC in 3D." Subline in `--text-2`.
-   - 2×2 feature list with icons: "1,000+ parts", "Live compatibility checks", "Prices in Rupiah", "Wattage estimates".
+   - 2×2 feature list with icons: a live catalogue count computed from the seeded data (e.g. "64 parts across 8 categories", via `CATALOG_STATS` in `lib/parts.ts`, so it is always true and grows with the data), "Live compatibility checks", "Prices in Rupiah", "Wattage estimates". Never hard-code a part count.
    - CTAs: primary "Start Building" → `/builder`; secondary "Browse Presets" → scrolls to Quick Start.
    - Trust row in mono: "Free · No sign-up · Made in Indonesia".
    - Right side: coral radial glow + placeholder visual (a stylised SVG/CSS PC case for now; Phase 5 replaces it with the live 3D scene).

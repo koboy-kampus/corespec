@@ -1,6 +1,8 @@
-import { Check, Store } from "lucide-react";
+import { AlertTriangle, Check, Store } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatIDR, formatMM, formatWatts } from "@/lib/format";
+import { formatIDR, formatWatts } from "@/lib/format";
+import { POWER } from "@/lib/power";
+import { showcase } from "@/lib/showcase";
 
 /* CSS/SVG illustrations for the feature bento. No external images. */
 
@@ -84,20 +86,21 @@ export function ViewerVisual() {
   );
 }
 
-const COST_SPLIT = [
-  { label: "Graphics", pct: 42, opacity: 1 },
-  { label: "CPU", pct: 22, opacity: 0.7 },
-  { label: "Board", pct: 13, opacity: 0.5 },
-  { label: "Other", pct: 23, opacity: 0.25 },
-];
+const SPLIT_OPACITY = [1, 0.7, 0.5, 0.25];
+const COST_SPLIT = showcase.costSplit.map((s, i) => ({
+  ...s,
+  opacity: SPLIT_OPACITY[i] ?? 0.25,
+}));
 
 export function CostVisual() {
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <span className="label-micro text-fg-3">Total · 8 parts</span>
+        <span className="label-micro text-fg-3">
+          Total · {showcase.partCount} parts
+        </span>
         <span className="spec text-[28px] leading-8 font-medium tracking-[-0.5px] text-accent">
-          {formatIDR(18450000)}
+          {formatIDR(showcase.totalIDR)}
         </span>
       </div>
       <div
@@ -132,12 +135,7 @@ export function CostVisual() {
   );
 }
 
-const CHECKS = [
-  { label: "CPU socket", value: "AM5 = AM5" },
-  { label: "Memory type", value: "DDR5 = DDR5" },
-  { label: "GPU length", value: `${formatMM(304)} / ${formatMM(360)}` },
-  { label: "Cooler height", value: `${formatMM(155)} / ${formatMM(165)}` },
-];
+const CHECKS = showcase.checks;
 
 export function CompatVisual() {
   return (
@@ -145,7 +143,7 @@ export function CompatVisual() {
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <span className="label-micro text-fg-3">Checks</span>
         <Badge variant="ok" icon={<Check />}>
-          4/4 passed
+          {CHECKS.length}/{CHECKS.length} passed
         </Badge>
       </div>
       <ul className="divide-y divide-line">
@@ -195,10 +193,11 @@ export function FpsVisual() {
   );
 }
 
+// Generic stores, illustrative spread around the catalogue price (no real retailers).
 const STORES = [
-  { store: "Store A", price: 10499000, lowest: true },
-  { store: "Store B", price: 10749000 },
-  { store: "Marketplace C", price: 10899000 },
+  { store: "Store A", price: showcase.gpu.priceIDR, lowest: true },
+  { store: "Store B", price: showcase.gpu.priceIDR + 250_000 },
+  { store: "Marketplace C", price: showcase.gpu.priceIDR + 400_000 },
 ];
 
 export function PriceVisual() {
@@ -206,7 +205,7 @@ export function PriceVisual() {
     <div className="flex w-full flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="truncate text-[13px] leading-5 font-medium text-fg">
-          GeForce RTX 5070 12GB
+          {showcase.gpu.name}
         </span>
         <span className="shrink-0 label-micro text-micro-sm text-fg-3">
           Approx.
@@ -240,14 +239,15 @@ export function PriceVisual() {
 }
 
 export function PowerVisual({
-  draw = 450,
-  psu = 750,
+  draw = showcase.drawW,
+  psu = showcase.psuWatts,
 }: {
   draw?: number;
   psu?: number;
 }) {
   const drawPct = (draw / psu) * 100;
-  const targetPct = Math.min(100, ((draw * 1.3) / psu) * 100);
+  const targetPct = Math.min(100, ((draw * POWER.headroom) / psu) * 100);
+  const headroomOk = psu >= draw * POWER.headroom;
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-end justify-between">
@@ -257,9 +257,15 @@ export function PowerVisual({
             {formatWatts(draw)}
           </span>
         </div>
-        <Badge variant="ok" icon={<Check />}>
-          Headroom OK
-        </Badge>
+        {headroomOk ? (
+          <Badge variant="ok" icon={<Check />}>
+            Headroom OK
+          </Badge>
+        ) : (
+          <Badge variant="warn" icon={<AlertTriangle />}>
+            Low headroom
+          </Badge>
+        )}
       </div>
       <div className="relative pt-5">
         <div

@@ -1,0 +1,138 @@
+[
+  {
+    "id": "case-nzxt-h5-flow",
+    "category": "case",
+    "brand": "NZXT",
+    "name": "H5 Flow",
+    "priceIDR": 1450000,
+    "dims": {
+      "l": 428,
+      "w": 227,
+      "h": 464
+    },
+    "anchor": "case",
+    "formFactors": ["ATX", "mATX", "ITX"],
+    "maxGpuMm": 365,
+    "maxCoolerMm": 165,
+    "psuFF": "ATX"
+  },
+  {
+    "id": "case-lian-li-lancool-216",
+    "category": "case",
+    "brand": "Lian Li",
+    "name": "Lancool 216",
+    "priceIDR": 1600000,
+    "dims": {
+      "l": 480,
+      "w": 235,
+      "h": 491
+    },
+    "anchor": "case",
+    "formFactors": ["ATX", "mATX", "ITX"],
+    "maxGpuMm": 392,
+    "maxCoolerMm": 180,
+    "psuFF": "ATX"
+  },
+  {
+    "id": "case-fractal-design-north",
+    "category": "case",
+    "brand": "Fractal Design",
+    "name": "North",
+    "priceIDR": 2400000,
+    "dims": {
+      "l": 447,
+      "w": 215,
+      "h": 469
+    },
+    "anchor": "case",
+    "formFactors": ["ATX", "mATX", "ITX"],
+    "maxGpuMm": 355,
+    "maxCoolerMm": 170,
+    "psuFF": "ATX"
+  },
+  {
+    "id": "case-lian-li-o11-dynamic-evo",
+    "category": "case",
+    "brand": "Lian Li",
+    "name": "O11 Dynamic EVO",
+    "priceIDR": 2600000,
+    "dims": {
+      "l": 465,
+      "w": 285,
+      "h": 459
+    },
+    "anchor": "case",
+    "formFactors": ["ATX", "mATX", "ITX"],
+    "maxGpuMm": 422,
+    "maxCoolerMm": 167,
+    "psuFF": "ATX"
+  },
+  {
+    "id": "case-montech-air-100-argb",
+    "category": "case",
+    "brand": "Montech",
+    "name": "AIR 100 ARGB",
+    "priceIDR": 750000,
+    "dims": {
+      "l": 405,
+      "w": 210,
+      "h": 426
+    },
+    "anchor": "case",
+    "formFactors": ["mATX", "ITX"],
+    "maxGpuMm": 330,
+    "maxCoolerMm": 161,
+    "psuFF": "ATX"
+  },
+  {
+    "id": "case-cooler-master-masterbox-q300l",
+    "category": "case",
+    "brand": "Cooler Master",
+    "name": "MasterBox Q300L",
+    "priceIDR": 650000,
+    "dims": {
+      "l": 387,
+      "w": 230,
+      "h": 378
+    },
+    "anchor": "case",
+    "formFactors": ["mATX", "ITX"],
+    "maxGpuMm": 360,
+    "maxCoolerMm": 157,
+    "psuFF": "ATX"
+  },
+  {
+    "id": "case-cooler-master-masterbox-nr200p-v2",
+    "category": "case",
+    "brand": "Cooler Master",
+    "name": "MasterBox NR200P V2",
+    "priceIDR": 1500000,
+    "dims": {
+      "l": 376,
+      "w": 185,
+      "h": 292
+    },
+    "anchor": "case",
+    "formFactors": ["ITX"],
+    "maxGpuMm": 336,
+    "maxCoolerMm": 155,
+    "psuFF": "SFX"
+  },
+  {
+    "id": "case-fractal-design-terra",
+    "category": "case",
+    "brand": "Fractal Design",
+    "name": "Terra",
+    "priceIDR": 2900000,
+    "dims": {
+      "l": 352,
+      "w": 155,
+      "h": 222
+    },
+    "anchor": "case",
+    "formFactors": ["ITX"],
+    "maxGpuMm": 322,
+    "maxCoolerMm": 77,
+    "psuFF": "SFX"
+  }
+]

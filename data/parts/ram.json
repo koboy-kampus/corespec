@@ -1,0 +1,138 @@
+[
+  {
+    "id": "ram-team-t-force-vulcan-z-16gb-2-8gb-ddr4-3200",
+    "category": "ram",
+    "brand": "Team",
+    "name": "T-Force Vulcan Z 16GB (2×8GB) DDR4-3200",
+    "priceIDR": 750000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR4",
+    "capacityGb": 16,
+    "sticks": 2,
+    "speedMts": 3200
+  },
+  {
+    "id": "ram-corsair-vengeance-lpx-32gb-2-16gb-ddr4-3200",
+    "category": "ram",
+    "brand": "Corsair",
+    "name": "Vengeance LPX 32GB (2×16GB) DDR4-3200",
+    "priceIDR": 1450000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR4",
+    "capacityGb": 32,
+    "sticks": 2,
+    "speedMts": 3200
+  },
+  {
+    "id": "ram-kingston-fury-beast-64gb-4-16gb-ddr4-3200",
+    "category": "ram",
+    "brand": "Kingston",
+    "name": "Fury Beast 64GB (4×16GB) DDR4-3200",
+    "priceIDR": 2700000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR4",
+    "capacityGb": 64,
+    "sticks": 4,
+    "speedMts": 3200
+  },
+  {
+    "id": "ram-kingston-fury-beast-16gb-2-8gb-ddr5-5600",
+    "category": "ram",
+    "brand": "Kingston",
+    "name": "Fury Beast 16GB (2×8GB) DDR5-5600",
+    "priceIDR": 1150000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR5",
+    "capacityGb": 16,
+    "sticks": 2,
+    "speedMts": 5600
+  },
+  {
+    "id": "ram-kingston-fury-beast-32gb-2-16gb-ddr5-6000",
+    "category": "ram",
+    "brand": "Kingston",
+    "name": "Fury Beast 32GB (2×16GB) DDR5-6000",
+    "priceIDR": 2349000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR5",
+    "capacityGb": 32,
+    "sticks": 2,
+    "speedMts": 6000
+  },
+  {
+    "id": "ram-g-skill-trident-z5-rgb-32gb-2-16gb-ddr5-6400",
+    "category": "ram",
+    "brand": "G.Skill",
+    "name": "Trident Z5 RGB 32GB (2×16GB) DDR5-6400",
+    "priceIDR": 2900000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR5",
+    "capacityGb": 32,
+    "sticks": 2,
+    "speedMts": 6400
+  },
+  {
+    "id": "ram-corsair-vengeance-64gb-2-32gb-ddr5-6000",
+    "category": "ram",
+    "brand": "Corsair",
+    "name": "Vengeance 64GB (2×32GB) DDR5-6000",
+    "priceIDR": 4600000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR5",
+    "capacityGb": 64,
+    "sticks": 2,
+    "speedMts": 6000
+  },
+  {
+    "id": "ram-corsair-vengeance-64gb-4-16gb-ddr5-5600",
+    "category": "ram",
+    "brand": "Corsair",
+    "name": "Vengeance 64GB (4×16GB) DDR5-5600",
+    "priceIDR": 4400000,
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 35
+    },
+    "anchor": "ram",
+    "ddr": "DDR5",
+    "capacityGb": 64,
+    "sticks": 4,
+    "speedMts": 5600
+  }
+]

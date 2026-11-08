@@ -1,0 +1,130 @@
+[
+  {
+    "id": "psu-cooler-master-mwe-550-bronze-v2",
+    "category": "psu",
+    "brand": "Cooler Master",
+    "name": "MWE 550 Bronze V2",
+    "priceIDR": 750000,
+    "dims": {
+      "l": 150,
+      "w": 140,
+      "h": 86
+    },
+    "anchor": "psu",
+    "watts": 550,
+    "formFactor": "ATX",
+    "rating": "80+ Bronze"
+  },
+  {
+    "id": "psu-msi-mag-a650bn",
+    "category": "psu",
+    "brand": "MSI",
+    "name": "MAG A650BN",
+    "priceIDR": 850000,
+    "dims": {
+      "l": 150,
+      "w": 140,
+      "h": 86
+    },
+    "anchor": "psu",
+    "watts": 650,
+    "formFactor": "ATX",
+    "rating": "80+ Bronze"
+  },
+  {
+    "id": "psu-corsair-rm750e",
+    "category": "psu",
+    "brand": "Corsair",
+    "name": "RM750e",
+    "priceIDR": 1599000,
+    "dims": {
+      "l": 140,
+      "w": 150,
+      "h": 86
+    },
+    "anchor": "psu",
+    "watts": 750,
+    "formFactor": "ATX",
+    "rating": "80+ Gold"
+  },
+  {
+    "id": "psu-seasonic-focus-gx-850",
+    "category": "psu",
+    "brand": "Seasonic",
+    "name": "Focus GX-850",
+    "priceIDR": 2050000,
+    "dims": {
+      "l": 140,
+      "w": 150,
+      "h": 86
+    },
+    "anchor": "psu",
+    "watts": 850,
+    "formFactor": "ATX",
+    "rating": "80+ Gold"
+  },
+  {
+    "id": "psu-be-quiet-pure-power-12-m-1000w",
+    "category": "psu",
+    "brand": "be quiet!",
+    "name": "Pure Power 12 M 1000W",
+    "priceIDR": 2700000,
+    "dims": {
+      "l": 160,
+      "w": 150,
+      "h": 86
+    },
+    "anchor": "psu",
+    "watts": 1000,
+    "formFactor": "ATX",
+    "rating": "80+ Gold"
+  },
+  {
+    "id": "psu-corsair-rm1200x-shift",
+    "category": "psu",
+    "brand": "Corsair",
+    "name": "RM1200x Shift",
+    "priceIDR": 3900000,
+    "dims": {
+      "l": 180,
+      "w": 150,
+      "h": 86
+    },
+    "anchor": "psu",
+    "watts": 1200,
+    "formFactor": "ATX",
+    "rating": "80+ Gold"
+  },
+  {
+    "id": "psu-corsair-sf750",
+    "category": "psu",
+    "brand": "Corsair",
+    "name": "SF750",
+    "priceIDR": 2800000,
+    "dims": {
+      "l": 125,
+      "w": 100,
+      "h": 63
+    },
+    "anchor": "psu",
+    "watts": 750,
+    "formFactor": "SFX",
+    "rating": "80+ Platinum"
+  },
+  {
+    "id": "psu-cooler-master-v650-sfx-gold",
+    "category": "psu",
+    "brand": "Cooler Master",
+    "name": "V650 SFX Gold",
+    "priceIDR": 1900000,
+    "dims": {
+      "l": 125,
+      "w": 100,
+      "h": 63
+    },
+    "anchor": "psu",
+    "watts": 650,
+    "formFactor": "SFX",
+    "rating": "80+ Gold"
+  }
+]

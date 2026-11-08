@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import { BuildSummaryCard } from "./build-summary-card";
 import { CaseDrawing } from "./case-drawing";
 import { Reveal } from "./reveal";
-import { showcaseBuild } from "./showcase-build";
+import { CATALOG_STATS } from "@/lib/parts";
+import { showcase } from "@/lib/showcase";
 
 const features = [
-  { icon: Boxes, label: "1,000+ parts" },
+  // Computed from the seeded catalogue, so it stays true as parts are added.
+  {
+    icon: Boxes,
+    label: `${CATALOG_STATS.parts} parts across ${CATALOG_STATS.categories} categories`,
+  },
   { icon: ShieldCheck, label: "Live compatibility checks" },
   { icon: Wallet, label: "Prices in Rupiah" },
   { icon: Zap, label: "Wattage estimates" },
@@ -84,14 +89,18 @@ export function Hero() {
           />
 
           <Reveal delay={0.1} className="relative">
-            <CaseDrawing className="mx-auto max-w-[600px] lg:mr-auto lg:ml-0 lg:max-w-[540px]" />
+            <CaseDrawing
+              gpuLengthMm={showcase.gpu.lengthMm}
+              psuWatts={showcase.psuWatts}
+              className="mx-auto max-w-[600px] lg:mr-auto lg:ml-0 lg:max-w-[540px]"
+            />
           </Reveal>
 
           <Reveal
             delay={0.25}
             className="relative z-10 -mt-16 flex justify-center sm:-mt-24 lg:absolute lg:right-0 lg:bottom-0 lg:mt-0 lg:block"
           >
-            <BuildSummaryCard {...showcaseBuild} />
+            <BuildSummaryCard {...showcase} />
           </Reveal>
         </div>
       </div>

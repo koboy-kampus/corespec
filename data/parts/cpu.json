@@ -1,0 +1,138 @@
+[
+  {
+    "id": "cpu-amd-ryzen-5-5600",
+    "category": "cpu",
+    "brand": "AMD",
+    "name": "Ryzen 5 5600",
+    "priceIDR": 1650000,
+    "dims": {
+      "l": 40,
+      "w": 40,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "AM4",
+    "cores": 6,
+    "threads": 12,
+    "tdpW": 65
+  },
+  {
+    "id": "cpu-amd-ryzen-7-5700x3d",
+    "category": "cpu",
+    "brand": "AMD",
+    "name": "Ryzen 7 5700X3D",
+    "priceIDR": 3300000,
+    "dims": {
+      "l": 40,
+      "w": 40,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "AM4",
+    "cores": 8,
+    "threads": 16,
+    "tdpW": 105
+  },
+  {
+    "id": "cpu-amd-ryzen-5-7600",
+    "category": "cpu",
+    "brand": "AMD",
+    "name": "Ryzen 5 7600",
+    "priceIDR": 2900000,
+    "dims": {
+      "l": 40,
+      "w": 40,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "AM5",
+    "cores": 6,
+    "threads": 12,
+    "tdpW": 65
+  },
+  {
+    "id": "cpu-amd-ryzen-5-9600x",
+    "category": "cpu",
+    "brand": "AMD",
+    "name": "Ryzen 5 9600X",
+    "priceIDR": 3500000,
+    "dims": {
+      "l": 40,
+      "w": 40,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "AM5",
+    "cores": 6,
+    "threads": 12,
+    "tdpW": 65
+  },
+  {
+    "id": "cpu-amd-ryzen-7-9800x3d",
+    "category": "cpu",
+    "brand": "AMD",
+    "name": "Ryzen 7 9800X3D",
+    "priceIDR": 8199000,
+    "dims": {
+      "l": 40,
+      "w": 40,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "AM5",
+    "cores": 8,
+    "threads": 16,
+    "tdpW": 120
+  },
+  {
+    "id": "cpu-amd-ryzen-9-9950x",
+    "category": "cpu",
+    "brand": "AMD",
+    "name": "Ryzen 9 9950X",
+    "priceIDR": 9800000,
+    "dims": {
+      "l": 40,
+      "w": 40,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "AM5",
+    "cores": 16,
+    "threads": 32,
+    "tdpW": 170
+  },
+  {
+    "id": "cpu-intel-core-i5-14400f",
+    "category": "cpu",
+    "brand": "Intel",
+    "name": "Core i5-14400F",
+    "priceIDR": 2750000,
+    "dims": {
+      "l": 45,
+      "w": 38,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "LGA1700",
+    "cores": 10,
+    "threads": 16,
+    "tdpW": 65
+  },
+  {
+    "id": "cpu-intel-core-ultra-7-265k",
+    "category": "cpu",
+    "brand": "Intel",
+    "name": "Core Ultra 7 265K",
+    "priceIDR": 5900000,
+    "dims": {
+      "l": 45,
+      "w": 38,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "LGA1851",
+    "cores": 20,
+    "threads": 20,
+    "tdpW": 125
+  }
+]

@@ -1,0 +1,146 @@
+[
+  {
+    "id": "motherboard-asrock-b550m-hdv",
+    "category": "motherboard",
+    "brand": "ASRock",
+    "name": "B550M-HDV",
+    "priceIDR": 1200000,
+    "dims": {
+      "l": 237,
+      "w": 203,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "AM4",
+    "formFactor": "mATX",
+    "ddr": "DDR4",
+    "ramSlots": 2,
+    "m2Slots": 1
+  },
+  {
+    "id": "motherboard-msi-mag-b550-tomahawk",
+    "category": "motherboard",
+    "brand": "MSI",
+    "name": "MAG B550 Tomahawk",
+    "priceIDR": 2400000,
+    "dims": {
+      "l": 305,
+      "w": 244,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "AM4",
+    "formFactor": "ATX",
+    "ddr": "DDR4",
+    "ramSlots": 4,
+    "m2Slots": 2
+  },
+  {
+    "id": "motherboard-msi-b650m-gaming-plus-wifi",
+    "category": "motherboard",
+    "brand": "MSI",
+    "name": "B650M Gaming Plus WiFi",
+    "priceIDR": 2899000,
+    "dims": {
+      "l": 244,
+      "w": 244,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "AM5",
+    "formFactor": "mATX",
+    "ddr": "DDR5",
+    "ramSlots": 4,
+    "m2Slots": 2
+  },
+  {
+    "id": "motherboard-gigabyte-b650-aorus-elite-ax",
+    "category": "motherboard",
+    "brand": "Gigabyte",
+    "name": "B650 Aorus Elite AX",
+    "priceIDR": 3700000,
+    "dims": {
+      "l": 305,
+      "w": 244,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "AM5",
+    "formFactor": "ATX",
+    "ddr": "DDR5",
+    "ramSlots": 4,
+    "m2Slots": 3
+  },
+  {
+    "id": "motherboard-asus-rog-strix-b650e-i-gaming-wifi",
+    "category": "motherboard",
+    "brand": "ASUS",
+    "name": "ROG Strix B650E-I Gaming WiFi",
+    "priceIDR": 5500000,
+    "dims": {
+      "l": 170,
+      "w": 170,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "AM5",
+    "formFactor": "ITX",
+    "ddr": "DDR5",
+    "ramSlots": 2,
+    "m2Slots": 2
+  },
+  {
+    "id": "motherboard-asus-tuf-gaming-x870-plus-wifi",
+    "category": "motherboard",
+    "brand": "ASUS",
+    "name": "TUF Gaming X870-Plus WiFi",
+    "priceIDR": 4700000,
+    "dims": {
+      "l": 305,
+      "w": 244,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "AM5",
+    "formFactor": "ATX",
+    "ddr": "DDR5",
+    "ramSlots": 4,
+    "m2Slots": 4
+  },
+  {
+    "id": "motherboard-msi-pro-b760m-a-ddr4-ii",
+    "category": "motherboard",
+    "brand": "MSI",
+    "name": "PRO B760M-A DDR4 II",
+    "priceIDR": 2100000,
+    "dims": {
+      "l": 244,
+      "w": 244,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "LGA1700",
+    "formFactor": "mATX",
+    "ddr": "DDR4",
+    "ramSlots": 4,
+    "m2Slots": 2
+  },
+  {
+    "id": "motherboard-gigabyte-z890-aorus-elite-wifi7",
+    "category": "motherboard",
+    "brand": "Gigabyte",
+    "name": "Z890 Aorus Elite WiFi7",
+    "priceIDR": 5600000,
+    "dims": {
+      "l": 305,
+      "w": 244,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "LGA1851",
+    "formFactor": "ATX",
+    "ddr": "DDR5",
+    "ramSlots": 4,
+    "m2Slots": 4
+  }
+]

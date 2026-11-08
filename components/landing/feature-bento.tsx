@@ -90,7 +90,10 @@ function BentoRow({ tiles, cols }: { tiles: Tile[]; cols: string }) {
         <Reveal
           key={tile.index}
           delay={i * 0.06}
-          className={cn("h-full", i === 2 && "md:col-span-2 lg:col-span-1")}
+          className={cn(
+            "h-full min-w-0",
+            i === 2 && "md:col-span-2 lg:col-span-1",
+          )}
         >
           <BentoTile tile={tile} />
         </Reveal>

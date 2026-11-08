@@ -1,0 +1,130 @@
+[
+  {
+    "id": "gpu-sapphire-pulse-radeon-rx-6600-8gb",
+    "category": "gpu",
+    "brand": "Sapphire",
+    "name": "Pulse Radeon RX 6600 8GB",
+    "priceIDR": 3100000,
+    "dims": {
+      "l": 193,
+      "w": 40,
+      "h": 120
+    },
+    "anchor": "gpu",
+    "lengthMm": 193,
+    "tdpW": 132,
+    "vramGb": 8
+  },
+  {
+    "id": "gpu-msi-geforce-rtx-5060-ventus-2x-8gb",
+    "category": "gpu",
+    "brand": "MSI",
+    "name": "GeForce RTX 5060 Ventus 2X 8GB",
+    "priceIDR": 5100000,
+    "dims": {
+      "l": 197,
+      "w": 42,
+      "h": 120
+    },
+    "anchor": "gpu",
+    "lengthMm": 197,
+    "tdpW": 145,
+    "vramGb": 8
+  },
+  {
+    "id": "gpu-sapphire-pulse-radeon-rx-9060-xt-16gb",
+    "category": "gpu",
+    "brand": "Sapphire",
+    "name": "Pulse Radeon RX 9060 XT 16GB",
+    "priceIDR": 6300000,
+    "dims": {
+      "l": 240,
+      "w": 45,
+      "h": 120
+    },
+    "anchor": "gpu",
+    "lengthMm": 240,
+    "tdpW": 160,
+    "vramGb": 16
+  },
+  {
+    "id": "gpu-asus-dual-geforce-rtx-5060-ti-16gb",
+    "category": "gpu",
+    "brand": "ASUS",
+    "name": "Dual GeForce RTX 5060 Ti 16GB",
+    "priceIDR": 7400000,
+    "dims": {
+      "l": 229,
+      "w": 50,
+      "h": 123
+    },
+    "anchor": "gpu",
+    "lengthMm": 229,
+    "tdpW": 180,
+    "vramGb": 16
+  },
+  {
+    "id": "gpu-gigabyte-geforce-rtx-5070-windforce-oc-12gb",
+    "category": "gpu",
+    "brand": "Gigabyte",
+    "name": "GeForce RTX 5070 Windforce OC 12GB",
+    "priceIDR": 10499000,
+    "dims": {
+      "l": 261,
+      "w": 50,
+      "h": 126
+    },
+    "anchor": "gpu",
+    "lengthMm": 261,
+    "tdpW": 250,
+    "vramGb": 12
+  },
+  {
+    "id": "gpu-sapphire-pulse-radeon-rx-9070-xt-16gb",
+    "category": "gpu",
+    "brand": "Sapphire",
+    "name": "Pulse Radeon RX 9070 XT 16GB",
+    "priceIDR": 12500000,
+    "dims": {
+      "l": 280,
+      "w": 58,
+      "h": 128
+    },
+    "anchor": "gpu",
+    "lengthMm": 280,
+    "tdpW": 304,
+    "vramGb": 16
+  },
+  {
+    "id": "gpu-asus-tuf-gaming-geforce-rtx-5070-ti-16gb",
+    "category": "gpu",
+    "brand": "ASUS",
+    "name": "TUF Gaming GeForce RTX 5070 Ti 16GB",
+    "priceIDR": 17500000,
+    "dims": {
+      "l": 348,
+      "w": 72,
+      "h": 146
+    },
+    "anchor": "gpu",
+    "lengthMm": 348,
+    "tdpW": 300,
+    "vramGb": 16
+  },
+  {
+    "id": "gpu-msi-geforce-rtx-5080-gaming-trio-oc-16gb",
+    "category": "gpu",
+    "brand": "MSI",
+    "name": "GeForce RTX 5080 Gaming Trio OC 16GB",
+    "priceIDR": 22900000,
+    "dims": {
+      "l": 338,
+      "w": 64,
+      "h": 140
+    },
+    "anchor": "gpu",
+    "lengthMm": 338,
+    "tdpW": 360,
+    "vramGb": 16
+  }
+]

@@ -1,0 +1,130 @@
+[
+  {
+    "id": "cooler-thermalright-assassin-x-120-refined-se",
+    "category": "cooler",
+    "brand": "Thermalright",
+    "name": "Assassin X 120 Refined SE",
+    "priceIDR": 280000,
+    "dims": {
+      "l": 124,
+      "w": 71,
+      "h": 148
+    },
+    "anchor": "cooler",
+    "type": "Air",
+    "heightMm": 148,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-deepcool-ak400",
+    "category": "cooler",
+    "brand": "DeepCool",
+    "name": "AK400",
+    "priceIDR": 450000,
+    "dims": {
+      "l": 127,
+      "w": 97,
+      "h": 155
+    },
+    "anchor": "cooler",
+    "type": "Air",
+    "heightMm": 155,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-thermalright-peerless-assassin-120-se",
+    "category": "cooler",
+    "brand": "Thermalright",
+    "name": "Peerless Assassin 120 SE",
+    "priceIDR": 520000,
+    "dims": {
+      "l": 125,
+      "w": 135,
+      "h": 155
+    },
+    "anchor": "cooler",
+    "type": "Air",
+    "heightMm": 155,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-id-cooling-is-55",
+    "category": "cooler",
+    "brand": "ID-Cooling",
+    "name": "IS-55",
+    "priceIDR": 480000,
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 57
+    },
+    "anchor": "cooler",
+    "type": "Air",
+    "heightMm": 57,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-noctua-nh-l9a-am5",
+    "category": "cooler",
+    "brand": "Noctua",
+    "name": "NH-L9a-AM5",
+    "priceIDR": 850000,
+    "dims": {
+      "l": 114,
+      "w": 92,
+      "h": 37
+    },
+    "anchor": "cooler",
+    "type": "Air",
+    "heightMm": 37,
+    "sockets": ["AM5", "AM4"]
+  },
+  {
+    "id": "cooler-noctua-nh-d15-g2",
+    "category": "cooler",
+    "brand": "Noctua",
+    "name": "NH-D15 G2",
+    "priceIDR": 2350000,
+    "dims": {
+      "l": 150,
+      "w": 152,
+      "h": 168
+    },
+    "anchor": "cooler",
+    "type": "Air",
+    "heightMm": 168,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-arctic-liquid-freezer-iii-240",
+    "category": "cooler",
+    "brand": "Arctic",
+    "name": "Liquid Freezer III 240",
+    "priceIDR": 1550000,
+    "dims": {
+      "l": 277,
+      "w": 120,
+      "h": 38
+    },
+    "anchor": "cooler",
+    "type": "AIO",
+    "heightMm": 53,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-nzxt-kraken-360",
+    "category": "cooler",
+    "brand": "NZXT",
+    "name": "Kraken 360",
+    "priceIDR": 3300000,
+    "dims": {
+      "l": 394,
+      "w": 121,
+      "h": 27
+    },
+    "anchor": "cooler",
+    "type": "AIO",
+    "heightMm": 53,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  }
+]

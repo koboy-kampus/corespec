@@ -3,24 +3,48 @@
     "id": "budget-1080p",
     "name": "Budget 1080p",
     "tagline": "High-refresh esports and indie games without overspending.",
-    "highlights": ["1080p", "AM4 · DDR4", "~400 W"],
-    "targetIDR": 9000000,
-    "parts": {}
+    "highlights": ["1080p", "AM4 · DDR4"],
+    "parts": {
+      "cpu": "cpu-amd-ryzen-5-5600",
+      "cooler": "cooler-thermalright-assassin-x-120-refined-se",
+      "motherboard": "motherboard-asrock-b550m-hdv",
+      "ram": "ram-team-t-force-vulcan-z-16gb-2-8gb-ddr4-3200",
+      "gpu": "gpu-sapphire-pulse-radeon-rx-6600-8gb",
+      "storage": "storage-crucial-p3-plus-500gb",
+      "psu": "psu-cooler-master-mwe-550-bronze-v2",
+      "case": "case-cooler-master-masterbox-q300l"
+    }
   },
   {
     "id": "sweet-spot-1440p",
     "name": "1440p Sweet Spot",
     "tagline": "The best frames per rupiah for modern games at 1440p.",
-    "highlights": ["1440p", "AM5 · DDR5", "~550 W"],
-    "targetIDR": 18000000,
-    "parts": {}
+    "highlights": ["1440p", "AM5 · DDR5"],
+    "parts": {
+      "cpu": "cpu-amd-ryzen-5-7600",
+      "cooler": "cooler-thermalright-peerless-assassin-120-se",
+      "motherboard": "motherboard-msi-b650m-gaming-plus-wifi",
+      "ram": "ram-kingston-fury-beast-32gb-2-16gb-ddr5-6000",
+      "gpu": "gpu-sapphire-pulse-radeon-rx-9060-xt-16gb",
+      "storage": "storage-crucial-p3-plus-1tb",
+      "psu": "psu-msi-mag-a650bn",
+      "case": "case-montech-air-100-argb"
+    }
   },
   {
     "id": "creator-workstation",
     "name": "Creator Workstation",
-    "tagline": "Many cores, lots of memory and a big GPU for render and edit work.",
-    "highlights": ["Render · Edit", "64 GB DDR5", "~750 W"],
-    "targetIDR": 35000000,
-    "parts": {}
+    "tagline": "Sixteen cores, 64 GB of memory and a strong GPU for render and edit work.",
+    "highlights": ["Render · Edit", "64 GB DDR5"],
+    "parts": {
+      "cpu": "cpu-amd-ryzen-9-9950x",
+      "cooler": "cooler-thermalright-peerless-assassin-120-se",
+      "motherboard": "motherboard-gigabyte-b650-aorus-elite-ax",
+      "ram": "ram-corsair-vengeance-64gb-2-32gb-ddr5-6000",
+      "gpu": "gpu-gigabyte-geforce-rtx-5070-windforce-oc-12gb",
+      "storage": "storage-wd-black-sn850x-2tb",
+      "psu": "psu-corsair-rm750e",
+      "case": "case-lian-li-lancool-216"
+    }
   }
 ]

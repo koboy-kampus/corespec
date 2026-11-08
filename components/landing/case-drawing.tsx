@@ -93,7 +93,15 @@ function Callout({
   );
 }
 
-export function CaseDrawing({ className }: { className?: string }) {
+export function CaseDrawing({
+  className,
+  gpuLengthMm,
+  psuWatts,
+}: {
+  className?: string;
+  gpuLengthMm: number;
+  psuWatts: number;
+}) {
   return (
     <svg
       viewBox="0 0 560 520"
@@ -250,8 +258,8 @@ export function CaseDrawing({ className }: { className?: string }) {
       {/* Callouts */}
       <Callout y={131} toX={266} index="01" label="COOLER" />
       <Callout y={201} toX={250} index="02" label="M.2 NVME" />
-      <Callout y={248} toX={196} index="03" label="GPU 304MM" />
-      <Callout y={401} toX={180} index="04" label="PSU 750W" />
+      <Callout y={248} toX={196} index="03" label={`GPU ${gpuLengthMm}MM`} />
+      <Callout y={401} toX={180} index="04" label={`PSU ${psuWatts}W`} />
 
       {/* Dimension: height */}
       <g stroke="rgba(255,255,255,0.3)" strokeWidth="1">

@@ -10,7 +10,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { PriceTag } from "@/components/ui/price-tag";
 import { SectionHeader } from "@/components/ui/section-header";
-import { presets } from "@/lib/presets";
+import { formatWatts } from "@/lib/format";
+import { presets, presetSummary } from "@/lib/presets";
 import { Reveal } from "./reveal";
 
 const PRESET_ICON: Record<string, LucideIcon> = {
@@ -47,8 +48,14 @@ export function QuickStart() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {presets.map((preset, i) => {
             const Icon = PRESET_ICON[preset.id] ?? Gauge;
+            const { totalIDR, drawW } = presetSummary(preset);
+            const chips = [...preset.highlights, `~${formatWatts(drawW)}`];
             return (
-              <Reveal key={preset.id} delay={i * 0.06} className="h-full">
+              <Reveal
+                key={preset.id}
+                delay={i * 0.06}
+                className="h-full min-w-0"
+              >
                 <Link
                   href={`/builder?preset=${preset.id}`}
                   className={cardLink}
@@ -74,7 +81,7 @@ export function QuickStart() {
                         </p>
                       </div>
                       <ul className="mt-auto flex flex-wrap gap-1.5">
-                        {preset.highlights.map((h) => (
+                        {chips.map((h) => (
                           <li
                             key={h}
                             className="rounded-chip border border-line bg-surface-2 px-2 py-0.5 spec text-spec-sm text-fg-2"
@@ -85,10 +92,7 @@ export function QuickStart() {
                       </ul>
                     </div>
                     <div className="flex items-end justify-between gap-3 border-t border-line px-5 py-4">
-                      <PriceTag
-                        value={preset.targetIDR}
-                        label="Approx. total"
-                      />
+                      <PriceTag value={totalIDR} label="Approx. total" />
                       <span className="inline-flex items-center gap-1 text-ui font-medium text-fg">
                         Customise
                         <HoverArrow />
@@ -100,7 +104,7 @@ export function QuickStart() {
             );
           })}
 
-          <Reveal delay={presets.length * 0.06} className="h-full">
+          <Reveal delay={presets.length * 0.06} className="h-full min-w-0">
             <Link href="/builder" className={cardLink}>
               <Card
                 interactive
