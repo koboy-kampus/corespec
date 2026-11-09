@@ -48,6 +48,11 @@ export interface SceneProps {
   exploded?: boolean;
   /** Keyboard camera controls, filled in by the camera rig (builder only). */
   cameraKeysRef?: RefObject<CameraKeys | null>;
+  /**
+   * The viewer sits inside a scrolling page: a plain wheel and a one-finger swipe
+   * scroll the page; Ctrl+wheel, pinch and two fingers move the camera.
+   */
+  embedded?: boolean;
 }
 
 type Item =
@@ -195,6 +200,7 @@ function SceneCanvas({
   paused = false,
   exploded = false,
   cameraKeysRef,
+  embedded = false,
 }: SceneProps) {
   const scene = useMemo(() => layoutBuild(parts), [parts]);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -289,6 +295,7 @@ function SceneCanvas({
         interactive={mode === "builder"}
         exploded={exploded}
         keysRef={cameraKeysRef}
+        embedded={embedded}
       />
     </Canvas>
   );

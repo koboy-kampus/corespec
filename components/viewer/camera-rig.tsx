@@ -9,7 +9,13 @@ import {
 } from "react";
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { MathUtils, Spherical, Vector3, type PerspectiveCamera } from "three";
+import {
+  MathUtils,
+  Spherical,
+  TOUCH,
+  Vector3,
+  type PerspectiveCamera,
+} from "three";
 import type { Vec3 } from "@/lib/viewer/layout";
 import { clampDelta, easeInOutCubic } from "@/lib/viewer/spring";
 
@@ -23,6 +29,8 @@ const HOME_DIR = new Vector3(-0.32, 0.26, 1).normalize();
 const MIN_POLAR = Math.PI * 0.12;
 const MAX_POLAR = Math.PI * 0.62;
 const MIN_ZOOM = 0.3;
+const DEFAULT_TOUCHES = { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
+const EMBEDDED_TOUCHES = { TWO: TOUCH.DOLLY_ROTATE };
 const MAX_ZOOM = 1.6;
 
 /** Keyboard camera moves, called by the viewer when its canvas has focus. */
@@ -45,6 +53,8 @@ interface CameraRigProps {
   exploded?: boolean;
   /** Filled with keyboard controls while mounted (builder only). */
   keysRef?: RefObject<CameraKeys | null>;
+  /** One finger is left to the page; two fingers rotate and pinch-zoom. */
+  embedded?: boolean;
 }
 
 /** Distance that fits the case's bounding sphere in both the vertical and horizontal field of view. */
@@ -65,6 +75,7 @@ export function CameraRig({
   interactive,
   exploded = false,
   keysRef,
+  embedded = false,
 }: CameraRigProps) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
@@ -196,6 +207,8 @@ export function CameraRig({
       minPolarAngle={MIN_POLAR}
       maxPolarAngle={MAX_POLAR}
       rotateSpeed={0.7}
+      // No mapping for one finger means the controls ignore it.
+      touches={embedded ? EMBEDDED_TOUCHES : DEFAULT_TOUCHES}
     />
   );
 }

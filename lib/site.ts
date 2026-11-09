@@ -17,11 +17,8 @@ export const INDEXED_PATHS = [
 /** When the Privacy, Credits and price pages were last reviewed. */
 export const LEGAL_UPDATED = "2026-11-09";
 
-/**
- * Public contact address for privacy questions. Empty until Rei chooses one;
- * the Privacy page says so instead of showing a made-up address.
- */
-export const CONTACT_EMAIL = "";
+/** Public contact address for privacy questions, shown on the Privacy page. */
+export const CONTACT_EMAIL = "syahreyhanpratamanandi@gmail.com";
 
 /** Error reporting is on only when a Sentry DSN is configured (see .env.example). */
 export const ERROR_REPORTING_ENABLED = !!process.env.NEXT_PUBLIC_SENTRY_DSN;

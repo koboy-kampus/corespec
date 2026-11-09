@@ -1,5 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-import { openPreset, overflowX, watchErrors } from "./helpers";
+import {
+  openPreset,
+  overflowX,
+  settledShot,
+  touchGesture,
+  watchErrors,
+} from "./helpers";
 
 const card = (page: Page, name: string) =>
   page
@@ -162,6 +168,80 @@ test("on a shared build, the wheel scrolls the page and Ctrl+wheel zooms", async
   await expect
     .poll(() => page.evaluate(() => window.scrollY))
     .toBeGreaterThan(0);
+});
+
+test.describe("touch on a shared build", () => {
+  test.use({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+
+  test("one finger scrolls the page; two fingers rotate and pinch", async ({
+    page,
+  }) => {
+    await page.goto("/builder?preset=budget-1080p");
+    await expect(page.getByRole("tab", { name: /Parts/ })).toBeVisible();
+    // The share button lives in the Summary tab on phones.
+    await page.getByRole("tab", { name: /Summary/ }).click();
+    const path = await shareLink(page);
+
+    await page.goto(path);
+    const canvas = page.locator("canvas");
+    await expect(canvas).toBeVisible();
+    await expect(
+      page.getByText("Two fingers to rotate and zoom"),
+    ).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("canvas has no box");
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    const scrollY = () => page.evaluate(() => window.scrollY);
+
+    // One finger: the page scrolls.
+    await touchGesture(page, [
+      { from: { x: cx, y: cy + 90 }, to: { x: cx, y: cy - 90 } },
+    ]);
+    await expect.poll(scrollY).toBeGreaterThan(0);
+
+    // Two fingers sideways: the build rotates, the page stays put.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(scrollY).toBe(0);
+    const before = await settledShot(canvas);
+    await touchGesture(page, [
+      { from: { x: cx - 60, y: cy }, to: { x: cx + 40, y: cy } },
+      { from: { x: cx + 20, y: cy }, to: { x: cx + 120, y: cy } },
+    ]);
+    const rotated = await settledShot(canvas);
+    expect(rotated.equals(before)).toBe(false);
+    expect(await scrollY()).toBe(0);
+
+    // Pinch apart: zooms, the page stays put.
+    await touchGesture(page, [
+      { from: { x: cx - 20, y: cy }, to: { x: cx - 110, y: cy } },
+      { from: { x: cx + 20, y: cy }, to: { x: cx + 110, y: cy } },
+    ]);
+    const zoomed = await settledShot(canvas);
+    expect(zoomed.equals(rotated)).toBe(false);
+    expect(await scrollY()).toBe(0);
+  });
+
+  test("the builder still rotates with one finger", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto("/builder?preset=budget-1080p");
+    const canvas = page.locator("canvas");
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("canvas has no box");
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    const before = await settledShot(canvas);
+    await touchGesture(page, [
+      { from: { x: cx - 80, y: cy }, to: { x: cx + 80, y: cy } },
+    ]);
+    expect((await settledShot(canvas)).equals(before)).toBe(false);
+  });
 });
 
 test("an invalid share code shows the not-found page", async ({ page }) => {

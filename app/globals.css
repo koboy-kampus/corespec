@@ -174,6 +174,16 @@
   padding-inline: 24px;
 }
 
+/*
+ * A 3D viewer inside a scrolling page (shared builds): the orbit controls set
+ * touch-action: none on their element, which would trap one-finger scrolling.
+ * Let the page pan; the viewer keeps two-finger gestures (see viewer.tsx).
+ */
+.viewer-embedded,
+.viewer-embedded * {
+  touch-action: pan-x pan-y !important;
+}
+
 @layer base {
   * {
     @apply border-border;

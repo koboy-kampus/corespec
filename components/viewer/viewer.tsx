@@ -62,11 +62,6 @@ type ViewerProps = Omit<
   className?: string;
   /** Called when R resets the camera, so the page can clear its selected slot too. */
   onResetView?: () => void;
-  /**
-   * Zoom only with Ctrl+wheel (also what a trackpad pinch sends) or a touch pinch,
-   * so a plain wheel scrolls the page. For viewers inside a scrolling page.
-   */
-  zoomNeedsCtrl?: boolean;
 };
 
 const ROTATE_STEP = 0.18; // radians per key press
@@ -105,12 +100,7 @@ function handleCameraKey(key: string, cam: CameraKeys): boolean {
 }
 
 /** Sizes the canvas to its box, respects reduced motion and pauses the spin when off screen. */
-export function Viewer({
-  className,
-  onResetView,
-  zoomNeedsCtrl = false,
-  ...props
-}: ViewerProps) {
+export function Viewer({ className, onResetView, ...props }: ViewerProps) {
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const ref = useRef<HTMLDivElement>(null);
   const [onScreen, setOnScreen] = useState(true);
@@ -125,24 +115,34 @@ export function Viewer({
     return () => io.disconnect();
   }, [props.mode]);
 
+  const embedded = !!props.embedded;
   useEffect(() => {
     const el = ref.current;
-    if (!el || !zoomNeedsCtrl) return;
-    // Capture phase on the wrapper runs before the orbit controls' listener on the
-    // canvas. Stopping it there (without preventDefault) leaves the browser free to
-    // scroll the page as usual.
+    if (!el || !embedded) return;
+    // Wheel: capture phase on the wrapper runs before the orbit controls' listener.
+    // Stopping it there (without preventDefault) lets the browser scroll the page.
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey) e.stopPropagation();
     };
+    // Touch: the page may pan (see .viewer-embedded in globals.css), so a two-finger
+    // gesture would scroll too. Cancelling its moves keeps it for rotate and pinch.
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 2 && e.cancelable) e.preventDefault();
+    };
     el.addEventListener("wheel", onWheel, { capture: true });
-    return () => el.removeEventListener("wheel", onWheel, { capture: true });
-  }, [zoomNeedsCtrl]);
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel, { capture: true });
+      el.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [embedded]);
 
   return (
     <div
       ref={ref}
       className={cn(
         "relative size-full rounded-card focus-visible:-outline-offset-2",
+        embedded && "viewer-embedded",
         className,
       )}
       {...(interactive
