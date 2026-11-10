@@ -313,7 +313,7 @@ Micro-interactions: cards lift (`translateY(-2px)`) and border brightens on hove
 **Before every commit:**
 1. Run `git status` and read the list of files about to be committed.
 2. Make sure `.gitignore` contains `.env*` (allow only `.env.example`), `node_modules`, `.next`, `.vercel`.
-3. Scan the staged diff for secrets: `git diff --cached | grep -nEi "(api[_-]?key|secret|token|password|sk-|ghp_|-----BEGIN)"`. If anything matches, **stop, unstage it, and tell Rei**.
+3. Scan the staged diff for secrets: `git diff --cached | grep -nEi "(api[_-]?key|secret|token|password|sk-|ghp_|-----BEGIN)"`. If anything matches, compare each match with the known false positives listed in `HANDOFF.md` §5. If **every** match is one of them, name them in the summary and continue. Otherwise **stop, unstage it, and tell Rei**.
 4. Never use `git add -A` blindly on a dirty tree you haven't checked; never `git push --force`.
 
 **Secret rules:**
@@ -359,7 +359,7 @@ Add a second group of slots, **Setup**, next to the 8 PC slots. All setup slots 
 
 | Category   | Items | Key fields (plus `dims` in mm, like PC parts)                                    |
 | ---------- | ----- | -------------------------------------------------------------------------------- |
-| Monitor    | 6     | `sizeIn`, `resolution` (`1080p`/`1440p`/`4K`/`UW1440p`), `refreshHz`, `panel` |
+| Monitor    | 6     | `sizeIn`, `resolution` (`1080p`/`1440p`/`4K`/`UW1440p`), `refreshHz`, `panel`, `adaptiveSync` (`FreeSync`/`G-Sync`/`None`), `curved` |
 | Keyboard   | 6     | `layout` (`Full`/`TKL`/`75%`/`65%`), `switches`, `wireless`                     |
 | Mouse      | 6     | `weightG`, `wireless`, `maxDpi`                                                  |
 | Headset    | 6     | `connection` (`3.5mm`/`USB`/`2.4GHz`/`Bluetooth`), `wireless`                    |
@@ -368,8 +368,14 @@ Add a second group of slots, **Setup**, next to the 8 PC slots. All setup slots 
 | Webcam     | 4     | `resolution`, `fps`                                                              |
 | Microphone | 4     | `connection` (`USB`/`XLR`)                                                       |
 | Chair      | 4     | `type` (`Gaming`/`Ergonomic`)                                                    |
-| Desk       | 4     | `widthMm`, `depthMm`, `heightMm`, `adjustable`                                   |
+| Desk       | 4     | `widthMm`, `depthMm`, `heightMinMm`, `heightMaxMm` (same value for fixed desks), `adjustable` |
+| Monitor arm | 4    | `monitors` (1/2), `maxSizeIn`, `maxLoadKg`, `mount` (`Clamp`/`Grommet`)          |
+| Desk lighting | 4  | `kind` (`Light bar`/`LED strip`/`Lamp`), `rgb`, `usbPowered`                     |
 
+That is **12 setup categories**.
+
+- **Builder LCP first (from Phase 9):** the builder shows a skeleton until the saved build loads, which keeps LCP at about 5.5 s. Render the empty builder straight away and fill in the saved build after it loads from localStorage. Re-measure and report before/after.
+- **Field ideas:** field choices may take ideas from the BuildCores OpenDB schema, but **do not copy any records or text from it** (it's CC BY-NC-SA 4.0). Write our own data for products sold in Indonesia.
 - **Types:** split the current `Category` into `PcCategory` (the existing 8) and `SetupCategory`, with `Category = PcCategory | SetupCategory`. Keep the compatibility rules, the power estimate and the PC 3D viewer typed on `PcCategory` so they don't change. Setup items get their own base type (no PC `anchor`; give them a desk placement instead, used in Phase 12).
 - **Data:** real product names that are sold in Indonesia, approximate integer IDR prices, mixed budget to high-end. Same honesty rule as before: prices are estimates, and the `/prices` page says so. Add the new items to `docs/price-check.md`.
 - **Builder UI:** the slot list gets two sections, **PC** and **Setup** (tabs or a segmented control; same on the mobile sheet). The part picker works for setup categories too, with their own spec chips and filters.
@@ -432,6 +438,7 @@ Still **no backend**. Links and checked prices live in the JSON so Phase 15 can 
 
 - Lighthouse (mobile) on `/`, `/builder` and `/b/[code]` again; fix anything that got worse since Phase 9.
 - Go through every page at 375, 768 and 1440 px; fix rough edges (spacing, long names, empty states, loading states).
+- Add a `.gitattributes` (e.g. `* text=auto eol=lf`) so the Windows CRLF/LF noise in `git status` stops; renormalise once in its own commit.
 - Known issue: in exploded view on narrow phones, the lifted cooler can leave the top of the viewport. Fix it by fitting the camera.
 - Update the README (screenshots of the setup tab and the desk view), `/about`, the sitemap and the credits.
 - **Rewrite `HANDOFF.md`** for session 2: what was built per phase, checks with real numbers, leftovers, and what Phase 15 needs.
