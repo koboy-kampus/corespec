@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import { buildTotals } from "@/lib/parts";
+import { getPreset, presetSummary, suggestedSetupFor } from "@/lib/presets";
+
+const preset = (id: string) => getPreset(id)!;
+
+describe("suggested setups", () => {
+  it("leaves the PC preset totals PC-only", () => {
+    for (const id of [
+      "budget-1080p",
+      "sweet-spot-1440p",
+      "creator-workstation",
+    ]) {
+      const p = preset(id);
+      expect(presetSummary(p).totalIDR).toBe(buildTotals(p.parts).pcIDR);
+      expect(presetSummary(p).setupIDR).toBeGreaterThan(0);
+    }
+  });
+
+  it("matches the preset sharing the most parts", () => {
+    const sweet = preset("sweet-spot-1440p");
+    expect(suggestedSetupFor(sweet.parts)?.preset.id).toBe("sweet-spot-1440p");
+    const mixed = { ...sweet.parts, gpu: preset("budget-1080p").parts.gpu };
+    expect(suggestedSetupFor(mixed)?.preset.id).toBe("sweet-spot-1440p");
+  });
+
+  it("falls back to the preset nearest in price", () => {
+    expect(suggestedSetupFor({})?.preset.id).toBe("budget-1080p");
+    const creator = preset("creator-workstation");
+    expect(
+      suggestedSetupFor({ cpu: creator.parts.cpu, gpu: "x" })?.preset.id,
+    ).toBe("creator-workstation");
+  });
+});
+
+describe("build totals", () => {
+  it("splits PC and setup and adds them up", () => {
+    const t = buildTotals({
+      cpu: "cpu-amd-ryzen-5-7600",
+      monitor: "monitor-aoc-24g4",
+    });
+    expect(t).toEqual({
+      pcIDR: 2_900_000,
+      setupIDR: 1_850_000,
+      totalIDR: 4_750_000,
+    });
+  });
+});

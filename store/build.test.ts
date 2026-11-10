@@ -111,3 +111,43 @@ describe("build library", () => {
     expect(migrated.saved).toEqual([]);
   });
 });
+
+describe("setup items in the build (Phase 10)", () => {
+  beforeEach(() => useBuildStore.setState({ build: emptyBuild(), saved: [] }));
+
+  it("sets setup items next to PC parts, and rejects the wrong slot", () => {
+    get().setPart("monitor", "monitor-aoc-24g4");
+    get().setPart("keyboard", "monitor-aoc-24g4");
+    expect(get().build.parts).toEqual({ monitor: "monitor-aoc-24g4" });
+  });
+
+  it("keeps setup items when a preset replaces the PC", () => {
+    get().setPart("chair", "chair-ikea-markus");
+    get().loadPreset("budget-1080p");
+    expect(get().build.parts.chair).toBe("chair-ikea-markus");
+    expect(get().build.parts.cpu).toBe("cpu-amd-ryzen-5-5600");
+  });
+
+  it("adds the suggested setup only to empty slots", () => {
+    get().loadPreset("budget-1080p");
+    get().setPart("monitor", "monitor-dell-p2422h");
+    get().addSuggestedSetup();
+    const parts = get().build.parts;
+    expect(parts.monitor).toBe("monitor-dell-p2422h");
+    expect(parts.keyboard).toBe("keyboard-royal-kludge-rk84");
+    expect(parts.cpu).toBe("cpu-amd-ryzen-5-5600");
+  });
+
+  it("loads a v2 save from before Phase 10 unchanged (no migration needed)", async () => {
+    const options = useBuildStore.persist.getOptions();
+    const saved = {
+      build: {
+        ...emptyBuild(),
+        name: "Old rig",
+        parts: { cpu: "cpu-amd-ryzen-5-7600" },
+      },
+      saved: [],
+    };
+    expect(await options.migrate?.(saved, 2)).toEqual(saved);
+  });
+});

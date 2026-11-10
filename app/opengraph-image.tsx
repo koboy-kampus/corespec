@@ -52,7 +52,7 @@ export default function Image() {
           Build your PC in 3D.
         </div>
         <div style={{ fontSize: 32, color: "#c9c6c9" }}>
-          {`Live compatibility checks · Prices in Rupiah · ${CATALOG_STATS.parts} parts`}
+          {`Live compatibility checks · Prices in Rupiah · ${CATALOG_STATS.parts} parts + ${CATALOG_STATS.setupItems} setup items`}
         </div>
       </div>
       <div style={{ fontSize: 22, color: "#8c898c" }}>

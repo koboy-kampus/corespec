@@ -269,16 +269,17 @@ All four entries REI.md requires are present: `.env*` (with only `.env.example` 
 
 The command was `git log -p | grep -nEi "(api[_-]?key|secret|token|password|sk-|ghp_|-----BEGIN)"`, over all 11 commits. It found 20 groups of matching lines. **None are secrets:**
 
-| Commit           | File                                                   | Kind of match                 | What it actually is                                                                                 |
-| ---------------- | ------------------------------------------------------ | ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| 741a40a          | .env.example, README.md, lib/sentry.ts, next.config.ts | "secret", "token"             | The variable **name** `SENTRY_AUTH_TOKEN` (empty value) and docs explaining it                      |
-| 91931d8, 8393069 | app/layout.tsx                                         | "secret"                      | A comment saying the Vercel URL "is not a secret" (added, then removed)                             |
-| 661091e, 0bd2779 | viewport.tsx, hero.tsx                                 | "sk-"                         | CSS class `[mask-image:…]`                                                                          |
-| 661091e          | lib/specs.ts                                           | "token"                       | Comment: "specs as short tokens"                                                                    |
-| 69c691a, 5d7aa2c | globals.css, styleguide/page.tsx                       | "token"                       | Design-system colour **tokens**                                                                     |
-| 5d7aa2c          | REI.md                                                 | "secret", "token", "password" | The brief's own git-safety rules                                                                    |
-| 5d7aa2c          | package-lock.json                                      | "password"                    | Package names `@radix-ui/react-password-toggle-field` and `@radix-ui/react-one-time-password-field` |
-| 3c4bb5c          | package-lock.json                                      | "token", "sk-"                | Package `js-tokens`, and the `queue-microtask` download URL                                         |
+| Commit           | File                                                                             | Kind of match                 | What it actually is                                                                                 |
+| ---------------- | -------------------------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------- |
+| 741a40a          | .env.example, README.md, lib/sentry.ts, next.config.ts                           | "secret", "token"             | The variable **name** `SENTRY_AUTH_TOKEN` (empty value) and docs explaining it                      |
+| 91931d8, 8393069 | app/layout.tsx                                                                   | "secret"                      | A comment saying the Vercel URL "is not a secret" (added, then removed)                             |
+| 661091e, 0bd2779 | viewport.tsx, hero.tsx                                                           | "sk-"                         | CSS class `[mask-image:…]`                                                                          |
+| 661091e          | lib/specs.ts                                                                     | "token"                       | Comment: "specs as short tokens"                                                                    |
+| 69c691a, 5d7aa2c | globals.css, styleguide/page.tsx                                                 | "token"                       | Design-system colour **tokens**                                                                     |
+| 5d7aa2c          | REI.md                                                                           | "secret", "token", "password" | The brief's own git-safety rules                                                                    |
+| 5d7aa2c          | package-lock.json                                                                | "password"                    | Package names `@radix-ui/react-password-toggle-field` and `@radix-ui/react-one-time-password-field` |
+| 3c4bb5c          | package-lock.json                                                                | "token", "sk-"                | Package `js-tokens`, and the `queue-microtask` download URL                                         |
+| Phase 10         | data/setup/*.json, data/presets.json, docs/price-check.md, types/parts.ts, tests | "sk-"                         | The word **`desk-`**: desk item ids (`desk-ikea-…`) and the placement value `desk-edge`             |
 
 No `ghp_`, `sk-…` keys, `-----BEGIN` blocks or API keys appear anywhere in history.
 

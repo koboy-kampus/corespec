@@ -122,6 +122,11 @@ export default async function Image({
           <div style={{ fontSize: 64, fontWeight: 700, color: C.accent }}>
             {formatIDR(d.totalIDR)}
           </div>
+          {d.setupFilled > 0 ? (
+            <div style={{ fontSize: 22, color: C.text2 }}>
+              {`PC ${formatIDR(d.pcIDR)} · Setup ${formatIDR(d.setupIDR)}`}
+            </div>
+          ) : null}
         </div>
         <div
           style={{

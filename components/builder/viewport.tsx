@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { ExplodeToggle } from "@/components/viewer/explode-toggle";
 import { Viewer } from "@/components/viewer/viewer";
+import { isPcCategory } from "@/lib/categories";
 import { partLabel } from "@/lib/parts";
 import { useBuildDerived } from "@/hooks/use-build";
 import { presets } from "@/lib/presets";
@@ -64,7 +65,8 @@ export function Viewport({ className }: { className?: string }) {
         mode="builder"
         parts={resolved}
         flags={severityByCategory}
-        activeSlot={activeSlot}
+        // Setup slots get their own desk view in Phase 12; the PC camera ignores them.
+        activeSlot={activeSlot && isPcCategory(activeSlot) ? activeSlot : null}
         exploded={exploded}
         onResetView={() => setActiveSlot(null)}
         className={cn(

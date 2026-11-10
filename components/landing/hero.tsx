@@ -11,7 +11,7 @@ const features = [
   // Computed from the seeded catalogue, so it stays true as parts are added.
   {
     icon: Boxes,
-    label: `${CATALOG_STATS.parts} parts across ${CATALOG_STATS.categories} categories`,
+    label: `${CATALOG_STATS.parts} PC parts + ${CATALOG_STATS.setupItems} setup items`,
   },
   { icon: ShieldCheck, label: "Live compatibility checks" },
   { icon: Wallet, label: "Prices in Rupiah" },

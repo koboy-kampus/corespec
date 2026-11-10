@@ -35,6 +35,10 @@ export default function Page() {
           date also appears at the bottom of the builder. They are not live and
           don&apos;t come from any retailer&apos;s feed.
         </p>
+        <p>
+          The same goes for setup items (monitors, keyboards, desks and the
+          rest): their prices are estimates too.
+        </p>
       </DocSection>
 
       <DocSection title="Why the real price can differ">

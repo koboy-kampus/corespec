@@ -6,14 +6,47 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon } from "@/components/ui/category-icon";
 import { PriceTag } from "@/components/ui/price-tag";
-import { CATEGORIES, CATEGORY_LABEL } from "@/lib/categories";
+import { Subtotals } from "@/components/builder/subtotals";
+import { CATEGORIES, CATEGORY_LABEL, SETUP_CATEGORIES } from "@/lib/categories";
 import { deriveBuild } from "@/lib/derive";
 import { formatDate } from "@/lib/format";
 import { PRICES_AS_OF, partLabel } from "@/lib/parts";
 import type { SharedBuild } from "@/lib/share";
 import { partSpecs } from "@/lib/specs";
+import type { Category, Item } from "@/types/parts";
 import { CopyToBuilds } from "./copy-to-builds";
 import { SharedViewer } from "./shared-viewer";
+
+function ItemRow({ category, part }: { category: Category; part?: Item }) {
+  return (
+    <li className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
+      <CategoryIcon
+        category={category}
+        className={part ? undefined : "bg-surface-2 text-fg-3"}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="label-micro text-micro-sm text-fg-3">
+          {CATEGORY_LABEL[category]}
+        </p>
+        {part ? (
+          <>
+            <p className="text-[13px] leading-[18px] font-medium text-fg">
+              {partLabel(part)}
+            </p>
+            <p className="mt-0.5 flex items-baseline gap-3">
+              <span className="min-w-0 flex-1 truncate spec text-spec-sm text-fg-3">
+                {partSpecs(part).join(" · ")}
+              </span>
+              <PriceTag value={part.priceIDR} size="sm" tone="default" />
+            </p>
+          </>
+        ) : (
+          <p className="text-[13px] leading-[18px] text-fg-3">Not chosen</p>
+        )}
+      </div>
+    </li>
+  );
+}
 
 /** Read-only view of a build someone shared: 3D view, parts, checks and total. */
 export function SharedBuildView({ shared }: { shared: SharedBuild }) {
@@ -38,6 +71,7 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
             <PriceTag value={d.totalIDR} size="lg" label="Total" />
             <span className="spec text-spec-sm text-fg-3">
               {d.filled}/{CATEGORIES.length} parts
+              {d.setupFilled ? ` · ${d.setupFilled} setup items` : ""}
             </span>
             <BuildStatus
               errors={d.errors}
@@ -45,6 +79,11 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
               filled={d.filled}
             />
           </div>
+          {d.setupFilled > 0 ? (
+            <div className="max-w-64">
+              <Subtotals pcIDR={d.pcIDR} setupIDR={d.setupIDR} />
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <CopyToBuilds name={shared.name} parts={shared.parts} />
@@ -87,48 +126,29 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
               Parts
             </h2>
             <ul className="flex flex-col divide-y divide-line">
-              {CATEGORIES.map((c) => {
-                const part = d.resolved[c];
-                return (
-                  <li
-                    key={c}
-                    className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <CategoryIcon
-                      category={c}
-                      className={part ? undefined : "bg-surface-2 text-fg-3"}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="label-micro text-micro-sm text-fg-3">
-                        {CATEGORY_LABEL[c]}
-                      </p>
-                      {part ? (
-                        <>
-                          <p className="text-[13px] leading-[18px] font-medium text-fg">
-                            {partLabel(part)}
-                          </p>
-                          <p className="mt-0.5 flex items-baseline gap-3">
-                            <span className="min-w-0 flex-1 truncate spec text-spec-sm text-fg-3">
-                              {partSpecs(part).join(" · ")}
-                            </span>
-                            <PriceTag
-                              value={part.priceIDR}
-                              size="sm"
-                              tone="default"
-                            />
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-[13px] leading-[18px] text-fg-3">
-                          Not chosen
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
+              {CATEGORIES.map((c) => (
+                <ItemRow key={c} category={c} part={d.resolved[c]} />
+              ))}
             </ul>
           </section>
+          {d.setupFilled > 0 ? (
+            <>
+              <div className="h-px bg-line" />
+              <section
+                aria-labelledby="shared-setup"
+                className="flex flex-col gap-3"
+              >
+                <h2 id="shared-setup" className="label-micro text-fg-2">
+                  Setup
+                </h2>
+                <ul className="flex flex-col divide-y divide-line">
+                  {SETUP_CATEGORIES.filter((c) => d.setup[c]).map((c) => (
+                    <ItemRow key={c} category={c} part={d.setup[c]} />
+                  ))}
+                </ul>
+              </section>
+            </>
+          ) : null}
           <div className="h-px bg-line" />
           <CompatPanel results={d.results} readOnly />
         </div>

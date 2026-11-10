@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { BuilderApp } from "@/components/builder/builder-app";
-import { BuilderSkeleton } from "@/components/builder/builder-skeleton";
 
 export const metadata: Metadata = {
   title: "Builder",
@@ -11,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function BuilderPage() {
   return (
-    // BuilderApp reads ?preset= (useSearchParams) and localStorage, so it renders on
-    // the client behind a skeleton.
-    <Suspense fallback={<BuilderSkeleton />}>
-      <BuilderApp />
-    </Suspense>
+    // Prerendered as the empty builder. The saved build (localStorage) and a
+    // ?preset= link are applied after it loads in the browser.
+    <BuilderApp />
   );
 }

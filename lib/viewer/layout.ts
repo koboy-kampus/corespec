@@ -1,7 +1,7 @@
 import type {
   BoardFF,
   Case,
-  Category,
+  PcCategory,
   Motherboard,
   Part,
   ResolvedBuild,
@@ -49,7 +49,7 @@ export interface Fan {
 }
 export interface PartLayout {
   id: string;
-  category: Category;
+  category: PcCategory;
   /** Where the part's group sits (its anchor). Blocks and fans are relative to it. */
   origin: Vec3;
   blocks: Block[];
@@ -537,7 +537,7 @@ export function partBounds(p: PartLayout): { min: Vec3; max: Vec3 } {
 }
 
 /** The point the camera eases toward for a slot (mm). */
-export function focusPoint(scene: SceneLayout, category: Category): Vec3 {
+export function focusPoint(scene: SceneLayout, category: PcCategory): Vec3 {
   const part = scene.parts.find((p) => p.category === category);
   if (part) {
     const { min, max } = partBounds(part);
@@ -569,7 +569,7 @@ export function focusPoint(scene: SceneLayout, category: Category): Vec3 {
  * default camera; the cooler lifts clear so the CPU underneath shows.
  * The board and case stay put.
  */
-export const EXPLODE_MM: Record<Category, Vec3> = {
+export const EXPLODE_MM: Record<PcCategory, Vec3> = {
   case: [0, 0, 0],
   motherboard: [0, 0, 0],
   cpu: [0, 0, 80],

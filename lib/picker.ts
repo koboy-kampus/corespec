@@ -1,7 +1,8 @@
 import { check, type CompatResult } from "@/lib/compat/check";
 import { partLabel } from "@/lib/parts";
-import { partSpecs } from "@/lib/specs";
-import type { Build, Part } from "@/types/parts";
+import { isPcCategory } from "@/lib/categories";
+import { partSpecs, type Facet } from "@/lib/specs";
+import type { Build, Item } from "@/types/parts";
 
 export type SortKey = "price-asc" | "price-desc" | "name";
 
@@ -16,12 +17,15 @@ export interface PickerFilters {
   brands: string[];
   minPrice?: number;
   maxPrice?: number;
+  /** Spec filters for setup categories: facet key → chosen values (any of). */
+  facets: Record<string, string[]>;
   sort: SortKey;
 }
 
 export const DEFAULT_FILTERS: PickerFilters = {
   query: "",
   brands: [],
+  facets: {},
   sort: "price-asc",
 };
 
@@ -30,23 +34,46 @@ export function isFiltered(f: PickerFilters): boolean {
     !!f.query.trim() ||
     f.brands.length > 0 ||
     f.minPrice != null ||
-    f.maxPrice != null
+    f.maxPrice != null ||
+    Object.values(f.facets).some((v) => v.length > 0)
   );
 }
 
-export function brandsOf(parts: Part[]): string[] {
+export function brandsOf(parts: Item[]): string[] {
   return [...new Set(parts.map((p) => p.brand))].sort((a, b) =>
     a.localeCompare(b),
   );
 }
 
-/** Search (name, brand and specs), brand and price filters, then sort. */
-export function filterParts<T extends Part>(parts: T[], f: PickerFilters): T[] {
+/** The values a facet takes across these items, sorted, for its chips. */
+export function facetValues<T extends Item>(
+  parts: T[],
+  facet: Facet<T>,
+): string[] {
+  const rank = (v: string) => facet.order?.indexOf(v) ?? -1;
+  return [...new Set(parts.map(facet.value))].sort(
+    (a, b) => rank(a) - rank(b) || a.localeCompare(b, "en", { numeric: true }),
+  );
+}
+
+/**
+ * Search (name, brand and specs), brand, price and spec filters, then sort.
+ * Within one facet any chosen value matches; different facets must all match.
+ */
+export function filterParts<T extends Item>(
+  parts: T[],
+  f: PickerFilters,
+  facets: Facet<T>[] = [],
+): T[] {
   const terms = f.query.toLowerCase().split(/\s+/).filter(Boolean);
   const result = parts.filter((p) => {
     if (f.brands.length && !f.brands.includes(p.brand)) return false;
     if (f.minPrice != null && p.priceIDR < f.minPrice) return false;
     if (f.maxPrice != null && p.priceIDR > f.maxPrice) return false;
+    for (const facet of facets) {
+      const chosen = f.facets[facet.key];
+      if (chosen?.length && !chosen.includes(facet.value(p))) return false;
+    }
     if (terms.length) {
       const haystack =
         `${partLabel(p)} ${partSpecs(p).join(" ")}`.toLowerCase();
@@ -69,8 +96,10 @@ export function filterParts<T extends Part>(parts: T[], f: PickerFilters): T[] {
  */
 export function candidateIssues(
   parts: Build["parts"],
-  part: Part,
+  part: Item,
 ): CompatResult[] {
+  // Setup items have no rules yet (Phase 11 adds info/warning ones).
+  if (!isPcCategory(part.category)) return [];
   return check({ ...parts, [part.category]: part.id }).filter(
     (r) => r.severity !== "info" && r.partIds.includes(part.id),
   );

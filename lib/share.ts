@@ -1,5 +1,5 @@
-import { CATEGORIES } from "@/lib/categories";
-import { ALL_PARTS, getPart } from "@/lib/parts";
+import { ALL_CATEGORIES } from "@/lib/categories";
+import { ALL_ITEMS, getItem } from "@/lib/parts";
 import type { Build, Category } from "@/types/parts";
 
 /**
@@ -8,15 +8,18 @@ import type { Build, Category } from "@/types/parts";
  *   "1" + one 5-character code per part + "." + base64url(name)
  *   e.g. 1k3f0aq81zz… .MTQ0MHAgU3dlZXQgU3BvdA
  *
- * Each part code is a hash of the part id, not its position in the catalogue,
+ * Each part code is a hash of the item id, not its position in the catalogue,
  * so adding parts later never breaks old links. Parts that were removed from the
  * catalogue are skipped and counted in `missing`.
+ *
+ * Setup items (Phase 10) are more codes in the same list, after the PC parts. A
+ * link made before then is simply a list with no setup codes, so it still opens.
  */
 const VERSION = "1";
 const PART_CODE_LEN = 5;
 export const MAX_NAME_LENGTH = 60;
 const CODE_PATTERN = new RegExp(
-  `^${VERSION}((?:[0-9a-z]{${PART_CODE_LEN}}){0,${CATEGORIES.length}})(?:\\.([A-Za-z0-9_-]*))?$`,
+  `^${VERSION}((?:[0-9a-z]{${PART_CODE_LEN}}){0,${ALL_CATEGORIES.length}})(?:\\.([A-Za-z0-9_-]*))?$`,
 );
 
 /** FNV-1a hash of the id, as 5 base-36 characters. */
@@ -29,7 +32,7 @@ export function partCode(id: string): string {
   return (h % 36 ** PART_CODE_LEN).toString(36).padStart(PART_CODE_LEN, "0");
 }
 
-const BY_CODE = new Map(ALL_PARTS.map((p) => [partCode(p.id), p]));
+const BY_CODE = new Map(ALL_ITEMS.map((p) => [partCode(p.id), p]));
 
 function toBase64Url(text: string): string {
   let bin = "";
@@ -53,9 +56,9 @@ export interface SharedBuild {
 }
 
 export function encodeBuild(build: Pick<Build, "name" | "parts">): string {
-  const parts = CATEGORIES.flatMap((c) => {
+  const parts = ALL_CATEGORIES.flatMap((c) => {
     const id = build.parts[c];
-    return id && getPart(id) ? [partCode(id)] : [];
+    return id && getItem(id)?.category === c ? [partCode(id)] : [];
   }).join("");
   const name = build.name.trim().slice(0, MAX_NAME_LENGTH);
   return `${VERSION}${parts}${name ? `.${toBase64Url(name)}` : ""}`;

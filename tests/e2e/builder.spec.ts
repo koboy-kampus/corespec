@@ -39,14 +39,18 @@ test("pick parts, catch an incompatibility, filter the picker", async ({
 test("a preset link loads, saves and keeps its name", async ({ page }) => {
   await openPreset(page, "creator-workstation");
   await expect(page).toHaveURL(/\/builder$/);
-  await expect(page.getByText("Rp 35.268.000").first()).toBeVisible();
+  await expect(
+    page.getByText("Rp 35.268.000").filter({ visible: true }).first(),
+  ).toBeVisible();
   await expect(page.getByLabel("Build name")).toHaveValue(
     "Creator Workstation",
   );
 
   await page.reload();
   await expect(page.getByText("All checks passed")).toBeVisible();
-  await expect(page.getByText("Rp 35.268.000").first()).toBeVisible();
+  await expect(
+    page.getByText("Rp 35.268.000").filter({ visible: true }).first(),
+  ).toBeVisible();
 
   await page.getByLabel("Build name").fill("Rei's render box");
   await page.keyboard.press("Enter");
@@ -82,7 +86,9 @@ test.describe("Load preset", () => {
     await expect(page.getByLabel("Build name")).toHaveValue(
       "Creator Workstation",
     );
-    await expect(page.getByText("Rp 35.268.000").first()).toBeVisible();
+    await expect(
+      page.getByText("Rp 35.268.000").filter({ visible: true }).first(),
+    ).toBeVisible();
 
     // Start as new build keeps the current one in My builds.
     await loadPreset(page, "1440p Sweet Spot");

@@ -1,0 +1,66 @@
+[
+  {
+    "id": "lighting-govee-rgbic-led-strip-5-m",
+    "category": "lighting",
+    "brand": "Govee",
+    "name": "RGBIC LED Strip 5 m",
+    "priceIDR": 300000,
+    "dims": {
+      "l": 5000,
+      "w": 10,
+      "h": 3
+    },
+    "placement": "desk-edge",
+    "kind": "LED strip",
+    "rgb": true,
+    "usbPowered": false
+  },
+  {
+    "id": "lighting-ikea-forsa-work-lamp",
+    "category": "lighting",
+    "brand": "IKEA",
+    "name": "FORSÅ work lamp",
+    "priceIDR": 400000,
+    "dims": {
+      "l": 150,
+      "w": 150,
+      "h": 450
+    },
+    "placement": "desk",
+    "kind": "Lamp",
+    "rgb": false,
+    "usbPowered": false
+  },
+  {
+    "id": "lighting-xiaomi-mi-computer-monitor-light-bar",
+    "category": "lighting",
+    "brand": "Xiaomi",
+    "name": "Mi Computer Monitor Light Bar",
+    "priceIDR": 450000,
+    "dims": {
+      "l": 450,
+      "w": 90,
+      "h": 40
+    },
+    "placement": "monitor-top",
+    "kind": "Light bar",
+    "rgb": false,
+    "usbPowered": true
+  },
+  {
+    "id": "lighting-benq-screenbar-halo",
+    "category": "lighting",
+    "brand": "BenQ",
+    "name": "ScreenBar Halo",
+    "priceIDR": 2500000,
+    "dims": {
+      "l": 500,
+      "w": 100,
+      "h": 95
+    },
+    "placement": "monitor-top",
+    "kind": "Light bar",
+    "rgb": false,
+    "usbPowered": true
+  }
+]

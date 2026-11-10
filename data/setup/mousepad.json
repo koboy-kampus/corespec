@@ -1,0 +1,58 @@
+[
+  {
+    "id": "mousepad-steelseries-qck-medium",
+    "category": "mousepad",
+    "brand": "SteelSeries",
+    "name": "QcK Medium",
+    "priceIDR": 180000,
+    "dims": {
+      "l": 320,
+      "w": 270,
+      "h": 2
+    },
+    "placement": "desk",
+    "size": "M"
+  },
+  {
+    "id": "mousepad-razer-gigantus-v2-large",
+    "category": "mousepad",
+    "brand": "Razer",
+    "name": "Gigantus V2 Large",
+    "priceIDR": 280000,
+    "dims": {
+      "l": 450,
+      "w": 400,
+      "h": 3
+    },
+    "placement": "desk",
+    "size": "L"
+  },
+  {
+    "id": "mousepad-logitech-g840-xl",
+    "category": "mousepad",
+    "brand": "Logitech",
+    "name": "G840 XL",
+    "priceIDR": 650000,
+    "dims": {
+      "l": 900,
+      "w": 400,
+      "h": 3
+    },
+    "placement": "desk",
+    "size": "XL"
+  },
+  {
+    "id": "mousepad-glorious-3xl-extended",
+    "category": "mousepad",
+    "brand": "Glorious",
+    "name": "3XL Extended",
+    "priceIDR": 750000,
+    "dims": {
+      "l": 1219,
+      "w": 610,
+      "h": 3
+    },
+    "placement": "desk",
+    "size": "Desk"
+  }
+]

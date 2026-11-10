@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { getPart } from "@/lib/parts";
-import { getPreset } from "@/lib/presets";
+import { isSetupCategory } from "@/lib/categories";
+import { getItem } from "@/lib/parts";
+import { getPreset, suggestedSetupFor } from "@/lib/presets";
 import type { Build, Category } from "@/types/parts";
 
 type Parts = Build["parts"];
@@ -63,13 +64,20 @@ function cleanName(name: string): string {
   return name.trim().slice(0, MAX_NAME) || DEFAULT_NAME;
 }
 
-/** Keeps only known part ids filed under the right slot. */
-function cleanParts(parts: Parts): Parts {
+/** Keeps only known ids (PC parts and setup items) filed under the right slot. */
+export function cleanParts(parts: Parts): Parts {
   const out: Parts = {};
   for (const [category, id] of Object.entries(parts) as [Category, string][]) {
-    if (getPart(id)?.category === category) out[category] = id;
+    if (getItem(id)?.category === category) out[category] = id;
   }
   return out;
+}
+
+/** Just the setup slots of a build. */
+function setupOf(parts: Parts): Parts {
+  return Object.fromEntries(
+    Object.entries(parts).filter(([c]) => isSetupCategory(c as Category)),
+  );
 }
 
 interface BuildState {
@@ -81,8 +89,13 @@ interface BuildState {
   /** Put a part in its slot. Ignores unknown ids or a part filed under the wrong slot. */
   setPart: (category: Category, partId: string) => void;
   removePart: (category: Category) => void;
-  /** Replace the current parts with a preset's parts, and take its name. */
+  /** Replace the PC parts with a preset's parts, and take its name. Setup items stay. */
   loadPreset: (presetId: string) => void;
+  /**
+   * Fill the empty setup slots with the suggested setup of the preset closest to
+   * this PC. Setup items already picked are kept.
+   */
+  addSuggestedSetup: () => void;
   /** Rename the open build. */
   rename: (name: string) => void;
 
@@ -117,7 +130,7 @@ export const useBuildStore = create<BuildState>()(
 
       setPart: (category, partId) =>
         set((s) => {
-          const part = getPart(partId);
+          const part = getItem(partId);
           if (!part || part.category !== category) return s;
           return {
             build: touch(s.build, {
@@ -140,7 +153,18 @@ export const useBuildStore = create<BuildState>()(
           return {
             build: touch(s.build, {
               name: preset.name,
-              parts: { ...preset.parts },
+              parts: { ...setupOf(s.build.parts), ...preset.parts },
+            }),
+          };
+        }),
+
+      addSuggestedSetup: () =>
+        set((s) => {
+          const suggestion = suggestedSetupFor(s.build.parts);
+          if (!suggestion) return s;
+          return {
+            build: touch(s.build, {
+              parts: { ...suggestion.setup, ...s.build.parts },
             }),
           };
         }),

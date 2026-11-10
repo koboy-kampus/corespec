@@ -1,0 +1,116 @@
+[
+  {
+    "id": "monitor-aoc-24g4",
+    "category": "monitor",
+    "brand": "AOC",
+    "name": "24G4",
+    "priceIDR": 1850000,
+    "dims": {
+      "l": 540,
+      "w": 210,
+      "h": 420
+    },
+    "placement": "desk",
+    "sizeIn": 24,
+    "resolution": "1080p",
+    "refreshHz": 180,
+    "panel": "IPS",
+    "adaptiveSync": "FreeSync",
+    "curved": false
+  },
+  {
+    "id": "monitor-dell-p2422h",
+    "category": "monitor",
+    "brand": "Dell",
+    "name": "P2422H",
+    "priceIDR": 2900000,
+    "dims": {
+      "l": 538,
+      "w": 166,
+      "h": 480
+    },
+    "placement": "desk",
+    "sizeIn": 24,
+    "resolution": "1080p",
+    "refreshHz": 60,
+    "panel": "IPS",
+    "adaptiveSync": "None",
+    "curved": false
+  },
+  {
+    "id": "monitor-lg-ultragear-27gr75q",
+    "category": "monitor",
+    "brand": "LG",
+    "name": "UltraGear 27GR75Q",
+    "priceIDR": 3600000,
+    "dims": {
+      "l": 614,
+      "w": 230,
+      "h": 455
+    },
+    "placement": "desk",
+    "sizeIn": 27,
+    "resolution": "1440p",
+    "refreshHz": 165,
+    "panel": "IPS",
+    "adaptiveSync": "FreeSync",
+    "curved": false
+  },
+  {
+    "id": "monitor-samsung-odyssey-g5-27-c27g55t",
+    "category": "monitor",
+    "brand": "Samsung",
+    "name": "Odyssey G5 27\" C27G55T",
+    "priceIDR": 3900000,
+    "dims": {
+      "l": 615,
+      "w": 290,
+      "h": 460
+    },
+    "placement": "desk",
+    "sizeIn": 27,
+    "resolution": "1440p",
+    "refreshHz": 144,
+    "panel": "VA",
+    "adaptiveSync": "FreeSync",
+    "curved": true
+  },
+  {
+    "id": "monitor-lg-ultragear-27gr93u",
+    "category": "monitor",
+    "brand": "LG",
+    "name": "UltraGear 27GR93U",
+    "priceIDR": 8500000,
+    "dims": {
+      "l": 614,
+      "w": 230,
+      "h": 460
+    },
+    "placement": "desk",
+    "sizeIn": 27,
+    "resolution": "4K",
+    "refreshHz": 144,
+    "panel": "IPS",
+    "adaptiveSync": "FreeSync",
+    "curved": false
+  },
+  {
+    "id": "monitor-alienware-aw3423dw",
+    "category": "monitor",
+    "brand": "Alienware",
+    "name": "AW3423DW",
+    "priceIDR": 16500000,
+    "dims": {
+      "l": 815,
+      "w": 305,
+      "h": 420
+    },
+    "placement": "desk",
+    "sizeIn": 34,
+    "resolution": "UW1440p",
+    "refreshHz": 175,
+    "panel": "OLED",
+    "adaptiveSync": "G-Sync",
+    "curved": true
+  }
+]

@@ -109,6 +109,10 @@ export function WattageMeter({
           </span>
         ) : null}
       </p>
+      <p className="text-[12px] leading-4 text-fg-3">
+        PC parts only: the monitor, speakers and other setup items plug into the
+        wall, not the PSU.
+      </p>
     </section>
   );
 }

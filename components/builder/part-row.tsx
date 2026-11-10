@@ -6,10 +6,10 @@ import { PriceTag } from "@/components/ui/price-tag";
 import type { CompatResult } from "@/lib/compat/check";
 import { partLabel } from "@/lib/parts";
 import { partSpecs } from "@/lib/specs";
-import type { Part } from "@/types/parts";
+import type { Item } from "@/types/parts";
 
 interface PartRowProps {
-  part: Part;
+  part: Item;
   issues: CompatResult[];
   selected: boolean;
   onSelect: () => void;

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "desk-ikea-micke-105-50",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "MICKE 105×50",
+    "priceIDR": 1300000,
+    "dims": {
+      "l": 1050,
+      "w": 500,
+      "h": 750
+    },
+    "placement": "floor",
+    "widthMm": 1050,
+    "depthMm": 500,
+    "heightMinMm": 750,
+    "heightMaxMm": 750,
+    "adjustable": false
+  },
+  {
+    "id": "desk-ikea-lagkapten-adils-120-60",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "LAGKAPTEN / ADILS 120×60",
+    "priceIDR": 900000,
+    "dims": {
+      "l": 1200,
+      "w": 600,
+      "h": 730
+    },
+    "placement": "floor",
+    "widthMm": 1200,
+    "depthMm": 600,
+    "heightMinMm": 730,
+    "heightMaxMm": 730,
+    "adjustable": false
+  },
+  {
+    "id": "desk-ikea-trotten-sit-stand-120-70",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "TROTTEN sit/stand 120×70",
+    "priceIDR": 3500000,
+    "dims": {
+      "l": 1200,
+      "w": 700,
+      "h": 720
+    },
+    "placement": "floor",
+    "widthMm": 1200,
+    "depthMm": 700,
+    "heightMinMm": 720,
+    "heightMaxMm": 1220,
+    "adjustable": true
+  },
+  {
+    "id": "desk-ikea-mittzon-sit-stand-140-80",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "MITTZON sit/stand 140×80",
+    "priceIDR": 6000000,
+    "dims": {
+      "l": 1400,
+      "w": 800,
+      "h": 650
+    },
+    "placement": "floor",
+    "widthMm": 1400,
+    "depthMm": 800,
+    "heightMinMm": 650,
+    "heightMaxMm": 1250,
+    "adjustable": true
+  }
+]

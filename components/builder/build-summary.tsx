@@ -10,6 +10,7 @@ import { CATEGORIES } from "@/lib/categories";
 import { useBuildStore } from "@/store/build";
 import { BuildActions } from "./build-actions";
 import { CompatPanel } from "./compat-panel";
+import { Subtotals } from "./subtotals";
 import { WattageMeter } from "./wattage-meter";
 
 /** Inline-editable build name: commits on blur or Enter, Esc cancels. */
@@ -48,7 +49,16 @@ function BuildName() {
 }
 
 export function BuildSummary({ className }: { className?: string }) {
-  const { totalIDR, drawW, results, resolved, filled } = useBuildDerived();
+  const {
+    totalIDR,
+    pcIDR,
+    setupIDR,
+    drawW,
+    results,
+    resolved,
+    filled,
+    setupFilled,
+  } = useBuildDerived();
 
   return (
     <section
@@ -69,10 +79,14 @@ export function BuildSummary({ className }: { className?: string }) {
         <BuildName />
         <div className="flex items-end justify-between gap-3">
           <PriceTag value={totalIDR} size="lg" label="Total" />
-          <span className="spec text-spec-sm text-fg-3">
-            {filled}/{CATEGORIES.length} parts
+          <span className="flex flex-col items-end spec text-spec-sm whitespace-nowrap text-fg-3">
+            <span>
+              {filled}/{CATEGORIES.length} parts
+            </span>
+            {setupFilled ? <span>+ {setupFilled} setup</span> : null}
           </span>
         </div>
+        <Subtotals pcIDR={pcIDR} setupIDR={setupIDR} />
         <BuildActions hasParts={filled > 0} />
       </div>
 

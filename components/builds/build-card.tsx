@@ -151,6 +151,7 @@ export function BuildCard({
           <div className="flex items-center gap-2">
             <span className="spec text-spec-sm text-fg-3">
               {d.filled}/{CATEGORIES.length}
+              {d.setupFilled ? ` + ${d.setupFilled} setup` : ""}
             </span>
             <BuildStatus
               errors={d.errors}

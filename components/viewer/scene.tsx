@@ -21,7 +21,7 @@ import {
   type PartLayout,
   type Vec3,
 } from "@/lib/viewer/layout";
-import type { Category, ResolvedBuild } from "@/types/parts";
+import type { PcCategory, ResolvedBuild } from "@/types/parts";
 import { clampDelta } from "@/lib/viewer/spring";
 import { Animated } from "./animated";
 import { CameraRig, type CameraKeys } from "./camera-rig";
@@ -33,9 +33,9 @@ import { PartTooltip } from "./part-tooltip";
 export interface SceneProps {
   parts: ResolvedBuild;
   /** Per-category flag from check(), so flagged parts glow. */
-  flags?: Partial<Record<Category, Flag>>;
+  flags?: Partial<Record<PcCategory, Flag>>;
   /** Slot the camera eases toward; null for the home view. */
-  activeSlot?: Category | null;
+  activeSlot?: PcCategory | null;
   /** "builder" adds orbit controls; "showcase" slowly spins with no controls. */
   mode: "builder" | "showcase";
   /** Shown instead of the canvas when WebGL isn't available. */
@@ -63,7 +63,7 @@ type Item =
   | { key: string; kind: "case"; shell: CaseLayout; flag?: Flag }
   | { key: string; kind: "part"; layout: PartLayout; flag?: Flag };
 
-const NO_FLAGS: Partial<Record<Category, Flag>> = {};
+const NO_FLAGS: Partial<Record<PcCategory, Flag>> = {};
 const BASE_YAW = -0.35;
 const PART_DROP = 160; // mm
 const CASE_DROP = 60;

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "keyboard-logitech-g213-prodigy",
+    "category": "keyboard",
+    "brand": "Logitech",
+    "name": "G213 Prodigy",
+    "priceIDR": 750000,
+    "dims": {
+      "l": 452,
+      "w": 218,
+      "h": 33
+    },
+    "placement": "desk",
+    "layout": "Full",
+    "switches": "Mech-Dome",
+    "wireless": false
+  },
+  {
+    "id": "keyboard-royal-kludge-rk84",
+    "category": "keyboard",
+    "brand": "Royal Kludge",
+    "name": "RK84",
+    "priceIDR": 650000,
+    "dims": {
+      "l": 316,
+      "w": 115,
+      "h": 40
+    },
+    "placement": "desk",
+    "layout": "75%",
+    "switches": "RK Red",
+    "wireless": true
+  },
+  {
+    "id": "keyboard-keychron-k2",
+    "category": "keyboard",
+    "brand": "Keychron",
+    "name": "K2",
+    "priceIDR": 1400000,
+    "dims": {
+      "l": 313,
+      "w": 123,
+      "h": 40
+    },
+    "placement": "desk",
+    "layout": "75%",
+    "switches": "Gateron Brown",
+    "wireless": true
+  },
+  {
+    "id": "keyboard-keychron-v2",
+    "category": "keyboard",
+    "brand": "Keychron",
+    "name": "V2",
+    "priceIDR": 1300000,
+    "dims": {
+      "l": 327,
+      "w": 104,
+      "h": 32
+    },
+    "placement": "desk",
+    "layout": "65%",
+    "switches": "Keychron K Pro Red",
+    "wireless": false
+  },
+  {
+    "id": "keyboard-razer-blackwidow-v4-x",
+    "category": "keyboard",
+    "brand": "Razer",
+    "name": "BlackWidow V4 X",
+    "priceIDR": 2300000,
+    "dims": {
+      "l": 448,
+      "w": 154,
+      "h": 42
+    },
+    "placement": "desk",
+    "layout": "Full",
+    "switches": "Razer Green",
+    "wireless": false
+  },
+  {
+    "id": "keyboard-steelseries-apex-pro-tkl-2023",
+    "category": "keyboard",
+    "brand": "SteelSeries",
+    "name": "Apex Pro TKL (2023)",
+    "priceIDR": 3800000,
+    "dims": {
+      "l": 355,
+      "w": 140,
+      "h": 42
+    },
+    "placement": "desk",
+    "layout": "TKL",
+    "switches": "OmniPoint 2.0",
+    "wireless": false
+  }
+]

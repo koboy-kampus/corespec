@@ -1,0 +1,58 @@
+[
+  {
+    "id": "microphone-fifine-k669b",
+    "category": "microphone",
+    "brand": "Fifine",
+    "name": "K669B",
+    "priceIDR": 300000,
+    "dims": {
+      "l": 85,
+      "w": 85,
+      "h": 220
+    },
+    "placement": "desk",
+    "connection": "USB"
+  },
+  {
+    "id": "microphone-rode-podmic",
+    "category": "microphone",
+    "brand": "Rode",
+    "name": "PodMic",
+    "priceIDR": 1600000,
+    "dims": {
+      "l": 111,
+      "w": 111,
+      "h": 172
+    },
+    "placement": "desk",
+    "connection": "XLR"
+  },
+  {
+    "id": "microphone-hyperx-quadcast-s",
+    "category": "microphone",
+    "brand": "HyperX",
+    "name": "QuadCast S",
+    "priceIDR": 1900000,
+    "dims": {
+      "l": 130,
+      "w": 130,
+      "h": 260
+    },
+    "placement": "desk",
+    "connection": "USB"
+  },
+  {
+    "id": "microphone-shure-sm7b",
+    "category": "microphone",
+    "brand": "Shure",
+    "name": "SM7B",
+    "priceIDR": 6500000,
+    "dims": {
+      "l": 96,
+      "w": 190,
+      "h": 96
+    },
+    "placement": "desk",
+    "connection": "XLR"
+  }
+]

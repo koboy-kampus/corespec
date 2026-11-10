@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { CATALOG, getPart } from "@/lib/parts";
-import { partSpecs, formatCapacity } from "@/lib/specs";
+import { CATALOG, SETUP_CATALOG, getPart } from "@/lib/parts";
+import { facetsFor, formatCapacity, partSpecs } from "@/lib/specs";
 import {
   DEFAULT_FILTERS,
   brandsOf,
   candidateIssues,
+  facetValues,
   filterParts,
   isFiltered,
   parseRupiah,
@@ -109,5 +110,58 @@ describe("partSpecs", () => {
     ).toEqual(["DDR5-5600", "64 GB", "4×16 GB"]);
     expect(formatCapacity(2000)).toBe("2 TB");
     expect(formatCapacity(500)).toBe("500 GB");
+  });
+});
+
+describe("setup item filters (Phase 10)", () => {
+  const monitors = SETUP_CATALOG.monitor;
+  const facets = facetsFor("monitor");
+
+  it("lists facet values for chips", () => {
+    const res = facets.find((f) => f.key === "resolution")!;
+    expect(facetValues(monitors, res)).toEqual([
+      "1080p",
+      "1440p",
+      "UW1440p",
+      "4K",
+    ]);
+  });
+
+  it("matches any value within a facet, and every facet together", () => {
+    const hiRes = filterParts(
+      monitors,
+      { ...DEFAULT_FILTERS, facets: { resolution: ["1440p", "4K"] } },
+      facets,
+    );
+    expect(hiRes).toHaveLength(3);
+    const va = filterParts(
+      monitors,
+      { ...DEFAULT_FILTERS, facets: { resolution: ["1440p"], panel: ["VA"] } },
+      facets,
+    );
+    expect(va.map((m) => m.id)).toEqual([
+      "monitor-samsung-odyssey-g5-27-c27g55t",
+    ]);
+    expect(isFiltered({ ...DEFAULT_FILTERS, facets: { panel: ["VA"] } })).toBe(
+      true,
+    );
+    expect(isFiltered({ ...DEFAULT_FILTERS, facets: { panel: [] } })).toBe(
+      false,
+    );
+  });
+
+  it("never reports compatibility issues for setup items", () => {
+    expect(candidateIssues({}, monitors[0])).toEqual([]);
+  });
+
+  it("searches setup specs", () => {
+    const hits = filterParts(SETUP_CATALOG.keyboard, {
+      ...DEFAULT_FILTERS,
+      query: "wireless 75%",
+    });
+    expect(hits.map((k) => k.id).sort()).toEqual([
+      "keyboard-keychron-k2",
+      "keyboard-royal-kludge-rk84",
+    ]);
   });
 });

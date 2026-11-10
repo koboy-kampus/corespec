@@ -24,6 +24,12 @@ export default function Page() {
             {CATALOG_STATS.categories} categories, drawn in 3D at real size.
           </li>
           <li>
+            Adds the rest of the desk: {CATALOG_STATS.setupItems} setup items
+            across {CATALOG_STATS.setupCategories} categories (monitor,
+            keyboard, mouse, chair, desk and more), with PC, setup and total
+            costs.
+          </li>
+          <li>
             Checks compatibility as you go: CPU socket, memory type, RAM slots,
             board and case size, GPU length, cooler height and power supply.
           </li>

@@ -29,7 +29,7 @@ const row1: Tile[] = [
   {
     index: "02",
     title: "Cost tracking",
-    body: "A running total in Rupiah, updated with every pick.",
+    body: "A running total in Rupiah, updated with every pick. Add a monitor, keyboard, desk and the rest of your setup for the full cost.",
     visual: <CostVisual />,
   },
   {

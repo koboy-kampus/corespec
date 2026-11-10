@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CATEGORY_LABEL } from "@/lib/categories";
+import { CATEGORY_LABEL, isSetupCategory } from "@/lib/categories";
 import { formatIDR } from "@/lib/format";
 import { getPartsByCategory } from "@/lib/parts";
 import {
@@ -19,12 +19,14 @@ import {
   SORT_LABEL,
   brandsOf,
   candidateIssues,
+  facetValues,
   filterParts,
   isFiltered,
   parseRupiah,
   type PickerFilters,
   type SortKey,
 } from "@/lib/picker";
+import { facetsFor } from "@/lib/specs";
 import { useBuildStore } from "@/store/build";
 import { useReturnFocus } from "@/hooks/use-return-focus";
 import { useUiStore } from "@/store/ui";
@@ -59,6 +61,55 @@ function PriceInput({
   );
 }
 
+const chipClass = (on: boolean) =>
+  cn(
+    "h-7 cursor-pointer rounded-chip border px-2.5 text-[12px] transition-colors",
+    on
+      ? "border-accent/40 bg-accent-soft text-fg"
+      : "border-line bg-surface text-fg-2 hover:border-line-hover hover:text-fg",
+  );
+
+/** A row of toggle chips (any of), e.g. brands or a setup spec like Layout. */
+function ChipGroup({
+  label,
+  values,
+  chosen,
+  onChange,
+}: {
+  label: string;
+  values: string[];
+  chosen: string[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <span className="label-micro text-micro-sm text-fg-3">{label}</span>
+      <div
+        className="flex flex-wrap gap-1.5"
+        role="group"
+        aria-label={`Filter by ${label.toLowerCase()}`}
+      >
+        {values.map((v) => {
+          const on = chosen.includes(v);
+          return (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={on}
+              onClick={() =>
+                onChange(on ? chosen.filter((x) => x !== v) : [...chosen, v])
+              }
+              className={chipClass(on)}
+            >
+              {v}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function PickerBody({ category }: { category: Category }) {
   const parts = useBuildStore((s) => s.build.parts);
   const setPart = useBuildStore((s) => s.setPart);
@@ -66,8 +117,12 @@ function PickerBody({ category }: { category: Category }) {
   const [filters, setFilters] = useState<PickerFilters>(DEFAULT_FILTERS);
 
   const all = getPartsByCategory(category);
+  const facets = facetsFor(category);
   const brands = useMemo(() => brandsOf(all), [all]);
-  const results = useMemo(() => filterParts(all, filters), [all, filters]);
+  const results = useMemo(
+    () => filterParts(all, filters, facets),
+    [all, filters, facets],
+  );
   const label = CATEGORY_LABEL[category];
   const update = (patch: Partial<PickerFilters>) =>
     setFilters((f) => ({ ...f, ...patch }));
@@ -81,6 +136,7 @@ function PickerBody({ category }: { category: Category }) {
             <DialogTitle>Choose {label.toLowerCase()}</DialogTitle>
             <DialogDescription className="text-[13px] leading-5">
               {all.length} options · prices approximate
+              {isSetupCategory(category) ? " · optional" : ""}
             </DialogDescription>
           </div>
         </div>
@@ -117,40 +173,12 @@ function PickerBody({ category }: { category: Category }) {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="label-micro text-micro-sm text-fg-3">Brand</span>
-            <div
-              className="flex flex-wrap gap-1.5"
-              role="group"
-              aria-label="Filter by brand"
-            >
-              {brands.map((b) => {
-                const on = filters.brands.includes(b);
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() =>
-                      update({
-                        brands: on
-                          ? filters.brands.filter((x) => x !== b)
-                          : [...filters.brands, b],
-                      })
-                    }
-                    className={cn(
-                      "h-7 cursor-pointer rounded-chip border px-2.5 text-[12px] transition-colors",
-                      on
-                        ? "border-accent/40 bg-accent-soft text-fg"
-                        : "border-line bg-surface text-fg-2 hover:border-line-hover hover:text-fg",
-                    )}
-                  >
-                    {b}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ChipGroup
+            label="Brand"
+            values={brands}
+            chosen={filters.brands}
+            onChange={(next) => update({ brands: next })}
+          />
           <div className="flex gap-2 sm:w-64">
             <PriceInput
               label="Min price"
@@ -165,6 +193,22 @@ function PickerBody({ category }: { category: Category }) {
           </div>
         </div>
       </div>
+
+      {facets.length ? (
+        <div className="flex flex-col gap-3 border-b border-line px-5 py-3 sm:flex-row sm:flex-wrap">
+          {facets.map((facet) => (
+            <ChipGroup
+              key={facet.key}
+              label={facet.label}
+              values={facetValues(all, facet)}
+              chosen={filters.facets[facet.key] ?? []}
+              onChange={(next) =>
+                update({ facets: { ...filters.facets, [facet.key]: next } })
+              }
+            />
+          ))}
+        </div>
+      ) : null}
 
       <div className="flex items-center justify-between px-5 pt-3 pb-1">
         <span className="spec text-spec-sm text-fg-3" aria-live="polite">
@@ -205,7 +249,10 @@ function PickerBody({ category }: { category: Category }) {
         ) : (
           <div className="flex flex-col items-center gap-3 rounded-btn border border-dashed border-line-strong/60 px-6 py-12 text-center">
             <SearchX className="size-6 text-fg-3" aria-hidden />
-            <p className="text-ui text-fg">No parts match these filters.</p>
+            <p className="text-ui text-fg">
+              No {isSetupCategory(category) ? "items" : "parts"} match these
+              filters.
+            </p>
             <Button
               variant="secondary"
               size="sm"

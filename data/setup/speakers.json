@@ -1,0 +1,58 @@
+[
+  {
+    "id": "speakers-logitech-z120",
+    "category": "speakers",
+    "brand": "Logitech",
+    "name": "Z120",
+    "priceIDR": 150000,
+    "dims": {
+      "l": 88,
+      "w": 90,
+      "h": 110
+    },
+    "placement": "desk",
+    "kind": "2.0"
+  },
+  {
+    "id": "speakers-creative-pebble-plus",
+    "category": "speakers",
+    "brand": "Creative",
+    "name": "Pebble Plus",
+    "priceIDR": 650000,
+    "dims": {
+      "l": 116,
+      "w": 115,
+      "h": 122
+    },
+    "placement": "desk",
+    "kind": "2.1"
+  },
+  {
+    "id": "speakers-logitech-z333",
+    "category": "speakers",
+    "brand": "Logitech",
+    "name": "Z333",
+    "priceIDR": 900000,
+    "dims": {
+      "l": 100,
+      "w": 100,
+      "h": 190
+    },
+    "placement": "desk",
+    "kind": "2.1"
+  },
+  {
+    "id": "speakers-edifier-r1080bt",
+    "category": "speakers",
+    "brand": "Edifier",
+    "name": "R1080BT",
+    "priceIDR": 1200000,
+    "dims": {
+      "l": 146,
+      "w": 180,
+      "h": 240
+    },
+    "placement": "desk",
+    "kind": "2.0"
+  }
+]

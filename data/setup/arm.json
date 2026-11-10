@@ -1,0 +1,70 @@
+[
+  {
+    "id": "arm-north-bayou-f80",
+    "category": "arm",
+    "brand": "North Bayou",
+    "name": "F80",
+    "priceIDR": 300000,
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 450
+    },
+    "placement": "desk-edge",
+    "monitors": 1,
+    "maxSizeIn": 30,
+    "maxLoadKg": 9,
+    "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-north-bayou-f160-dual",
+    "category": "arm",
+    "brand": "North Bayou",
+    "name": "F160 Dual",
+    "priceIDR": 550000,
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 450
+    },
+    "placement": "desk-edge",
+    "monitors": 2,
+    "maxSizeIn": 27,
+    "maxLoadKg": 6.5,
+    "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-ergotron-lx-desk-mount",
+    "category": "arm",
+    "brand": "Ergotron",
+    "name": "LX Desk Mount",
+    "priceIDR": 3500000,
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 520
+    },
+    "placement": "desk-edge",
+    "monitors": 1,
+    "maxSizeIn": 34,
+    "maxLoadKg": 11.3,
+    "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-ergotron-lx-dual-side-by-side",
+    "category": "arm",
+    "brand": "Ergotron",
+    "name": "LX Dual Side-by-Side",
+    "priceIDR": 6500000,
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 520
+    },
+    "placement": "desk-edge",
+    "monitors": 2,
+    "maxSizeIn": 27,
+    "maxLoadKg": 9.1,
+    "mounts": ["Clamp", "Grommet"]
+  }
+]

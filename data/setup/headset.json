@@ -1,0 +1,92 @@
+[
+  {
+    "id": "headset-hyperx-cloud-stinger-2",
+    "category": "headset",
+    "brand": "HyperX",
+    "name": "Cloud Stinger 2",
+    "priceIDR": 550000,
+    "dims": {
+      "l": 180,
+      "w": 90,
+      "h": 200
+    },
+    "placement": "desk-edge",
+    "connection": "3.5mm",
+    "wireless": false
+  },
+  {
+    "id": "headset-steelseries-arctis-nova-1",
+    "category": "headset",
+    "brand": "SteelSeries",
+    "name": "Arctis Nova 1",
+    "priceIDR": 800000,
+    "dims": {
+      "l": 180,
+      "w": 85,
+      "h": 200
+    },
+    "placement": "desk-edge",
+    "connection": "3.5mm",
+    "wireless": false
+  },
+  {
+    "id": "headset-logitech-g435-lightspeed",
+    "category": "headset",
+    "brand": "Logitech",
+    "name": "G435 Lightspeed",
+    "priceIDR": 900000,
+    "dims": {
+      "l": 170,
+      "w": 80,
+      "h": 180
+    },
+    "placement": "desk-edge",
+    "connection": "2.4GHz",
+    "wireless": true
+  },
+  {
+    "id": "headset-hyperx-cloud-ii",
+    "category": "headset",
+    "brand": "HyperX",
+    "name": "Cloud II",
+    "priceIDR": 1100000,
+    "dims": {
+      "l": 180,
+      "w": 95,
+      "h": 200
+    },
+    "placement": "desk-edge",
+    "connection": "USB",
+    "wireless": false
+  },
+  {
+    "id": "headset-soundcore-life-q30",
+    "category": "headset",
+    "brand": "Soundcore",
+    "name": "Life Q30",
+    "priceIDR": 1200000,
+    "dims": {
+      "l": 175,
+      "w": 85,
+      "h": 195
+    },
+    "placement": "desk-edge",
+    "connection": "Bluetooth",
+    "wireless": true
+  },
+  {
+    "id": "headset-razer-blackshark-v2-pro-2023",
+    "category": "headset",
+    "brand": "Razer",
+    "name": "BlackShark V2 Pro (2023)",
+    "priceIDR": 2700000,
+    "dims": {
+      "l": 180,
+      "w": 90,
+      "h": 200
+    },
+    "placement": "desk-edge",
+    "connection": "2.4GHz",
+    "wireless": true
+  }
+]

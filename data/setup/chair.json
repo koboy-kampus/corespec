@@ -1,0 +1,58 @@
+[
+  {
+    "id": "chair-ikea-markus",
+    "category": "chair",
+    "brand": "IKEA",
+    "name": "MARKUS",
+    "priceIDR": 2500000,
+    "dims": {
+      "l": 620,
+      "w": 600,
+      "h": 1290
+    },
+    "placement": "floor",
+    "type": "Ergonomic"
+  },
+  {
+    "id": "chair-cougar-armor-one",
+    "category": "chair",
+    "brand": "Cougar",
+    "name": "Armor One",
+    "priceIDR": 2600000,
+    "dims": {
+      "l": 700,
+      "w": 650,
+      "h": 1330
+    },
+    "placement": "floor",
+    "type": "Gaming"
+  },
+  {
+    "id": "chair-dxracer-formula-series",
+    "category": "chair",
+    "brand": "DXRacer",
+    "name": "Formula Series",
+    "priceIDR": 4200000,
+    "dims": {
+      "l": 700,
+      "w": 690,
+      "h": 1310
+    },
+    "placement": "floor",
+    "type": "Gaming"
+  },
+  {
+    "id": "chair-herman-miller-aeron",
+    "category": "chair",
+    "brand": "Herman Miller",
+    "name": "Aeron",
+    "priceIDR": 25000000,
+    "dims": {
+      "l": 690,
+      "w": 660,
+      "h": 1070
+    },
+    "placement": "floor",
+    "type": "Ergonomic"
+  }
+]

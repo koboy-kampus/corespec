@@ -1,12 +1,24 @@
 import {
+  Armchair,
   Box,
   CircuitBoard,
   Cpu,
   Fan,
   Gpu,
   HardDrive,
+  Headset,
+  Keyboard,
+  LampDesk,
   MemoryStick,
+  Mic,
+  Monitor,
+  MonitorUp,
+  Mouse,
+  PanelTop,
   PlugZap,
+  RectangleHorizontal,
+  Speaker,
+  Webcam,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
@@ -21,6 +33,18 @@ const ICONS: Record<Category, LucideIcon> = {
   storage: HardDrive,
   psu: PlugZap,
   case: Box,
+  monitor: Monitor,
+  arm: MonitorUp,
+  keyboard: Keyboard,
+  mouse: Mouse,
+  mousepad: RectangleHorizontal,
+  headset: Headset,
+  speakers: Speaker,
+  webcam: Webcam,
+  microphone: Mic,
+  lighting: LampDesk,
+  desk: PanelTop,
+  chair: Armchair,
 };
 
 /** Category icon in a small coral-tinted tile. */

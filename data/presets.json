@@ -13,6 +13,15 @@
       "storage": "storage-crucial-p3-plus-500gb",
       "psu": "psu-cooler-master-mwe-550-bronze-v2",
       "case": "case-cooler-master-masterbox-q300l"
+    },
+    "setup": {
+      "monitor": "monitor-aoc-24g4",
+      "keyboard": "keyboard-royal-kludge-rk84",
+      "mouse": "mouse-logitech-g102-lightsync",
+      "mousepad": "mousepad-steelseries-qck-medium",
+      "headset": "headset-hyperx-cloud-stinger-2",
+      "speakers": "speakers-logitech-z120",
+      "desk": "desk-ikea-lagkapten-adils-120-60"
     }
   },
   {
@@ -29,6 +38,20 @@
       "storage": "storage-crucial-p3-plus-1tb",
       "psu": "psu-msi-mag-a650bn",
       "case": "case-montech-air-100-argb"
+    },
+    "setup": {
+      "monitor": "monitor-lg-ultragear-27gr75q",
+      "arm": "arm-north-bayou-f80",
+      "keyboard": "keyboard-keychron-k2",
+      "mouse": "mouse-logitech-g304-lightspeed",
+      "mousepad": "mousepad-razer-gigantus-v2-large",
+      "headset": "headset-logitech-g435-lightspeed",
+      "speakers": "speakers-creative-pebble-plus",
+      "webcam": "webcam-logitech-c920-hd-pro",
+      "microphone": "microphone-fifine-k669b",
+      "lighting": "lighting-xiaomi-mi-computer-monitor-light-bar",
+      "desk": "desk-ikea-trotten-sit-stand-120-70",
+      "chair": "chair-cougar-armor-one"
     }
   },
   {
@@ -45,6 +68,20 @@
       "storage": "storage-wd-black-sn850x-2tb",
       "psu": "psu-corsair-rm750e",
       "case": "case-lian-li-lancool-216"
+    },
+    "setup": {
+      "monitor": "monitor-lg-ultragear-27gr93u",
+      "arm": "arm-ergotron-lx-desk-mount",
+      "keyboard": "keyboard-keychron-v2",
+      "mouse": "mouse-logitech-g502-x",
+      "mousepad": "mousepad-logitech-g840-xl",
+      "headset": "headset-hyperx-cloud-ii",
+      "speakers": "speakers-edifier-r1080bt",
+      "webcam": "webcam-logitech-brio-4k",
+      "microphone": "microphone-rode-podmic",
+      "lighting": "lighting-benq-screenbar-halo",
+      "desk": "desk-ikea-mittzon-sit-stand-140-80",
+      "chair": "chair-ikea-markus"
     }
   }
 ]

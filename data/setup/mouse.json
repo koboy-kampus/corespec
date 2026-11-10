@@ -1,0 +1,98 @@
+[
+  {
+    "id": "mouse-logitech-g102-lightsync",
+    "category": "mouse",
+    "brand": "Logitech",
+    "name": "G102 Lightsync",
+    "priceIDR": 250000,
+    "dims": {
+      "l": 117,
+      "w": 62,
+      "h": 38
+    },
+    "placement": "desk",
+    "weightG": 85,
+    "wireless": false,
+    "maxDpi": 8000
+  },
+  {
+    "id": "mouse-razer-deathadder-essential",
+    "category": "mouse",
+    "brand": "Razer",
+    "name": "DeathAdder Essential",
+    "priceIDR": 300000,
+    "dims": {
+      "l": 127,
+      "w": 73,
+      "h": 43
+    },
+    "placement": "desk",
+    "weightG": 96,
+    "wireless": false,
+    "maxDpi": 6400
+  },
+  {
+    "id": "mouse-logitech-g304-lightspeed",
+    "category": "mouse",
+    "brand": "Logitech",
+    "name": "G304 Lightspeed",
+    "priceIDR": 450000,
+    "dims": {
+      "l": 117,
+      "w": 62,
+      "h": 38
+    },
+    "placement": "desk",
+    "weightG": 99,
+    "wireless": true,
+    "maxDpi": 12000
+  },
+  {
+    "id": "mouse-logitech-g502-x",
+    "category": "mouse",
+    "brand": "Logitech",
+    "name": "G502 X",
+    "priceIDR": 1000000,
+    "dims": {
+      "l": 131,
+      "w": 79,
+      "h": 41
+    },
+    "placement": "desk",
+    "weightG": 89,
+    "wireless": false,
+    "maxDpi": 25600
+  },
+  {
+    "id": "mouse-razer-viper-v3-hyperspeed",
+    "category": "mouse",
+    "brand": "Razer",
+    "name": "Viper V3 HyperSpeed",
+    "priceIDR": 1100000,
+    "dims": {
+      "l": 127,
+      "w": 63,
+      "h": 40
+    },
+    "placement": "desk",
+    "weightG": 82,
+    "wireless": true,
+    "maxDpi": 30000
+  },
+  {
+    "id": "mouse-logitech-g-pro-x-superlight-2",
+    "category": "mouse",
+    "brand": "Logitech",
+    "name": "G Pro X Superlight 2",
+    "priceIDR": 2300000,
+    "dims": {
+      "l": 125,
+      "w": 64,
+      "h": 40
+    },
+    "placement": "desk",
+    "weightG": 60,
+    "wireless": true,
+    "maxDpi": 32000
+  }
+]
