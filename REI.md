@@ -325,4 +325,136 @@ Micro-interactions: cards lift (`translateY(-2px)`) and border brightens on hove
 
 ---
 
-**Start now with Phase 0. Plan → implement → verify → summary → commit, then wait for "next".**
+## 8. Session 2 — Phases 9 to 15
+
+> **How to use (session 2):** open Claude Code in the repo and say:
+> `Read REI.md section 8 and HANDOFF.md, then start Phase 9.`
+
+Phases 0–8 are done and live on Vercel (see `HANDOFF.md`). Session 2 adds **setup items** (monitor, mouse, keyboard and the rest of a desk setup) with their own **3D desk view**, **marketplace links** with checked prices, and a smoothing pass. **Login and the backend come last (Phase 15)**, in a later session, on purpose.
+
+**Everything in sections 0, 3, 6 and 7 still applies**: one phase at a time, plan → implement → verify → summary → commit + push, then stop and wait for "next". On top of that:
+
+- Next 16 renamed and changed some APIs. Before using a Next API you haven't used in this repo yet, read its guide in `node_modules/next/dist/docs/` (see `AGENTS.md`).
+- **Verify** now means `npm run lint`, `npx tsc --noEmit`, `npx vitest run`, `npm run test:e2e` and `npm run build`, all green. New features get new unit tests **and** e2e tests, and the axe test must stay at **0 violations**.
+- Don't break what exists: old share links, saved builds in localStorage (write a tested storage migration if the shape changes), the 9 compatibility rules and their tests, and the PC 3D viewer.
+- Rei isn't in a rush this session. Prefer doing a phase well over doing it fast, and say in the summary what you'd still improve.
+
+### Phase 9 — Clean-up and performance
+
+Finish the leftovers from session 1, with numbers.
+
+- **Hero build card:** show all **8** parts of the showcase build so the rows add up to the total (it shows 6 today: cooler and case are missing). Keep the card compact on mobile.
+- **Power label on the hero card:** replace the plain draw/PSU text with `Need 1.3× · You have 2.1×` (PSU watts ÷ estimated draw, one decimal), computed from `lib/power.ts`, never hard-coded. Keep the meter bar.
+- **Footer:** remove every link that has no page ("Soon" items in `lib/nav.ts`). Drop empty columns.
+- **Performance:** PageSpeed showed **9–11 s Total Blocking Time** on `/b/[code]`. First measure it locally with Lighthouse (mobile preset) on `/`, `/builder` and `/b/[code]` against `next build && next start`, then fix the biggest causes (likely candidates: loading the 3D scene only when it's near the viewport or after the page is idle, splitting heavy client components, deferring Sentry and analytics, trimming Motion/Radix in the base bundle). Target: TBT under 600 ms on the mobile preset. **The summary must include a before/after table** (TBT, LCP, CLS, JS gzip per route).
+- `HANDOFF.md` says "21 parts" for `docs/price-check.md`; the file has **23**. Fix the number.
+
+**Done when:** the hero card total matches its rows, the footer has no "Soon", and the before/after table shows TBT going down.
+
+### Phase 10 — Setup items: data and builder
+
+Add a second group of slots, **Setup**, next to the 8 PC slots. All setup slots are **optional**: they never appear in the "missing parts" reminder.
+
+**Categories** (first version; Rei will add more later, so adding a category must be a one-place change: a type, a label, an icon, a JSON file and specs):
+
+| Category   | Items | Key fields (plus `dims` in mm, like PC parts)                                    |
+| ---------- | ----- | -------------------------------------------------------------------------------- |
+| Monitor    | 6     | `sizeIn`, `resolution` (`1080p`/`1440p`/`4K`/`UW1440p`), `refreshHz`, `panel` |
+| Keyboard   | 6     | `layout` (`Full`/`TKL`/`75%`/`65%`), `switches`, `wireless`                     |
+| Mouse      | 6     | `weightG`, `wireless`, `maxDpi`                                                  |
+| Headset    | 6     | `connection` (`3.5mm`/`USB`/`2.4GHz`/`Bluetooth`), `wireless`                    |
+| Mousepad   | 4     | `size` (`M`/`L`/`XL`/`Desk`)                                                     |
+| Speakers   | 4     | `kind` (`2.0`/`2.1`)                                                             |
+| Webcam     | 4     | `resolution`, `fps`                                                              |
+| Microphone | 4     | `connection` (`USB`/`XLR`)                                                       |
+| Chair      | 4     | `type` (`Gaming`/`Ergonomic`)                                                    |
+| Desk       | 4     | `widthMm`, `depthMm`, `heightMm`, `adjustable`                                   |
+
+- **Types:** split the current `Category` into `PcCategory` (the existing 8) and `SetupCategory`, with `Category = PcCategory | SetupCategory`. Keep the compatibility rules, the power estimate and the PC 3D viewer typed on `PcCategory` so they don't change. Setup items get their own base type (no PC `anchor`; give them a desk placement instead, used in Phase 12).
+- **Data:** real product names that are sold in Indonesia, approximate integer IDR prices, mixed budget to high-end. Same honesty rule as before: prices are estimates, and the `/prices` page says so. Add the new items to `docs/price-check.md`.
+- **Builder UI:** the slot list gets two sections, **PC** and **Setup** (tabs or a segmented control; same on the mobile sheet). The part picker works for setup categories too, with their own spec chips and filters.
+- **Totals:** the summary shows **PC subtotal**, **Setup subtotal** and **Total**. The wattage meter stays PC-only (monitors and speakers plug into the wall, not the PSU); say that in one line under the meter.
+- **Presets:** keep the 3 PC presets and their totals exactly as they are (the landing page relies on them). Give each preset an optional matching setup, applied with an **"Add suggested setup"** button, not automatically.
+- **Saving and sharing:** setup items save with the build and travel in share links. Old links must still open (add a test with a link encoded before this phase). The `/b/[code]` page and the OG image show the setup total when there is one.
+- **Landing page:** update `CATALOG_STATS` so the hero count stays true, and mention setup items in one bento tile or feature line. Don't change the hero 3D scene.
+
+**Done when:** Rei can build a PC plus a full desk setup, see three totals, save it, share it and open the link in a private window.
+
+### Phase 11 — Setup rules
+
+Add rule-based checks for setup items, in the same style as `lib/compat/rules.ts` (pure functions, same result shape, read by the UI and tests). They are **info or warning only, never error**: a setup choice never makes a build "incompatible".
+
+- **GPU class:** add `targetRes: '1080p' | '1440p' | '4K'` to every GPU (a rough class, picked by you and stated as approximate in a code comment).
+- **Monitor resolution vs GPU:** monitor resolution above the GPU's `targetRes` → warning, e.g. "This GPU is aimed at 1080p; a 4K monitor will need lower settings."
+- **Refresh rate vs GPU:** a monitor of 165 Hz or more at a resolution above `targetRes` → info, e.g. "High refresh rates at 1440p are hard to reach with this GPU."
+- **Desk width:** the monitor's width plus the speakers (if any) wider than the desk's `widthMm` → warning. Use the same numbers the 3D desk uses in Phase 12.
+- **No GPU yet:** the two GPU rules stay silent until a GPU is picked.
+- Show setup results in the compat panel under their own **Setup** heading. One pass case and one fail case per rule in Vitest.
+- Write the rule table into `docs/rules.md` (rule, inputs, condition, severity, message), for Rei's PI write-up. Include the 9 PC rules too.
+
+**Done when:** each rule can be triggered from the UI, and `docs/rules.md` lists all rules.
+
+### Phase 12 — 3D desk view
+
+A second 3D view for the setup. In the builder viewport, a toggle **PC | Desk** (the Setup tab opens Desk; the PC tab opens PC).
+
+- **Scene:** a separate scene component, loaded with `next/dynamic` and `ssr: false` as its **own chunk**, so the PC builder and the landing page don't pay for it.
+- **Desk:** procedural, sized from the chosen desk's dims (default 1200 × 600 × 750 mm when none is picked, drawn faded with a "No desk picked" label).
+- **Items on and around the desk**, all procedural, sized from `dims`, in the existing palette:
+  - monitor (stand, thin bezel, screen with a soft emissive glow), keyboard, mouse, mousepad under both, speakers either side of the monitor, webcam on top of the monitor, mic on a small stand, headset on a hook or stand;
+  - the chair in front of the desk;
+  - the PC itself as a simplified box sized from the chosen case, on the floor beside the desk or on the desk when it's small (ITX), with a glow for the case's side panel.
+- Reuse what exists: the drop animation, the coral glow for items flagged by Phase 11 rules, hover tooltips, `frameloop="demand"`, `dpr={[1, 2]}`, the keyboard camera controls, the reduced-motion behaviour, the screen-reader text description, the WebGL fallback and the error fallback.
+- **Camera:** a fixed "seated view" preset plus orbit with limits; clicking a setup slot eases the camera to that item.
+- **Shared builds:** `/b/[code]` shows the PC | Desk toggle when the build has setup items, with the same touch and wheel behaviour as the PC view today.
+- Models: procedural is fine. A GLTF model is allowed only through the existing pipeline (CC0 or CC BY 3.0, `credits.json`, under 1 MB, tests).
+- Measure the desk scene's extra JS (gzip) and add it to the summary.
+
+**Done when:** adding and removing any setup item animates on the desk, a too-narrow desk glows coral, and the PC view behaves exactly as before.
+
+### Phase 13 — Marketplace links and checked prices
+
+Still **no backend**. Links and checked prices live in the JSON so Phase 15 can move them into the database later.
+
+- **Data:** each part and setup item gets optional `listings: { marketplace: 'tokopedia' | 'shopee' | 'blibli'; url: string; priceIDR: number; checkedAt: string }[]`.
+- **Price shown:** the lowest checked listing price when there is one, otherwise the estimate. The UI makes the difference clear: "Checked 12 Nov" vs "Estimate".
+- **Stale prices:** a listing checked more than 14 days ago gets a small "Price may have changed" note.
+- **Buy links:** the part detail in the picker, the summary and the shared build page get **"View on Tokopedia / Shopee / Blibli"** buttons for each listing.
+- **Search links:** when a part has no listing, show **"Search on Tokopedia / Shopee"** links built from the product name (the marketplace's own search page). They're always honest and never point at a fake product.
+- All outside links: `target="_blank"`, `rel="noopener noreferrer nofollow"`, and a small external-link icon. Use text names only: **no marketplace logos** (section 6).
+- **Never scrape** marketplaces, and never fetch them from the app. Rei checks prices by hand.
+- **Rei's workflow:** add `data/price-check.csv` (one row per item: id, name, marketplace, url, price, checked date) that Rei can fill in Excel or Google Sheets. Add `npm run prices:apply` (a script in `scripts/`) that validates the CSV (known ids, integer prices, real dates, https URLs on the 3 marketplace domains) and writes the listings into the JSON. It must print what it changed and fail loudly on bad rows. Replace the table in `docs/price-check.md` with short instructions for this workflow.
+- Update `pricesAsOf` logic: show the newest `checkedAt` when listings exist. Update `/prices` to explain estimate vs checked.
+
+**Done when:** a test CSV with 3 rows becomes 3 buy buttons with "Checked" dates, a bad row is rejected with a clear message, and parts without listings show search links.
+
+### Phase 14 — Smoothing pass and handoff
+
+- Lighthouse (mobile) on `/`, `/builder` and `/b/[code]` again; fix anything that got worse since Phase 9.
+- Go through every page at 375, 768 and 1440 px; fix rough edges (spacing, long names, empty states, loading states).
+- Known issue: in exploded view on narrow phones, the lifted cooler can leave the top of the viewport. Fix it by fitting the camera.
+- Update the README (screenshots of the setup tab and the desk view), `/about`, the sitemap and the credits.
+- **Rewrite `HANDOFF.md`** for session 2: what was built per phase, checks with real numbers, leftovers, and what Phase 15 needs.
+
+**Done when:** all checks are green and `HANDOFF.md` is current.
+
+### Phase 15 — Login and backend *(later session — don't start without Rei saying so)*
+
+Rei's supervisor suggested user and admin login, because examiners like seeing it. Outline only; plan it in detail when Rei starts this phase.
+
+- **Supabase** (Auth + Postgres), using `@supabase/ssr` with Next 16 (read the Next docs first).
+- **Rei creates the Supabase project himself** and puts the keys in `.env.local` and Vercel. You never see, print or ask for their values. The service-role key is server-only and never gets a `NEXT_PUBLIC_` prefix (section 7).
+- **Tables:** `profiles` (id, name, `role`: `user` | `admin`), `builds` (owner, name, parts, timestamps), `parts` (seeded from the JSON, PC and setup), `listings` (seeded from the JSON). Row Level Security on every table: users read and write only their own builds; only admins write parts and listings; everyone can read parts and listings.
+- **Pages:** `/login` and `/register` (styled to the design system; the supervisor wants these to look good), account menu in the navbar, `/admin` guarded on the server.
+- **Admin panel:** CRUD for parts, setup items and listings (with "mark as checked today"), so price checks move from the CSV into the browser.
+- **Guests keep working with localStorage.** After logging in, offer "Import builds from this browser".
+- The compatibility rules stay pure functions on plain objects, so their tests don't change.
+- For the PI: export an ERD and a use case diagram (actors: Guest, User, Admin) into `docs/`.
+
+---
+
+**Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".**
+
+---
+
+_Session 1 instruction, kept for history:_ **Start now with Phase 0. Plan → implement → verify → summary → commit, then wait for "next".**
