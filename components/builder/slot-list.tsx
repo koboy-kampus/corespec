@@ -153,8 +153,14 @@ function SuggestedSetup() {
 }
 
 export function SlotList({ className }: { className?: string }) {
-  const { filled, setupFilled, resolved, setup, severityByCategory } =
-    useBuildDerived();
+  const {
+    filled,
+    setupFilled,
+    resolved,
+    setup,
+    severityByCategory,
+    setupSeverity,
+  } = useBuildDerived();
   const group = useUiStore((s) => s.slotGroup);
   const setGroup = useUiStore((s) => s.setSlotGroup);
   return (
@@ -215,7 +221,7 @@ export function SlotList({ className }: { className?: string }) {
                 key={c}
                 category={c}
                 part={setup[c]}
-                severity={undefined}
+                severity={setupSeverity[c]}
               />
             ))}
           </ul>

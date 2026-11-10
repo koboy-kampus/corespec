@@ -1,4 +1,4 @@
-import { check, type CompatResult } from "@/lib/compat/check";
+import { check, checkSetup, type CompatResult } from "@/lib/compat/check";
 import { partLabel } from "@/lib/parts";
 import { isPcCategory } from "@/lib/categories";
 import { partSpecs, type Facet } from "@/lib/specs";
@@ -98,9 +98,12 @@ export function candidateIssues(
   parts: Build["parts"],
   part: Item,
 ): CompatResult[] {
-  // Setup items have no rules yet (Phase 11 adds info/warning ones).
-  if (!isPcCategory(part.category)) return [];
-  return check({ ...parts, [part.category]: part.id }).filter(
+  const next = { ...parts, [part.category]: part.id };
+  // Setup items only meet setup rules; PC parts meet both (e.g. a GPU vs the monitor).
+  const results: CompatResult[] = isPcCategory(part.category)
+    ? [...check(next), ...checkSetup(next)]
+    : checkSetup(next);
+  return results.filter(
     (r) => r.severity !== "info" && r.partIds.includes(part.id),
   );
 }

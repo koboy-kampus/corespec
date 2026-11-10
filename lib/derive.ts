@@ -1,7 +1,7 @@
-import { check, flaggedPartIds } from "@/lib/compat/check";
+import { check, checkSetup, flaggedPartIds } from "@/lib/compat/check";
 import { buildTotals, resolveBuild, resolveSetup } from "@/lib/parts";
 import { estimateDrawW } from "@/lib/power";
-import type { Build, PcCategory } from "@/types/parts";
+import type { Build, PcCategory, SetupCategory } from "@/types/parts";
 
 export type SlotFlag = "error" | "warning";
 
@@ -20,6 +20,14 @@ export function deriveBuild(parts: Build["parts"]) {
       }
     }
   }
+  // Setup rules never block a build: their warnings mark the setup slots only.
+  const setupResults = checkSetup(parts);
+  const setupSeverity: Partial<Record<SetupCategory, "warning">> = {};
+  for (const r of setupResults) {
+    if (r.severity !== "warning") continue;
+    for (const item of Object.values(setup))
+      if (r.partIds.includes(item.id)) setupSeverity[item.category] = "warning";
+  }
   const { pcIDR, setupIDR, totalIDR } = buildTotals(parts);
   return {
     parts,
@@ -30,6 +38,11 @@ export function deriveBuild(parts: Build["parts"]) {
     results,
     flagged: flaggedPartIds(results),
     severityByCategory,
+    /** Setup rule results (warning/info), shown under their own heading. */
+    setupResults,
+    /** Setup items involved in a setup warning (for Phase 12's coral glow). */
+    setupFlagged: flaggedPartIds(setupResults),
+    setupSeverity,
     pcIDR,
     setupIDR,
     /** PC and setup together. */

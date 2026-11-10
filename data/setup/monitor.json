@@ -16,7 +16,8 @@
     "refreshHz": 180,
     "panel": "IPS",
     "adaptiveSync": "FreeSync",
-    "curved": false
+    "curved": false,
+    "weightKg": 3.0
   },
   {
     "id": "monitor-dell-p2422h",
@@ -35,7 +36,8 @@
     "refreshHz": 60,
     "panel": "IPS",
     "adaptiveSync": "None",
-    "curved": false
+    "curved": false,
+    "weightKg": 3.3
   },
   {
     "id": "monitor-lg-ultragear-27gr75q",
@@ -54,7 +56,8 @@
     "refreshHz": 165,
     "panel": "IPS",
     "adaptiveSync": "FreeSync",
-    "curved": false
+    "curved": false,
+    "weightKg": 4.3
   },
   {
     "id": "monitor-samsung-odyssey-g5-27-c27g55t",
@@ -73,7 +76,8 @@
     "refreshHz": 144,
     "panel": "VA",
     "adaptiveSync": "FreeSync",
-    "curved": true
+    "curved": true,
+    "weightKg": 4.6
   },
   {
     "id": "monitor-lg-ultragear-27gr93u",
@@ -92,7 +96,8 @@
     "refreshHz": 144,
     "panel": "IPS",
     "adaptiveSync": "FreeSync",
-    "curved": false
+    "curved": false,
+    "weightKg": 5.5
   },
   {
     "id": "monitor-alienware-aw3423dw",
@@ -111,6 +116,7 @@
     "refreshHz": 175,
     "panel": "OLED",
     "adaptiveSync": "G-Sync",
-    "curved": true
+    "curved": true,
+    "weightKg": 6.3
   }
 ]

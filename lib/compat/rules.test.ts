@@ -71,6 +71,8 @@ const gpu = (o: Partial<Gpu> = {}): Gpu => ({
   lengthMm: 300,
   tdpW: 200,
   vramGb: 12,
+  vendor: "NVIDIA",
+  targetRes: "1440p",
   ...o,
 });
 const storage = (o: Partial<Storage> = {}): Storage => ({

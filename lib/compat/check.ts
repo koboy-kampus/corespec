@@ -1,4 +1,5 @@
-import { resolveBuild } from "@/lib/parts";
+import { resolveBuild, resolveSetup } from "@/lib/parts";
+import { SETUP_RULES, type SetupResult } from "./setup-rules";
 import type { Build, ResolvedBuild } from "@/types/parts";
 import { RULES, type CompatResult, type Severity } from "./rules";
 
@@ -27,3 +28,16 @@ export function flaggedPartIds(results: CompatResult[]): Set<string> {
 }
 
 export type { CompatResult, Severity };
+
+/**
+ * The setup rules (Phase 11): warnings and info only, run on the PC and setup
+ * halves of the build. Warnings first, then info.
+ */
+export function checkSetup(parts: Build["parts"]): SetupResult[] {
+  const input = { pc: resolveBuild(parts), setup: resolveSetup(parts) };
+  return SETUP_RULES.map((rule) => rule(input))
+    .filter((r): r is SetupResult => r !== null)
+    .sort((a, b) => ORDER[a.severity] - ORDER[b.severity]);
+}
+
+export type { SetupResult };

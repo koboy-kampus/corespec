@@ -64,8 +64,10 @@ function StatusBar() {
  */
 export function BuilderApp() {
   const hydrated = useBuildHydration();
-  const { filled, totalIDR, results } = useBuildDerived();
-  const issues = results.filter((r) => r.severity !== "info").length;
+  const { filled, totalIDR, results, setupResults } = useBuildDerived();
+  const issues = [...results, ...setupResults].filter(
+    (r) => r.severity !== "info",
+  ).length;
 
   return (
     <div className="flex flex-1 flex-col" aria-busy={!hydrated || undefined}>

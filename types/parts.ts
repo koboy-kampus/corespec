@@ -65,8 +65,18 @@ export interface Ram extends PartBase {
   sticks: number;
   speedMts: number;
 }
+/** Resolution a GPU is roughly aimed at in current games. */
+export type ResClass = "1080p" | "1440p" | "4K";
+
 export interface Gpu extends PartBase {
   category: "gpu";
+  /** Who makes the chip (the brand field is the board maker, e.g. Sapphire). */
+  vendor: "AMD" | "NVIDIA" | "Intel";
+  /**
+   * Approximate class, picked by hand from typical reviews at high settings:
+   * a rough guide for the setup rules, not a benchmark.
+   */
+  targetRes: ResClass;
   lengthMm: number;
   tdpW: number;
   vramGb: number;
@@ -118,9 +128,14 @@ export interface Monitor extends SetupBase {
   resolution: "1080p" | "1440p" | "4K" | "UW1440p";
   refreshHz: number;
   panel: "IPS" | "VA" | "TN" | "OLED";
-  /** 'G-Sync' covers G-Sync modules and "G-Sync Compatible" certification. */
+  /**
+   * 'G-Sync' means a G-Sync hardware module (variable refresh needs an NVIDIA GPU).
+   * "G-Sync Compatible" monitors are listed as 'FreeSync': they work on both brands.
+   */
   adaptiveSync: "FreeSync" | "G-Sync" | "None";
   curved: boolean;
+  /** Panel without its stand, approximate: what a monitor arm has to hold. */
+  weightKg: number;
 }
 export interface Keyboard extends SetupBase {
   category: "keyboard";

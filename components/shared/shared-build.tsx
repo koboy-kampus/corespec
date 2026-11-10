@@ -150,7 +150,11 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
             </>
           ) : null}
           <div className="h-px bg-line" />
-          <CompatPanel results={d.results} readOnly />
+          <CompatPanel
+            results={d.results}
+            setupResults={d.setupResults}
+            readOnly
+          />
         </div>
       </div>
 

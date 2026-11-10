@@ -58,6 +58,7 @@ export function BuildSummary({ className }: { className?: string }) {
     resolved,
     filled,
     setupFilled,
+    setupResults,
   } = useBuildDerived();
 
   return (
@@ -93,7 +94,7 @@ export function BuildSummary({ className }: { className?: string }) {
       <div className="h-px bg-line" />
       <WattageMeter drawW={drawW} psuW={resolved.psu?.watts} />
       <div className="h-px bg-line" />
-      <CompatPanel results={results} />
+      <CompatPanel results={results} setupResults={setupResults} />
     </section>
   );
 }

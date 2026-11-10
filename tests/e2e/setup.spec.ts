@@ -63,7 +63,9 @@ test("build a PC plus a desk setup, see three totals, share it", async ({
   const ctx = await browser.newContext();
   const shared = await ctx.newPage();
   await shared.goto(new URL(url).pathname);
-  await expect(shared.getByRole("heading", { name: "Setup" })).toBeVisible();
+  await expect(
+    shared.getByRole("heading", { name: "Setup", exact: true }),
+  ).toBeVisible();
   await expect(shared.getByText(/Odyssey G5/)).toBeVisible();
   await expect(shared.getByLabel("Subtotals")).toContainText(
     /Setup subtotal\s*Rp\s6\.580\.000/,
@@ -82,7 +84,9 @@ test("a share link from before setup items still opens", async ({ page }) => {
     page.getByRole("heading", { name: "1440p Sweet Spot" }),
   ).toBeVisible();
   await expect(page.getByText("8/8 parts", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Setup" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Setup", exact: true }),
+  ).toHaveCount(0);
   await expect(page.getByLabel("Subtotals")).toHaveCount(0);
 });
 

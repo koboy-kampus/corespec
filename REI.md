@@ -394,7 +394,9 @@ Add rule-based checks for setup items, in the same style as `lib/compat/rules.ts
 - **Monitor resolution vs GPU:** monitor resolution above the GPU's `targetRes` → warning, e.g. "This GPU is aimed at 1080p; a 4K monitor will need lower settings."
 - **Refresh rate vs GPU:** a monitor of 165 Hz or more at a resolution above `targetRes` → info, e.g. "High refresh rates at 1440p are hard to reach with this GPU."
 - **Desk width:** the monitor's width plus the speakers (if any) wider than the desk's `widthMm` → warning. Use the same numbers the 3D desk uses in Phase 12.
-- **No GPU yet:** the two GPU rules stay silent until a GPU is picked.
+- **Sync tech vs GPU brand (info):** a monitor with `adaptiveSync: 'G-Sync'` (a hardware module) plus an AMD GPU → "This monitor's G-Sync module needs an NVIDIA GPU for variable refresh; it still works as a normal monitor." FreeSync monitors stay silent (they work on both brands).
+- **Monitor arm vs monitor (warning):** the monitor's `sizeIn` above the arm's `maxSizeIn`, or its `weightKg` above the arm's `maxLoadKg` → warning. Monitors get `weightKg` (panel without stand); arms already have `maxSizeIn` and `maxLoadKg`.
+- **No GPU yet:** the GPU rules (resolution, refresh rate, sync) stay silent until a GPU is picked.
 - Show setup results in the compat panel under their own **Setup** heading. One pass case and one fail case per rule in Vitest.
 - Write the rule table into `docs/rules.md` (rule, inputs, condition, severity, message), for Rei's PI write-up. Include the 9 PC rules too.
 
