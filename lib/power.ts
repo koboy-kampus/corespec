@@ -25,6 +25,25 @@ export function estimateDrawW(build: ResolvedBuild): number {
   );
 }
 
+/**
+ * How many times the estimated draw the PSU can supply, rounded *down* to one
+ * decimal so it never claims more headroom than there is (1.29× shows as 1.2×,
+ * not as a passing 1.3×). Null without a PSU or a draw to compare.
+ */
+export function headroomRatio(
+  drawW: number,
+  psuW: number | undefined,
+): number | null {
+  if (!psuW || drawW <= 0) return null;
+  // The epsilon keeps exact ratios like 650 / 500 = 1.3 from flooring to 1.2.
+  return Math.floor((psuW / drawW) * 10 + 1e-9) / 10;
+}
+
+/** "1.3×": a ratio with one decimal and a multiplication sign. */
+export function formatRatio(ratio: number): string {
+  return `${ratio.toFixed(1)}×`;
+}
+
 /** Smallest PSU wattage that meets the 1.3× headroom target. */
 export function recommendedPsuW(drawW: number): number {
   return Math.ceil(drawW * POWER.headroom);

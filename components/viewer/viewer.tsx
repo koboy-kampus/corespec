@@ -11,6 +11,7 @@ import {
 import dynamic from "next/dynamic";
 import { cn } from "cn";
 import { useMediaQuery } from "@/hooks/use-build";
+import { useNearAndIdle } from "@/hooks/use-near-and-idle";
 import { reportError } from "@/lib/sentry";
 import type { CameraKeys } from "./camera-rig";
 import type { SceneProps } from "./scene";
@@ -62,6 +63,12 @@ type ViewerProps = Omit<
   className?: string;
   /** Called when R resets the camera, so the page can clear its selected slot too. */
   onResetView?: () => void;
+  /**
+   * Show the fallback drawing first and load the 3D scene only once the viewer is
+   * near the screen and the page is idle. For pages where the 3D view is a bonus
+   * (landing hero, shared builds), not the tool itself (the builder).
+   */
+  lazy?: boolean;
 };
 
 const ROTATE_STEP = 0.18; // radians per key press
@@ -100,9 +107,21 @@ function handleCameraKey(key: string, cam: CameraKeys): boolean {
 }
 
 /** Sizes the canvas to its box, respects reduced motion and pauses the spin when off screen. */
-export function Viewer({ className, onResetView, ...props }: ViewerProps) {
+export function Viewer({
+  className,
+  onResetView,
+  lazy = false,
+  ...props
+}: ViewerProps) {
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const ref = useRef<HTMLDivElement>(null);
+  // The hero is decoration: wait until a quarter of it is on screen (on phones it
+  // starts just below the fold). Elsewhere, start as it comes near.
+  const ready = useNearAndIdle(
+    ref,
+    lazy,
+    props.mode === "showcase" ? { margin: "0px", minVisible: 0.25 } : undefined,
+  );
   const [onScreen, setOnScreen] = useState(true);
   const cameraKeysRef = useRef<CameraKeys | null>(null);
   const interactive = props.mode === "builder";
@@ -163,14 +182,18 @@ export function Viewer({ className, onResetView, ...props }: ViewerProps) {
           }
         : {})}
     >
-      <SceneBoundary fallback={props.fallback}>
-        <Scene
-          {...props}
-          reducedMotion={reducedMotion}
-          paused={!onScreen}
-          cameraKeysRef={interactive ? cameraKeysRef : undefined}
-        />
-      </SceneBoundary>
+      {ready ? (
+        <SceneBoundary fallback={props.fallback}>
+          <Scene
+            {...props}
+            reducedMotion={reducedMotion}
+            paused={!onScreen}
+            cameraKeysRef={interactive ? cameraKeysRef : undefined}
+          />
+        </SceneBoundary>
+      ) : (
+        props.fallback
+      )}
     </div>
   );
 }

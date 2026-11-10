@@ -6,6 +6,7 @@ import { CategoryIcon } from "@/components/ui/category-icon";
 import { PriceTag } from "@/components/ui/price-tag";
 import { CATEGORY_LABEL } from "@/lib/categories";
 import { formatIDR, formatWatts } from "@/lib/format";
+import { formatRatio } from "@/lib/power";
 import type { ShowcaseRow } from "@/lib/showcase";
 
 interface BuildSummaryCardProps {
@@ -16,10 +17,12 @@ interface BuildSummaryCardProps {
   compatible: boolean;
   drawW: number;
   psuWatts: number;
+  /** PSU headroom: the 1.3× target and this build's PSU ÷ draw (lib/power). */
+  headroom: { need: number; have: number };
   className?: string;
 }
 
-/** Floating glass card: part rows, total in IDR, wattage vs PSU. */
+/** Floating glass card: every part row, total in IDR, PSU headroom. */
 export function BuildSummaryCard({
   name,
   rows,
@@ -28,6 +31,7 @@ export function BuildSummaryCard({
   compatible,
   drawW,
   psuWatts,
+  headroom,
   className,
 }: BuildSummaryCardProps) {
   const loadPct = Math.min(100, Math.round((drawW / psuWatts) * 100));
@@ -55,13 +59,14 @@ export function BuildSummaryCard({
         )}
       </div>
 
-      <ul className="flex flex-col px-2 py-2">
+      {/* Eight compact rows, so the card doesn't bury the 3D case behind it. */}
+      <ul className="flex flex-col px-2 py-1.5">
         {rows.map((row) => (
           <li
             key={row.category}
-            className="flex items-center gap-3 rounded-input px-2 py-1.5"
+            className="flex items-center gap-2.5 rounded-input px-2 py-1"
           >
-            <CategoryIcon category={row.category} className="size-7" />
+            <CategoryIcon category={row.category} className="size-6" />
             <div className="min-w-0 flex-1">
               <p className="label-micro text-micro-sm text-fg-3">
                 {CATEGORY_LABEL[row.category]}
@@ -88,16 +93,27 @@ export function BuildSummaryCard({
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-[12px] leading-4 text-fg-2">
               <Zap className="size-3.5 text-accent" aria-hidden />
-              <span className="spec">{formatWatts(drawW)}</span> est. draw
+              PSU headroom
             </span>
-            <span className="spec text-spec-sm text-fg-3">
-              PSU {formatWatts(psuWatts)}
+            <span className="spec text-spec-sm text-fg-2">
+              Need {formatRatio(headroom.need)}{" "}
+              <span className="text-fg-3" aria-hidden>
+                ·
+              </span>{" "}
+              You have{" "}
+              <span
+                className={
+                  headroom.have >= headroom.need ? "text-ok" : "text-warn"
+                }
+              >
+                {formatRatio(headroom.have)}
+              </span>
             </span>
           </div>
           <div
             className="h-1.5 overflow-hidden rounded-full bg-surface-2"
             role="meter"
-            aria-label="Estimated draw versus PSU capacity"
+            aria-label={`Estimated draw ${formatWatts(drawW)} of a ${formatWatts(psuWatts)} PSU`}
             aria-valuemin={0}
             aria-valuemax={psuWatts}
             aria-valuenow={drawW}

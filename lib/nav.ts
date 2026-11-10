@@ -12,13 +12,18 @@ export const mainNav: NavLink[] = [
   { label: "About", href: "/about" },
 ];
 
-export const footerNav: { title: string; links: NavLink[] }[] = [
+/** A footer link always points at a real page: no "Soon" placeholders. */
+export interface FooterLink {
+  label: string;
+  href: string;
+}
+
+export const footerNav: { title: string; links: FooterLink[] }[] = [
   {
     title: "Product",
     links: [
       { label: "Builder", href: "/builder" },
       { label: "Builds", href: "/builds" },
-      { label: "Presets" },
     ],
   },
   {
@@ -26,12 +31,7 @@ export const footerNav: { title: string; links: NavLink[] }[] = [
     links: [
       { label: "About", href: "/about" },
       { label: "Style guide", href: "/styleguide" },
-      { label: "Compatibility rules" },
     ],
-  },
-  {
-    title: "Community",
-    links: [{ label: "Shared builds" }, { label: "Feedback" }],
   },
   {
     title: "Legal",

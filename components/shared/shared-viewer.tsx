@@ -25,6 +25,8 @@ export function SharedViewer({ parts }: { parts: Build["parts"] }) {
         exploded={exploded}
         mode="builder"
         embedded
+        lazy
+        skipIntro
         parts={resolved}
         flags={severityByCategory}
         className="absolute inset-0"

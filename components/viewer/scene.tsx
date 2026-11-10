@@ -10,7 +10,6 @@ import {
   type RefObject,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Lightformer } from "@react-three/drei";
 import type { Group } from "three";
 import {
   MM_TO_UNITS,
@@ -53,6 +52,11 @@ export interface SceneProps {
    * scroll the page; Ctrl+wheel, pinch and two fingers move the camera.
    */
   embedded?: boolean;
+  /**
+   * Parts already in the build when the scene first appears are placed without the
+   * drop animation (a shared build opens assembled). Later changes still animate.
+   */
+  skipIntro?: boolean;
 }
 
 type Item =
@@ -63,6 +67,7 @@ const NO_FLAGS: Partial<Record<Category, Flag>> = {};
 const BASE_YAW = -0.35;
 const PART_DROP = 160; // mm
 const CASE_DROP = 60;
+const SWAY_FRAME_MS = 1000 / 30;
 
 function hasWebGL(): boolean {
   try {
@@ -109,17 +114,26 @@ function Turntable({
 }) {
   const ref = useRef<Group>(null);
   const swayT = useRef(0);
+  const next = useRef<ReturnType<typeof setTimeout> | null>(null);
   const invalidate = useThree((s) => s.invalidate);
   useFrame((_, delta) => {
     if (!spinning || !ref.current) return;
     // Sway rather than spin, so the glass side always faces the viewer.
     swayT.current += clampDelta(delta);
     ref.current.rotation.y = BASE_YAW + Math.sin(swayT.current * 0.45) * 0.5;
-    invalidate();
+    // A slow sway looks the same at 30 fps and costs half the frames of 60.
+    next.current ??= setTimeout(() => {
+      next.current = null;
+      invalidate();
+    }, SWAY_FRAME_MS);
   });
-  // Kick the demand loop when spinning starts or resumes.
+  // Kick the demand loop when spinning starts or resumes; stop the timer when it ends.
   useEffect(() => {
     if (spinning) invalidate();
+    return () => {
+      if (next.current) clearTimeout(next.current);
+      next.current = null;
+    };
   }, [spinning, invalidate]);
   return (
     <group ref={ref} rotation={[0, BASE_YAW, 0]}>
@@ -143,28 +157,10 @@ function Lights() {
         decay={1.4}
         color="#fff4f5"
       />
-      {/* Soft studio reflections, rendered once from these light panels (no downloaded HDRI). */}
-      <Environment resolution={64} frames={1}>
-        <Lightformer
-          intensity={1.4}
-          position={[0, 5, 2]}
-          rotation-x={Math.PI / 2}
-          scale={[8, 2, 1]}
-        />
-        <Lightformer
-          intensity={0.8}
-          position={[-5, 1, 3]}
-          rotation-y={Math.PI / 2}
-          scale={[3, 6, 1]}
-        />
-        <Lightformer
-          form="ring"
-          color={ACCENT}
-          intensity={1.2}
-          position={[4, 1, -4]}
-          scale={2}
-        />
-      </Environment>
+      {/*
+        No <Environment>: its reflection map cost about 345 ms of blocking time on a
+        mid-range phone (Lighthouse mobile, Phase 9) for a barely visible difference.
+      */}
     </>
   );
 }
@@ -201,6 +197,7 @@ function SceneCanvas({
   exploded = false,
   cameraKeysRef,
   embedded = false,
+  skipIntro = false,
 }: SceneProps) {
   const scene = useMemo(() => layoutBuild(parts), [parts]);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -223,6 +220,10 @@ function SceneCanvas({
     [scene, parts.case?.id, flags],
   );
   const { leaving, done } = usePresence(items);
+  // Keys present on the first render, which skip the drop when skipIntro is set.
+  const [introKeys] = useState<ReadonlySet<string>>(
+    () => new Set(skipIntro ? items.map((i) => i.key) : []),
+  );
 
   const focus = useMemo<Vec3 | null>(() => {
     // The case slot shows the whole case, so it uses the home view.
@@ -240,7 +241,7 @@ function SceneCanvas({
       drop={item.kind === "case" ? CASE_DROP : PART_DROP}
       leaving={isLeaving}
       onExited={() => done(item.key)}
-      instant={reducedMotion}
+      instant={reducedMotion || introKeys.has(item.key)}
     >
       {item.kind === "case" ? (
         <CaseShell shell={item.shell} flag={item.flag} />
@@ -273,7 +274,8 @@ function SceneCanvas({
   return (
     <Canvas
       frameloop="demand"
-      dpr={[1, 2]}
+      // The hero is decoration: a lower pixel ratio halves its fill cost on phones.
+      dpr={mode === "showcase" ? [1, 1.5] : [1, 2]}
       camera={{ fov: 30, near: 0.1, far: 100, position: [0, 0, 12] }}
       gl={{ antialias: true, alpha: true }}
       fallback={fallback}

@@ -1,8 +1,8 @@
 import { check } from "@/lib/compat/check";
-import { CATEGORY_LABEL } from "@/lib/categories";
+import { CATEGORIES, CATEGORY_LABEL } from "@/lib/categories";
 import { formatMM } from "@/lib/format";
 import { buildTotalIDR, partLabel, resolveBuild } from "@/lib/parts";
-import { estimateDrawW } from "@/lib/power";
+import { POWER, estimateDrawW, headroomRatio } from "@/lib/power";
 import { getPreset } from "@/lib/presets";
 import { sharePath } from "@/lib/share";
 import type { Category } from "@/types/parts";
@@ -25,14 +25,6 @@ if (!cpu || !motherboard || !ram || !gpu || !cooler || !pcCase || !psu) {
 }
 
 const totalIDR = buildTotalIDR(preset.parts);
-const ROW_ORDER: Category[] = [
-  "cpu",
-  "gpu",
-  "motherboard",
-  "ram",
-  "storage",
-  "psu",
-];
 
 export interface ShowcaseRow {
   category: Category;
@@ -64,7 +56,13 @@ export const showcase = {
   compatible: check(preset.parts).length === 0,
   drawW: estimateDrawW(parts),
   psuWatts: psu.watts,
-  rows: ROW_ORDER.flatMap((c): ShowcaseRow[] => {
+  /** The target and what this build has, for "Need 1.3× · You have 2.1×". */
+  headroom: {
+    need: POWER.headroom,
+    have: headroomRatio(estimateDrawW(parts), psu.watts) ?? 0,
+  },
+  /** Every slot, in builder order, so the rows add up to the total. */
+  rows: CATEGORIES.flatMap((c): ShowcaseRow[] => {
     const p = parts[c];
     return p ? [{ category: c, name: partLabel(p), priceIDR: p.priceIDR }] : [];
   }),

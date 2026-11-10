@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { footerNav, type NavLink } from "@/lib/nav";
+import { footerNav, type FooterLink as FooterLinkData } from "@/lib/nav";
 import { Logo } from "./logo";
 
 const titleBlock = [
@@ -10,17 +10,7 @@ const titleBlock = [
   { k: "Year", v: "© 2026" },
 ];
 
-function FooterLink({ link }: { link: NavLink }) {
-  if (!link.href) {
-    return (
-      <span className="text-ui text-fg-3">
-        {link.label}
-        <span className="ml-2 inline-block label-micro text-micro-sm whitespace-nowrap text-fg-3">
-          Soon
-        </span>
-      </span>
-    );
-  }
+function FooterLink({ link }: { link: FooterLinkData }) {
   return (
     <Link
       href={link.href}
@@ -35,13 +25,13 @@ export function Footer() {
   return (
     <footer className="border-t border-line">
       <div className="container-page flex flex-col gap-12 py-14">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(4,1fr)] md:gap-8">
+        <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-8">
           <div className="flex flex-col gap-4">
             <Logo showBeta={false} />
             <p className="text-body text-fg-2">Spec it. See it. Build it.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 md:contents">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:contents">
             {footerNav.map((col) => (
               <div key={col.title} className="flex flex-col gap-3">
                 <p className="label-micro text-fg-3">{col.title}</p>

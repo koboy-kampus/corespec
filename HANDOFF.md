@@ -186,7 +186,7 @@ _Written 9 November 2026, just before the first deploy. Every number below comes
 ### Known bugs and rough edges
 
 1. ✅ **fixed: untrue landing copy.** The "FPS estimates" and "Compare prices" tiles and their invented store prices are gone (see Phase 2).
-2. ⚠️ **Prices still unverified.** ✅ fixed: the `/prices` wording no longer says "entered by hand"; it says prices are estimates and are being checked against Indonesian stores. ❌ The checking itself is still to do: `docs/price-check.md` lists the 21 parts used across the 3 presets with empty Tokopedia, Shopee and "Checked" columns for Rei to fill in.
+2. ⚠️ **Prices still unverified.** ✅ fixed: the `/prices` wording no longer says "entered by hand"; it says prices are estimates and are being checked against Indonesian stores. ❌ The checking itself is still to do: `docs/price-check.md` lists the 23 parts used across the 3 presets with empty Tokopedia, Shopee and "Checked" columns for Rei to fill in.
 3. **Bad share links return HTTP 200**, with 404 content and `noindex`. This is a streaming limitation. **Kept as is** by Rei's decision.
 4. ✅ **fixed: the 3D view on `/b/[code]` trapped scrolling.** A plain mouse wheel now scrolls the page (Ctrl+wheel or a trackpad pinch zooms). On touch screens one finger scrolls the page, and two fingers rotate and pinch-zoom; the hint text says so. The builder is unchanged (one finger rotates, the wheel zooms). Both are covered by e2e tests with real touch input in Chrome. 🔍 Not tried on a physical phone.
 5. **Exploded view on narrow phones**: the lifted cooler can go off the top of the viewport (zoom out to see it).

@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BuildSummaryCard } from "./build-summary-card";
 import { HeroViewer } from "./hero-viewer";
-import { Reveal } from "./reveal";
 import { CATALOG_STATS } from "@/lib/parts";
 import { showcase } from "@/lib/showcase";
 
@@ -24,7 +23,7 @@ export function Hero() {
     <section className="relative overflow-hidden border-b border-line">
       <div className="container-page grid items-center gap-12 pt-10 pb-16 md:pt-14 lg:grid-cols-[2fr_3fr] lg:gap-10 lg:pt-16 lg:pb-24">
         {/* Text column (~40%) */}
-        <Reveal className="relative z-10 flex flex-col gap-7">
+        <div className="hero-enter relative z-10 flex flex-col gap-7">
           <Badge variant="outline" shape="pill" className="gap-2">
             <span className="size-1.5 rounded-full bg-ok" aria-hidden />
             Beta · Free to use
@@ -73,10 +72,10 @@ export function Hero() {
             Free <span className="text-line-strong">·</span> No sign-up{" "}
             <span className="text-line-strong">·</span> Made in Indonesia
           </p>
-        </Reveal>
+        </div>
 
         {/* Visual column (~60%) */}
-        <div className="relative lg:pb-28">
+        <div className="relative lg:pb-40">
           {/* single coral glow */}
           <div
             aria-hidden
@@ -88,16 +87,13 @@ export function Hero() {
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_72%)] bg-[size:28px_28px]"
           />
 
-          <Reveal delay={0.1} className="relative">
+          <div className="hero-enter relative [animation-delay:100ms]">
             <HeroViewer />
-          </Reveal>
+          </div>
 
-          <Reveal
-            delay={0.25}
-            className="relative z-10 -mt-16 flex justify-center sm:-mt-24 lg:absolute lg:right-0 lg:bottom-0 lg:mt-0 lg:block"
-          >
+          <div className="hero-enter relative z-10 -mt-16 flex justify-center [animation-delay:250ms] sm:-mt-24 lg:absolute lg:right-0 lg:bottom-0 lg:mt-0 lg:block">
             <BuildSummaryCard {...showcase} />
-          </Reveal>
+          </div>
         </div>
       </div>
     </section>

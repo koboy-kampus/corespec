@@ -95,3 +95,56 @@ for (const width of [375, 768, 1440]) {
     await ctx.close();
   });
 }
+
+/** "Rp 2.900.000" → 2900000 */
+const rupiah = (text: string | null) => Number((text ?? "").replace(/\D/g, ""));
+
+test("hero card lists all 8 parts and they add up to its total", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const card = page.getByLabel(/^Example build/);
+  const rows = card.locator("ul > li");
+  await expect(rows).toHaveCount(8);
+
+  const rowPrices = await rows
+    .locator("[data-slot=price-tag]")
+    .allTextContents();
+  const sum = rowPrices.reduce((s, t) => s + rupiah(t), 0);
+  const total = rupiah(
+    await card.locator("[data-slot=price-tag]").last().textContent(),
+  );
+  expect(sum).toBe(total);
+
+  // Computed from lib/power: 650 W PSU ÷ 305 W estimate = 2.13, shown as 2.1×.
+  await expect(card).toContainText(/Need 1\.3×\s*·\s*You have 2\.1×/);
+});
+
+test("footer has no placeholder links, and every link works", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/");
+  const footer = page.getByRole("contentinfo");
+  await expect(footer.getByText("Soon")).toHaveCount(0);
+  const hrefs = await footer
+    .locator("a")
+    .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  expect(hrefs.length).toBeGreaterThan(0);
+  for (const href of hrefs) {
+    if (!href.startsWith("/")) continue;
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+});
+
+test("the hero 3D waits: the drawing comes first, then the scene loads", async ({
+  page,
+}) => {
+  // The server HTML has the drawing and no canvas.
+  const html = await (await page.request.get("/")).text();
+  expect(html).not.toContain("<canvas");
+  expect(html).toContain("Technical drawing of a mid-tower PC case");
+
+  await page.goto("/");
+  await expect(page.locator("canvas")).toHaveCount(1, { timeout: 10_000 });
+});
