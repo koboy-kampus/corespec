@@ -44,13 +44,14 @@ export default function Page() {
         </p>
       </DocSection>
 
-      <DocSection title="Prices are estimates">
+      <DocSection title="Prices are checked or estimated">
         <p>
-          Every price is an approximate Indonesian price in Rupiah, last updated
-          on <strong>{formatDate(PRICES_AS_OF)}</strong>. They are not live and
-          CoreSpec isn&apos;t a shop, so always confirm in the store before
-          buying. The <Link href="/prices">price disclaimer</Link> has the
-          details.
+          Prices are in Rupiah. Some were checked by hand on a marketplace and
+          are marked Checked with their date; the rest are estimates. The newest
+          check is from <strong>{formatDate(PRICES_AS_OF)}</strong>. They are
+          not live and CoreSpec isn&apos;t a shop, so always confirm in the
+          store before buying. The <Link href="/prices">price page</Link> has
+          the details.
         </p>
       </DocSection>
 

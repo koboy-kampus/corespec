@@ -41,7 +41,7 @@ export function QuickStart() {
             layout="split"
             eyebrow="01 · Quick start"
             title="Start from a preset"
-            subtitle="Three balanced builds checked for compatibility. Load one, then swap any part to make it yours."
+            subtitle="Three balanced builds checked for compatibility. Totals use prices checked on a marketplace where we have them, estimates otherwise. Load one, then swap any part to make it yours."
           />
         </Reveal>
 

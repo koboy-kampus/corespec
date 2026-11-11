@@ -240,7 +240,7 @@ Micro-interactions: cards lift (`translateY(-2px)`) and border brightens on hove
 
 - `types/parts.ts` from section 4.
 - Seed **~8 parts per category (~64 total)** with real product names and **approximate** Indonesian street prices as integers. Add `data/meta.json` with `{ "pricesAsOf": "<today>", "note": "Approximate prices" }`. Mix AM5, AM4 and Intel; DDR4 and DDR5; ATX, mATX and ITX boards and cases; at least one small ITX case that rejects long GPUs so the rules have something to catch.
-- `presets.json`: 3 valid builds — "Budget 1080p" (~Rp 9 jt), "1440p Sweet Spot" (~Rp 18 jt), "Creator Workstation" (~Rp 35 jt).
+- `presets.json`: 3 valid builds — "Budget 1080p" (~Rp 9 jt), "1440p Sweet Spot" (~Rp 18 jt in estimates; Rp 23,4 jt with the checked prices since Phase 13), "Creator Workstation" (~Rp 35 jt).
 - `store/build.ts`: `setPart`, `removePart`, `loadPreset`, `reset`, `rename`; persisted.
 - `lib/compat`, `lib/power.ts`, `lib/format.ts`.
 - Vitest: one pass + one fail case per rule, plus `formatIDR` tests.

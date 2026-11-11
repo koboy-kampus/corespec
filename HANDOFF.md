@@ -318,13 +318,13 @@ No `ghp_`, `sk-…` keys, `-----BEGIN` blocks or API keys appear anywhere in his
 
 ### Presets (totals computed from the JSON just now)
 
-| Preset              | Total             | Est. draw | PSU   | Compatible       |
-| ------------------- | ----------------- | --------- | ----- | ---------------- |
-| Budget 1080p        | **Rp 9.080.000**  | 277 W     | 550 W | ✅ (unit-tested) |
-| 1440p Sweet Spot    | **Rp 17.618.000** | 305 W     | 650 W | ✅               |
-| Creator Workstation | **Rp 35.268.000** | 500 W     | 750 W | ✅               |
+| Preset              | Estimate total | Shown total (with checked prices) | Est. draw | PSU   | Compatible       |
+| ------------------- | -------------- | --------------------------------- | --------- | ----- | ---------------- |
+| Budget 1080p        | Rp 9.080.000   | **Rp 9.080.000**                  | 277 W     | 550 W | ✅ (unit-tested) |
+| 1440p Sweet Spot    | Rp 17.618.000  | **Rp 23.445.294**                 | 305 W     | 650 W | ✅               |
+| Creator Workstation | Rp 35.268.000  | **Rp 35.268.000**                 | 500 W     | 750 W | ✅               |
 
-All three match the brief's targets (about Rp 9 jt, 18 jt and 35 jt).
+The estimates match the brief's targets (about Rp 9 jt, 18 jt and 35 jt), and a unit test keeps them there. The site shows and adds up checked prices where Rei has them (Phase 13), so the 1440p Sweet Spot shows about Rp 23,4 jt: the GPU and SSD really cost about twice their estimates since the memory price surge (checked 11 Nov 2026). The presets are kept as they are on purpose; no page promises a fixed total.
 
 ### Placeholder text and claims that aren't true yet
 

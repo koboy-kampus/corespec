@@ -58,8 +58,14 @@
     "listings": [
       {
         "marketplace": "tokopedia",
-        "url": "https://www.tokopedia.com/toko-expert-komputer/sapphire-pulse-amd-radeon-rx-9060-xt-gaming-oc-16gb-gddr6-1731599374040204485",
-        "priceIDR": 12450000,
+        "url": "https://www.tokopedia.com/gamingpcstore/sapphire-pulse-amd-radeon-rx-9060-xt-16gb-ddr6-1731599080037581989",
+        "priceIDR": 11285000,
+        "checkedAt": "2026-11-11"
+      },
+      {
+        "marketplace": "shopee",
+        "url": "https://shopee.co.id/SAPPHIRE-PULSE-AMD-Radeon-RX-9060-XT-GAMING-OC-16GB-GDDR6-i.1120452270.28837519680",
+        "priceIDR": 12610000,
         "checkedAt": "2026-11-11"
       }
     ]
