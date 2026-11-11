@@ -193,3 +193,30 @@ export function describeChanges(items, listings) {
   }
   return out;
 }
+
+/** A checked price this far from the estimate (either way) needs --force. */
+export const MAX_PRICE_GAP = 0.4;
+
+/**
+ * Checked listings whose price is more than MAX_PRICE_GAP away from the item's
+ * estimate: usually the wrong model, size or bundle. One such row once doubled a
+ * preset's total.
+ * @param {{ id: string, priceIDR: number }[]} items
+ * @param {Map<string, Listing[]>} listings
+ * @returns {string[]}
+ */
+export function priceGapWarnings(items, listings, maxGap = MAX_PRICE_GAP) {
+  /** @type {string[]} */
+  const out = [];
+  const rp = (/** @type {number} */ n) => `Rp ${n.toLocaleString("id-ID")}`;
+  for (const item of items)
+    for (const l of listings.get(item.id) ?? []) {
+      const gap = (l.priceIDR - item.priceIDR) / item.priceIDR;
+      if (Math.abs(gap) <= maxGap) continue;
+      const pct = Math.round(Math.abs(gap) * 100);
+      out.push(
+        `${item.id} (${l.marketplace}): checked ${rp(l.priceIDR)} is ${pct}% ${gap > 0 ? "above" : "below"} the estimate ${rp(item.priceIDR)}`,
+      );
+    }
+  return out;
+}

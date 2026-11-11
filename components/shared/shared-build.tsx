@@ -36,16 +36,17 @@ function ItemRow({ category, part }: { category: Category; part?: Item }) {
             <p className="text-[13px] leading-[18px] font-medium text-fg">
               {partLabel(part)}
             </p>
-            <p className="mt-0.5 flex items-baseline gap-3">
-              <span className="min-w-0 flex-1 truncate spec text-spec-sm text-fg-3">
+            <div className="mt-0.5 flex items-start gap-3">
+              <span className="min-w-0 flex-1 truncate spec text-spec-sm leading-6 text-fg-3">
                 {partSpecs(part).join(" · ")}
               </span>
-              <PriceTag value={shownPrice(part)} size="sm" tone="default" />
-            </p>
-            <div className="mt-1 flex items-start justify-between gap-3">
-              <ShopLinks item={part} />
-              <PriceSource item={part} className="shrink-0" />
+              <div className="flex shrink-0 flex-col items-end gap-0.5">
+                <PriceTag value={shownPrice(part)} size="sm" tone="default" />
+                <PriceSource item={part} />
+              </div>
             </div>
+            {/* Full width under the price, so a link never wraps next to it. */}
+            <ShopLinks item={part} className="mt-1" />
           </>
         ) : (
           <p className="text-[13px] leading-[18px] text-fg-3">Not chosen</p>

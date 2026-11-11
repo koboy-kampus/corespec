@@ -137,9 +137,9 @@ function PickerBody({ category }: { category: Category }) {
         <div className="flex items-center gap-3 pr-8">
           <CategoryIcon category={category} />
           <div className="min-w-0">
-            <DialogTitle>Choose {label.toLowerCase()}</DialogTitle>
+            <DialogTitle>Choose {label}</DialogTitle>
             <DialogDescription className="text-[13px] leading-5">
-              {all.length} options · estimated prices unless marked Checked
+              {all.length} options · Estimate or checked prices
               {isSetupCategory(category) ? " · optional" : ""}
             </DialogDescription>
           </div>

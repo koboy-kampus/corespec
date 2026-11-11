@@ -20,6 +20,8 @@ CoreSpec shows two kinds of price: **Checked** (a marketplace listing you looked
 
    `prices:apply` checks every row (known `id`, marketplace, `https` link on that marketplace, whole-number price, real date not in the future) and stops with a list of bad rows if anything is wrong, writing nothing. Otherwise it writes the listings into `data/parts/*.json` and `data/setup/*.json` and prints what changed.
 
+   It also stops if a checked price is more than 40% above or below the item's estimate, printing both numbers: that's usually the wrong model, size or bundle. If you've double-checked and the price really is right, run `npm run prices:apply -- --force` to write it anyway.
+
 4. Commit `data/price-check.csv` and the changed JSON files.
 
 The CSV is the source of truth for listings: clearing a row removes that listing from the site the next time you run the script. A listing older than 14 days shows "Price may have changed" next to its price, so re-check those first.

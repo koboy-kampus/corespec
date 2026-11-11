@@ -1,14 +1,24 @@
 // npm run prices:apply: reads data/price-check.csv (Rei's hand-checked prices),
 // checks every row, and writes the listings into data/parts and data/setup.
 // The CSV is the whole truth: an item with no filled row ends up with no listings.
-// Nothing is written when any row is bad. Never fetches a marketplace.
+// Nothing is written when any row is bad, or when a checked price is more than 40%
+// away from the item's estimate (unless run with --force). Never fetches a marketplace.
+//   npm run prices:apply [-- --force] [-- path/to/file.csv]
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { format } from "prettier";
-import { describeChanges, readPriceCsv } from "./price-csv.mjs";
+import {
+  MAX_PRICE_GAP,
+  describeChanges,
+  priceGapWarnings,
+  readPriceCsv,
+} from "./price-csv.mjs";
 
 const root = join(import.meta.dirname, "..");
-const csvPath = process.argv[2] ?? join(root, "data/price-check.csv");
+const args = process.argv.slice(2);
+const force = args.includes("--force");
+const csvPath =
+  args.find((a) => !a.startsWith("--")) ?? join(root, "data/price-check.csv");
 const dirs = ["data/parts", "data/setup"].map((d) => join(root, d));
 
 const files = dirs.flatMap((d) =>
@@ -34,6 +44,22 @@ if (errors.length) {
   for (const e of errors) console.error(`  ${e}`);
   console.error("");
   process.exit(1);
+}
+
+const gaps = priceGapWarnings(items, listings);
+if (gaps.length) {
+  const pct = Math.round(MAX_PRICE_GAP * 100);
+  console.warn(
+    `\n⚠ ${gaps.length} checked price${gaps.length > 1 ? "s are" : " is"} more than ${pct}% away from the estimate. Wrong model, size or bundle?\n`,
+  );
+  for (const g of gaps) console.warn(`  ${g}`);
+  if (!force) {
+    console.error(
+      "\n✗ Nothing was written. Fix the row, or if the price really is right, run:\n  npm run prices:apply -- --force\n",
+    );
+    process.exit(1);
+  }
+  console.warn("\n--force: writing anyway.\n");
 }
 
 const changes = describeChanges(items, listings);

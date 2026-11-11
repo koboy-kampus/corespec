@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 import { ALL_ITEMS, getItem } from "@/lib/parts";
 import { shopLinks } from "@/lib/prices";
 import type { Item } from "@/types/parts";
-import { describeChanges, parseCsv, readPriceCsv } from "./price-csv.mjs";
+import {
+  describeChanges,
+  parseCsv,
+  priceGapWarnings,
+  readPriceCsv,
+} from "./price-csv.mjs";
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, "../tests/fixtures", name), "utf8");
@@ -126,6 +131,34 @@ describe("describeChanges", () => {
       "+ a: shopee Rp 1.000 (2026-11-11)",
       "~ b: shopee Rp 900 (2026-11-11)",
       "- c: removed 1 listing(s)",
+    ]);
+  });
+});
+
+describe("priceGapWarnings", () => {
+  const l = (priceIDR: number) => ({
+    marketplace: "tokopedia" as const,
+    url: "https://www.tokopedia.com/x",
+    priceIDR,
+    checkedAt: "2026-11-11",
+  });
+  it("flags checked prices more than 40% from the estimate, either way", () => {
+    const items = [
+      { id: "a", priceIDR: 1_000_000 },
+      { id: "b", priceIDR: 6_300_000 },
+      { id: "c", priceIDR: 1_000_000 },
+    ];
+    const warnings = priceGapWarnings(
+      items,
+      new Map([
+        ["a", [l(1_400_000), l(600_000)]], // exactly 40%: fine
+        ["b", [l(12_450_000)]],
+        ["c", [l(500_000)]],
+      ]),
+    );
+    expect(warnings).toEqual([
+      "b (tokopedia): checked Rp 12.450.000 is 98% above the estimate Rp 6.300.000",
+      "c (tokopedia): checked Rp 500.000 is 50% below the estimate Rp 1.000.000",
     ]);
   });
 });

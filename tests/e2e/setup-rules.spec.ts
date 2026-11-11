@@ -61,7 +61,7 @@ test("the setup rules the catalogue can trigger show under Setup, and none makes
   // Clicking a setup warning opens the picker for that item.
   await setup.getByRole("button", { name: /Change F160 Dual/ }).click();
   await expect(
-    page.getByRole("dialog").getByText("Choose monitor arm"),
+    page.getByRole("dialog").getByText("Choose Monitor arm"),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   expect(errors).toEqual([]);

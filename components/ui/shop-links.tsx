@@ -29,7 +29,7 @@ export function ShopLinks({
             target="_blank"
             rel={OUTBOUND_REL}
             data-kind={l.kind}
-            className="inline-flex items-center gap-1 text-[12px] leading-4 text-fg-2 underline-offset-2 hover:text-fg hover:underline"
+            className="inline-flex items-center gap-1 text-[12px] leading-4 whitespace-nowrap text-fg-2 underline-offset-2 hover:text-fg hover:underline"
           >
             {l.label}
             {l.priceIDR != null ? (
