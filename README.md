@@ -66,6 +66,7 @@ Open <http://localhost:3000>. No environment variables or API keys are needed.
 | `npm run format`                 | Format everything with Prettier (`format:check` to only check) |
 | `npm run models`                 | Build `data/models.json` into `public/models/` (see 3D models) |
 | `npm run models:check -- <file>` | Size, triangles, materials and budget of a source model        |
+| `npm run hero:poster`            | Re-render the landing hero's poster (server running on :3124)  |
 
 Before committing: `npm run build && npm run lint && npm test`.
 

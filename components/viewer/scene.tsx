@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -27,6 +28,7 @@ import { Animated } from "./animated";
 import { CameraRig, type CameraKeys } from "./camera-rig";
 import { CaseShell } from "./case-shell";
 import { ACCENT, type Flag } from "./palette";
+import { SuspendModelsUp } from "./model-block";
 import { PartMesh } from "./part-mesh";
 import { PartTooltip } from "./part-tooltip";
 import { hasWebGL, usePresence } from "./scene-common";
@@ -58,6 +60,12 @@ export interface SceneProps {
    * drop animation (a shared build opens assembled). Later changes still animate.
    */
   skipIntro?: boolean;
+  /**
+   * Called once every model has loaded and the first full frame is drawn. When
+   * set, the scene draws nothing until then (no placeholder boxes), so a poster
+   * image of it can be swapped for the live scene invisibly (the landing hero).
+   */
+  onReady?: () => void;
 }
 
 type Item =
@@ -106,6 +114,23 @@ function Turntable({
       {children}
     </group>
   );
+}
+
+/**
+ * Mounted next to the parts inside one <Suspense>, so it only mounts once every
+ * model has loaded; it then waits for one drawn frame and reports ready.
+ */
+function FirstFrame({ onReady }: { onReady: () => void }) {
+  const invalidate = useThree((s) => s.invalidate);
+  const done = useRef(false);
+  useEffect(() => invalidate(), [invalidate]);
+  useFrame(() => {
+    if (done.current) return;
+    done.current = true;
+    // After this frame is on screen.
+    requestAnimationFrame(() => onReady());
+  });
+  return null;
 }
 
 function Lights() {
@@ -164,6 +189,7 @@ function SceneCanvas({
   cameraKeysRef,
   embedded = false,
   skipIntro = false,
+  onReady,
 }: SceneProps) {
   const scene = useMemo(() => layoutBuild(parts), [parts]);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -260,10 +286,19 @@ function SceneCanvas({
       <Turntable spinning={mode === "showcase" && !reducedMotion && !paused}>
         <group scale={MM_TO_UNITS}>
           {/* One keyed list, so a removed part keeps its instance while it animates out. */}
-          {[
-            ...items.map((i) => render(i, false)),
-            ...leaving.map((i) => render(i, true)),
-          ]}
+          {onReady ? (
+            <SuspendModelsUp.Provider value>
+              <Suspense fallback={null}>
+                {items.map((i) => render(i, false))}
+                <FirstFrame onReady={onReady} />
+              </Suspense>
+            </SuspendModelsUp.Provider>
+          ) : (
+            [
+              ...items.map((i) => render(i, false)),
+              ...leaving.map((i) => render(i, true)),
+            ]
+          )}
         </group>
       </Turntable>
       <CameraRig

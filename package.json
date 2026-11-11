@@ -17,6 +17,7 @@
     "format:check": "prettier --check .",
     "models": "node scripts/build-models.mjs",
     "models:check": "node scripts/models-check.mjs",
+    "hero:poster": "node scripts/hero-poster.mjs",
     "prices:apply": "node scripts/prices-apply.mjs"
   },
   "dependencies": {

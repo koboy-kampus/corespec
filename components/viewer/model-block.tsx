@@ -1,11 +1,26 @@
 "use client";
 
-import { Component, Suspense, useEffect, useMemo, type ReactNode } from "react";
+import {
+  Component,
+  createContext,
+  Suspense,
+  useContext,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { Outlines, useGLTF } from "@react-three/drei";
 import { fitModel } from "@/lib/viewer/fit-model";
 import type { Vec3 } from "@/lib/viewer/layout";
 import { DRACO_DECODER_PATH, MODELS, type ModelId } from "@/lib/viewer/models";
 import { TONES } from "./palette";
+
+/**
+ * When true, a loading model suspends up to the nearest outer <Suspense> instead
+ * of showing its box: the landing hero uses this to reveal the scene only once
+ * every model is in, so the swap from its poster image is invisible.
+ */
+export const SuspendModelsUp = createContext(false);
 
 /** If a model file fails to load, show the next model in the chain (or the box). */
 class ModelBoundary extends Component<
@@ -78,6 +93,7 @@ function ModelChain({
   glow?: string;
   fallback: ReactNode;
 }) {
+  const suspendUp = useContext(SuspendModelsUp);
   const [first, ...rest] = ids;
   if (!first || !MODELS[first]) return <>{fallback}</>;
   const next = rest.length ? (
@@ -85,11 +101,10 @@ function ModelChain({
   ) : (
     fallback
   );
+  const model = <FittedModel id={first} size={size} glow={glow} />;
   return (
     <ModelBoundary fallback={next}>
-      <Suspense fallback={fallback}>
-        <FittedModel id={first} size={size} glow={glow} />
-      </Suspense>
+      {suspendUp ? model : <Suspense fallback={fallback}>{model}</Suspense>}
     </ModelBoundary>
   );
 }

@@ -57,8 +57,9 @@ test.describe("3D views look the same", () => {
   test("landing hero", async ({ page }) => {
     await freeze(page);
     await page.goto("/");
-    const hero = page.locator("canvas").first();
-    await expect(hero).toBeVisible({ timeout: 15_000 });
+    // With reduced motion the hero is its poster: the live scene's first frame.
+    const hero = page.getByTestId("hero-viewer");
+    await expect(hero.locator("img")).toBeVisible();
     await loaded(hero);
     await expect(hero).toHaveScreenshot("hero.png", SHOT);
   });

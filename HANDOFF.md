@@ -40,16 +40,16 @@ Scaffold and design system, landing page, catalogue and the 9 PC rules, the buil
 
 ### Session 2
 
-| Phase                               | What was built                                                                                                                                                                                                                                                                                                                                                                              | Commits                                               |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **9** Clean-up and performance      | Hero card with all 8 parts; "Need 1.3× · You have 2.1×" PSU label; footer without "Soon" links. Performance: 3D scene loads when visible and idle, lighting reflection map removed (~345 ms TBT), 30 fps hero sway, CSS hero entrance (landing LCP 6.5 → 0.9 s).                                                                                                                            | `a3b65bc`                                             |
-| **10** Setup items                  | 12 setup categories, PC / Setup tabs, spec filter chips, "Add suggested setup", three totals. Setup items save and share; old saves and links still load (tested). Builder LCP 5.5 → 0.75 s.                                                                                                                                                                                                | `2300f04`                                             |
-| **11** Setup rules                  | 5 setup rules (monitor resolution and refresh vs GPU class, G-Sync vs GPU brand, desk width, arm limits), warnings only. `docs/rules.md` documents every rule.                                                                                                                                                                                                                              | `337e7c1`, `c296340`, `23b8b4e`                       |
-| **12** 3D desk view                 | Pure desk layout in mm (no overlaps across thousands of combinations, tested), desk scene in its own chunk, PC / Desk switch, amber highlights for setup warnings, chair that fades when it hides the screen, soft floor shadows. Shared page gets the desk view.                                                                                                                           | `4b9d7f9`, `c03acb8`, `a66265e`                       |
-| **13** Tiers, links, checked prices | `tier` on every item, 9 new PC parts and 51 new setup items (every category exactly 3/3/3, coolers 4/3/3). `listings` with checked prices, "Checked" / "Estimate" labels, 14-day staleness note, shop links (`nofollow`, new tab, text names only). `data/price-check.csv` + `npm run prices:apply` (validates every row, refuses prices more than 40% from the estimate unless `--force`). | `250f9f6`, `de84fc6`, `bc56fcd`, `20e5ee6`, `035d67d` |
-| Hero fix                            | GPU clipped into the cooler (in the builder too, hidden by the camera angle): the PCIe slot sat too close to the socket. Fixed in the shared layout; `partClashes()` test over every compatible build.                                                                                                                                                                                      | `ac3689b`                                             |
-| **14** Model pipeline v2            | `data/models.json` (basis, `fit: stretch / contain`, recolour, credit, defaultFor), `modelId` on items, `resolveModel` in the PC and desk views, `npm run models` with licence and size checks, `npm run models:check`, `docs/models.md` with a real walkthrough. Keyboard model (CC BY 3.0) as the keyboard default. Screenshot tests for the 3D views.                                    | `8d53899`, `35676ec`, `b73015e`, `9583fbe`            |
-| **15** Smoothing and handoff        | `.gitattributes` (LF everywhere). The exploded view frames everything that moved, so nothing leaves the screen on phones. The landing page no longer ships the parts catalogue. Camera hints no longer overlap buttons or the parts sheet. README, `/about`, this report, and `docs/demo-script.md` with an e2e test that runs it.                                                          | `b617188` and the Phase 15 commit                     |
+| Phase                               | What was built                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Commits                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **9** Clean-up and performance      | Hero card with all 8 parts; "Need 1.3× · You have 2.1×" PSU label; footer without "Soon" links. Performance: 3D scene loads when visible and idle, lighting reflection map removed (~345 ms TBT), 30 fps hero sway, CSS hero entrance (landing LCP 6.5 → 0.9 s).                                                                                                                                                                                                                                                          | `a3b65bc`                                             |
+| **10** Setup items                  | 12 setup categories, PC / Setup tabs, spec filter chips, "Add suggested setup", three totals. Setup items save and share; old saves and links still load (tested). Builder LCP 5.5 → 0.75 s.                                                                                                                                                                                                                                                                                                                              | `2300f04`                                             |
+| **11** Setup rules                  | 5 setup rules (monitor resolution and refresh vs GPU class, G-Sync vs GPU brand, desk width, arm limits), warnings only. `docs/rules.md` documents every rule.                                                                                                                                                                                                                                                                                                                                                            | `337e7c1`, `c296340`, `23b8b4e`                       |
+| **12** 3D desk view                 | Pure desk layout in mm (no overlaps across thousands of combinations, tested), desk scene in its own chunk, PC / Desk switch, amber highlights for setup warnings, chair that fades when it hides the screen, soft floor shadows. Shared page gets the desk view.                                                                                                                                                                                                                                                         | `4b9d7f9`, `c03acb8`, `a66265e`                       |
+| **13** Tiers, links, checked prices | `tier` on every item, 9 new PC parts and 51 new setup items (every category exactly 3/3/3, coolers 4/3/3). `listings` with checked prices, "Checked" / "Estimate" labels, 14-day staleness note, shop links (`nofollow`, new tab, text names only). `data/price-check.csv` + `npm run prices:apply` (validates every row, refuses prices more than 40% from the estimate unless `--force`).                                                                                                                               | `250f9f6`, `de84fc6`, `bc56fcd`, `20e5ee6`, `035d67d` |
+| Hero fix                            | GPU clipped into the cooler (in the builder too, hidden by the camera angle): the PCIe slot sat too close to the socket. Fixed in the shared layout; `partClashes()` test over every compatible build.                                                                                                                                                                                                                                                                                                                    | `ac3689b`                                             |
+| **14** Model pipeline v2            | `data/models.json` (basis, `fit: stretch / contain`, recolour, credit, defaultFor), `modelId` on items, `resolveModel` in the PC and desk views, `npm run models` with licence and size checks, `npm run models:check`, `docs/models.md` with a real walkthrough. Keyboard model (CC BY 3.0) as the keyboard default. Screenshot tests for the 3D views.                                                                                                                                                                  | `8d53899`, `35676ec`, `b73015e`, `9583fbe`            |
+| **15** Smoothing and handoff        | Hero **poster first** (a still WebP of the scene; the live 3D starts after load, idle and the first interaction, never with reduced motion, and pauses off screen or in a hidden tab). `.gitattributes` (LF everywhere). The exploded view frames everything that moved, so nothing leaves the screen on phones. The landing page no longer ships the parts catalogue. Camera hints no longer overlap buttons or the parts sheet. README, `/about`, this report, and `docs/demo-script.md` with an e2e test that runs it. | `b617188`, `315a8dc` and the hero poster commit       |
 
 The tag **`demo-stable-2026-11-11`** marks `ac3689b`, the version before Phase 14, as known-good for the demo.
 
@@ -63,54 +63,78 @@ The tag **`demo-stable-2026-11-11`** marks `ac3689b`, the version before Phase 1
 | TypeScript | `npx tsc --noEmit`       | ✅ 0 errors                                                                          |
 | Formatting | `npx prettier --check .` | ✅ clean                                                                             |
 | Unit tests | `npx vitest run`         | ✅ **238 passed** (18 files)                                                         |
-| End-to-end | `npm run test:e2e`       | ✅ **68 passed** (Playwright, installed Chrome), including axe with **0 violations** |
+| End-to-end | `npm run test:e2e`       | ✅ **70 passed** (Playwright, installed Chrome), including axe with **0 violations** |
 | Build      | `npm run build`          | ✅ passes (run by the e2e suite)                                                     |
 
 Session 1 ended at 117 unit and 34 e2e tests.
 
 ### What the e2e suite covers (`tests/e2e/`)
 
-| File                                               | Covers                                                                                                                       |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `builder.spec.ts`                                  | Picking parts, incompatibilities, picker filters (including tiers), presets, saving, the replace-preset dialog, phone layout |
-| `setup.spec.ts`, `setup-rules.spec.ts`             | Setup tab, suggested setup, filter chips, totals, every setup rule from the UI                                               |
-| `desk.spec.ts`                                     | Desk view switch, warnings in 3D, touch and wheel on the desk, chair fade                                                    |
-| `prices.spec.ts`                                   | Checked and estimate labels, shop links and their `rel`, the 14-day note (mocked clock), summary and shared page             |
-| `share.spec.ts`                                    | Storage migration, share links (old and new), My builds, touch and wheel on shared builds, phone widths                      |
-| `hero.spec.ts`                                     | The hero and the builder show the same build                                                                                 |
-| `visual.spec.ts`                                   | Screenshot baselines of the PC views, the hero and a full desk; models load once, and only when used                         |
-| `demo.spec.ts`                                     | `docs/demo-script.md`, click for click                                                                                       |
-| `keyboard.spec.ts`, `a11y.spec.ts`, `site.spec.ts` | Keyboard-only run, axe on every page and dialog, site wording, no sideways scroll                                            |
+| File                                               | Covers                                                                                                                        |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `builder.spec.ts`                                  | Picking parts, incompatibilities, picker filters (including tiers), presets, saving, the replace-preset dialog, phone layout  |
+| `setup.spec.ts`, `setup-rules.spec.ts`             | Setup tab, suggested setup, filter chips, totals, every setup rule from the UI                                                |
+| `desk.spec.ts`                                     | Desk view switch, warnings in 3D, touch and wheel on the desk, chair fade                                                     |
+| `prices.spec.ts`                                   | Checked and estimate labels, shop links and their `rel`, the 14-day note (mocked clock), summary and shared page              |
+| `share.spec.ts`                                    | Storage migration, share links (old and new), My builds, touch and wheel on shared builds, phone widths                       |
+| `hero.spec.ts`                                     | The hero and the builder show the same build; the hero poster still matches the live scene                                    |
+| `visual.spec.ts`                                   | Screenshot baselines of the PC views, the hero and a full desk; models load once, and only when used                          |
+| `demo.spec.ts`                                     | `docs/demo-script.md`, click for click                                                                                        |
+| `keyboard.spec.ts`, `a11y.spec.ts`, `site.spec.ts` | Keyboard-only run, axe on every page and dialog, site wording, no sideways scroll, poster first and no 3D with reduced motion |
 
 ### Lighthouse (mobile, median of 3 runs, local production build)
 
-Same tool and settings every time (Lighthouse 13.6, mobile preset, default simulated throttling, `next start` on this laptop). TBT target: under 600 ms.
+Same tool and settings every time (Lighthouse 13.6, mobile preset, default simulated throttling, `next start` on this laptop). TBT target: under 600 ms. "Phase 15" is before the hero poster, "+ poster" after it (the last commit of the session).
 
-| Route       | Metric    | Phase 9 before | Phase 9 after | Phase 10 | **Phase 15**             |
-| ----------- | --------- | -------------- | ------------- | -------- | ------------------------ |
-| `/`         | Score     | 57             | 87            | 86       | **85**                   |
-|             | TBT       | 875 ms         | 514 ms        | 532 ms   | **578 ms** (median of 5) |
-|             | LCP       | 6.5 s          | 0.9 s         | 0.9 s    | **0.9 s**                |
-|             | CLS       | 0              | 0             | 0        | **0**                    |
-|             | JS (gzip) | 589 KB         | 566 KB        | 564 KB   | **578 KB**               |
-| `/builder`  | Score     | 70             | 71            | 96       | **97**                   |
-|             | TBT       | 398 ms         | 356 ms        | 233 ms   | **203 ms**               |
-|             | LCP       | 5.5 s          | 5.5 s         | 0.75 s   | **0.76 s**               |
-|             | CLS       | 0.023          | 0.023         | 0        | **0**                    |
-|             | JS (gzip) | 589 KB         | 577 KB        | 564 KB   | **576 KB**               |
-| `/b/[code]` | Score     | 80             | 86            | 86       | **86**                   |
-|             | TBT       | 846 ms         | 543 ms        | 544 ms   | **562 ms**               |
-|             | LCP       | 0.9 s          | 0.9 s         | 0.9 s    | **1.06 s**               |
-|             | CLS       | 0              | 0             | 0        | **0**                    |
-|             | JS (gzip) | 590 KB         | 567 KB        | 571 KB   | **585 KB**               |
+| Route       | Metric                | Phase 9 before | Phase 9 after | Phase 10 | Phase 15 | **Phase 15 + poster** |
+| ----------- | --------------------- | -------------- | ------------- | -------- | -------- | --------------------- |
+| `/`         | Score                 | 57             | 87            | 86       | 85       | **90**                |
+|             | TBT                   | 875 ms         | 514 ms        | 532 ms   | 578 ms¹  | **20 ms**¹            |
+|             | LCP (simulated)       | 6.5 s          | 0.9 s         | 0.9 s    | 0.9 s    | **3.7 s**²            |
+|             | LCP (observed)        | —              | —             | —        | 0.19 s   | **0.15 s**            |
+|             | CLS                   | 0              | 0             | 0        | 0        | **0**                 |
+|             | JS during load (gzip) | 589 KB         | 566 KB        | 564 KB   | 578 KB   | **290 KB**            |
+|             | Main-thread work      | —              | —             | 3.1 s    | 3.4 s    | **0.67 s**            |
+| `/builder`  | Score                 | 70             | 71            | 96       | 97       | **95**                |
+|             | TBT                   | 398 ms         | 356 ms        | 233 ms   | 203 ms   | **255 ms**            |
+|             | LCP                   | 5.5 s          | 5.5 s         | 0.75 s   | 0.76 s   | **0.75 s**            |
+|             | CLS                   | 0.023          | 0.023         | 0        | 0        | **0**                 |
+|             | JS (gzip)             | 589 KB         | 577 KB        | 564 KB   | 576 KB   | **575 KB**            |
+| `/b/[code]` | Score                 | 80             | 86            | 86       | 86       | **84**                |
+|             | TBT                   | 846 ms         | 543 ms        | 544 ms   | 562 ms   | **615 ms**³           |
+|             | LCP                   | 0.9 s          | 0.9 s         | 0.9 s    | 1.06 s   | **1.06 s**            |
+|             | CLS                   | 0              | 0             | 0        | 0        | **0**                 |
+|             | JS (gzip)             | 590 KB         | 567 KB        | 571 KB   | 585 KB   | **585 KB**            |
 
-**Reading it:**
+¹ Median of 5 runs.
+² See "the LCP trade-off" below.
+³ This page didn't change in the last commit. Its runs have ranged 551–689 ms across today's measurements, so treat 560–615 as one band: at the 600 ms target, not clearly under it (§10).
 
-- `/builder` is the best it has been. `/` and `/b/[code]` are within about 50 ms TBT of Phase 9 and still under the 600 ms target.
-- The long tasks on `/` are the same ones as in Phase 10, each 2–8% longer. That includes three.js's own file, which hasn't changed at all, so most of the difference is this laptop's run-to-run variance (single `/` runs ranged 526–946 ms).
-- Phase 15 removed the parts catalogue (57 KB, 15 KB gzip) from the landing page's own bundle. `useMediaQuery` and `partLabel` were importing it, and so was the hero viewer. It still arrives later through the prefetch of `/builder`. On `/b/[code]` it stays, because "Copy to my builds" needs the build store.
-- JS grew about 12–14 KB gzip since Phase 10: 108 more catalogue items (only on pages that need them), the setup and desk code, and the model pipeline.
-- Local numbers are much faster than PageSpeed Insights on the live site (a simulated mid-range phone over a slow network). Run PageSpeed on the Vercel URL to compare.
+**The hero, poster first (last commit):**
+
+- **Poster first:** the landing page now shows a still image of the hero scene. It's a 22 KB WebP rendered from the real 3D scene by `npm run hero:poster`.
+- **When the 3D starts:** the live scene starts only after the page has loaded and gone idle, and then the first interaction or 3 quiet seconds. It draws nothing until every model is in, then replaces the poster in one frame. An e2e test checks the poster still matches the live scene.
+- **Reduced motion:** the poster stays and 3D never loads.
+- **When it stops:** the sway stops rendering when the hero is off screen or the tab is hidden.
+- **Result:** TBT on `/` drops from about 578 ms to 20 ms, and main-thread work from 3.4 s to 0.67 s. Lighthouse finishes much sooner because the page goes quiet right after loading.
+- **To be clear:** most of the TBT drop is because three.js and the scene now load _after_ the first seconds of the page, outside Lighthouse's window. Mounting them still costs about 0.4 s of main thread on this laptop. It just no longer competes with the page loading, and it never happens with reduced motion.
+
+**The LCP trade-off:**
+
+- The poster is now the largest element on a phone screen.
+- Lighthouse's _simulated_ LCP for an image is pessimistic (3.7 s). In the same runs the _observed_ LCP got faster (0.19 → 0.15 s), and the image is only 22 KB with `fetchpriority="high"`.
+- **What I tried:** inlining it as a data URI (no request at all) gave the same simulated 3.7 s and a heavier HTML. Preloading it from `<head>` didn't change it either.
+- **Why it was 0.9 s before:** the line-drawing placeholder was an SVG, and SVG shapes are never LCP candidates.
+- **Overall:** the score still went up (85 → 90). PageSpeed on the live site will show the same simulated LCP.
+
+**Earlier in Phase 15:**
+
+- Phase 15 removed the parts catalogue (57 KB, 15 KB gzip) from the landing page's own bundle. `useMediaQuery` and `partLabel` were importing it, and so was the hero viewer. It still arrives later through the prefetch of `/builder`.
+- On `/b/[code]` it stays, because "Copy to my builds" needs the build store.
+
+**In general:**
+
+- **Local vs live:** local numbers are much faster than PageSpeed Insights on the live site, which simulates a mid-range phone over a slow network. Before this work, Rei measured live mobile scores of **62** for `/` and **97** for `/builder` (100 for accessibility, best practices and SEO). Run PageSpeed on the Vercel URL again after this deploys.
 
 ---
 
@@ -153,7 +177,8 @@ Suggested setups: Rp 4.530.000, Rp 15.330.000 and Rp 27.650.000. The estimates m
   - a file over 400 KB;
   - a heaviest possible build over 2.5 MB.
 - **Loading:** models load only when an item on screen uses them, and each file loads once. They're Draco-compressed with the decoder served from `public/draco/`. A model that fails falls back to the next step.
-- **Weight:** `public/` is 332 KB in total: the Draco decoder is about 252 KB and the 4 models about 78 KB. `models-src/` (sources) is 268 KB, and `docs/screenshots/` is 1.8 MB (not served).
+- **Hero poster:** `public/hero/poster.webp` (22 KB), made by `npm run hero:poster` from `/styleguide/hero` (internal, `noindex`, disallowed in robots).
+- **Weight:** `public/` is about 355 KB in total: the Draco decoder is about 252 KB and the 4 models about 78 KB. `models-src/` (sources) is 268 KB, and `docs/screenshots/` is 1.8 MB (not served).
 - **Layout checks:** `partClashes()` (PC) and the desk overlap tests run over thousands of combinations. `viewFrame()` keeps the exploded view in frame from 0.46 (tall phone) to 1.8 (wide) aspect ratios.
 
 ---
@@ -213,6 +238,11 @@ Session 1's table of known false positives (`mask-image`, design tokens, `SENTRY
 - **Footer links** "Presets", "Compatibility rules" and "Feedback" were removed in Phase 9. A public `/rules` page built from `docs/rules.md` would be a good addition for the write-up.
 - **`/parts` catalogue page** is still a placeholder (unlinked, `noindex`). It could reuse the picker with tiers and shop links.
 - **PageSpeed on the live URL** and a real-phone pass before any big demo. The demo script assumes a laptop.
+- **Hero LCP (simulated 3.7 s):**
+  - An option is a vector (SVG) poster, which is never an LCP candidate. It would need its own drawing of the scene, and matching the 3D render exactly would be hard.
+  - Another is to make the hero image smaller than the heading on phones.
+  - Re-run `npm run hero:poster` whenever the showcase build or the 3D look changes; the e2e test will say so.
+- **`/b/[code]` TBT** sits at the 600 ms target (560–615 ms). The same deferral as the hero (mount the 3D after the first interaction) would help, but there the 3D view is the point of the page, so it's a judgement call.
 
 ---
 

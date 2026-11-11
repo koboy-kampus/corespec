@@ -140,14 +140,38 @@ test("footer has no placeholder links, and every link works", async ({
   }
 });
 
-test("the hero 3D waits: the drawing comes first, then the scene loads", async ({
+test("the hero 3D waits: the poster comes first, then the live scene", async ({
   page,
 }) => {
-  // The server HTML has the drawing and no canvas.
+  // The server HTML has the poster image and no canvas.
   const html = await (await page.request.get("/")).text();
   expect(html).not.toContain("<canvas");
-  expect(html).toContain("Technical drawing of a mid-tower PC case");
+  expect(html).toContain('src="/hero/poster.webp"');
 
   await page.goto("/");
-  await expect(page.locator("canvas")).toHaveCount(1, { timeout: 10_000 });
+  const hero = page.getByTestId("hero-viewer");
+  await expect(hero.locator("img")).toBeVisible();
+  // The live scene starts on the first interaction (or after a quiet moment),
+  // and replaces the poster only once it's fully drawn.
+  await page.mouse.move(200, 200);
+  await expect(hero).toHaveAttribute("data-live", "true", { timeout: 15_000 });
+  await expect(hero.locator("canvas")).toBeVisible();
+  await expect(hero.locator("img")).toBeHidden();
+});
+
+test("with reduced motion the hero keeps its poster and never loads 3D", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const three: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/models/")) three.push(r.url());
+  });
+  await page.goto("/");
+  await page.mouse.move(200, 200);
+  await page.waitForTimeout(4500); // past the quiet delay
+  const hero = page.getByTestId("hero-viewer");
+  await expect(hero.locator("img")).toBeVisible();
+  await expect(page.locator("canvas")).toHaveCount(0);
+  expect(three).toEqual([]);
 });

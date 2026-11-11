@@ -156,12 +156,21 @@ export function ViewerShell({
   const cameraKeysRef = useRef<CameraKeys | null>(null);
   const interactive = mode === "builder";
 
+  // The showcase sways only while it's on screen and the tab is visible.
+  const [tabVisible, setTabVisible] = useState(true);
   useEffect(() => {
     const el = ref.current;
     if (!el || mode !== "showcase") return;
     const io = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting));
     io.observe(el);
-    return () => io.disconnect();
+    const onVisibility = () =>
+      setTabVisible(document.visibilityState === "visible");
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [mode]);
 
   useEffect(() => {
@@ -214,7 +223,7 @@ export function ViewerShell({
         <SceneBoundary fallback={fallback}>
           {children({
             reducedMotion,
-            paused: !onScreen,
+            paused: !onScreen || !tabVisible,
             cameraKeysRef: interactive ? cameraKeysRef : undefined,
           })}
         </SceneBoundary>
