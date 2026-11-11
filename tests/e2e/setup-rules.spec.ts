@@ -97,6 +97,36 @@ test("picking items in the UI raises and clears a setup warning", async ({
   await expect(page.getByRole("tab", { name: /^Setup 3\/12$/ })).toBeVisible();
 });
 
+test("a 240 Hz monitor at the GPU's own class gets the refresh note, picked in the UI", async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await openSaved(page, { gpu: "gpu-asus-dual-geforce-rtx-5060-ti-16gb" }); // 1440p class
+  await page.getByRole("tab", { name: /^Setup/ }).click();
+  await page.getByRole("button", { name: /^Monitor Choose/ }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /UltraGear 27GS95QE/ })
+    .click();
+  await expect(
+    page.getByRole("button", { name: /^Monitor.*UltraGear 27GS95QE/ }),
+  ).toBeVisible();
+
+  const setup = page
+    .getByRole("region", { name: "Build summary" })
+    .getByRole("region", { name: "Setup checks" });
+  await expect(
+    setup.getByText(
+      "High refresh rates (240 Hz) at 1440p are hard to reach with this GPU.",
+    ),
+  ).toBeVisible();
+  await expect(setup.getByText("Notes · 1")).toBeVisible();
+  // At the GPU's class there's no resolution warning, so nothing to count.
+  await expect(setup.getByText(/will need lower settings/)).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: /^Setup 1\/12$/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("GPU rules stay silent until a GPU is picked; the picker warns for a weak GPU", async ({
   page,
 }) => {

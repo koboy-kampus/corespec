@@ -100,6 +100,26 @@
     "weightKg": 5.5
   },
   {
+    "id": "monitor-lg-ultragear-27gs95qe",
+    "category": "monitor",
+    "brand": "LG",
+    "name": "UltraGear 27GS95QE",
+    "priceIDR": 12100000,
+    "dims": {
+      "l": 604,
+      "w": 233,
+      "h": 545
+    },
+    "placement": "desk",
+    "sizeIn": 27,
+    "resolution": "1440p",
+    "refreshHz": 240,
+    "panel": "OLED",
+    "adaptiveSync": "FreeSync",
+    "curved": false,
+    "weightKg": 4.2
+  },
+  {
     "id": "monitor-alienware-aw3423dw",
     "category": "monitor",
     "brand": "Alienware",

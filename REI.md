@@ -392,7 +392,7 @@ Add rule-based checks for setup items, in the same style as `lib/compat/rules.ts
 
 - **GPU class:** add `targetRes: '1080p' | '1440p' | '4K'` to every GPU (a rough class, picked by you and stated as approximate in a code comment).
 - **Monitor resolution vs GPU:** monitor resolution above the GPU's `targetRes` → warning, e.g. "This GPU is aimed at 1080p; a 4K monitor will need lower settings."
-- **Refresh rate vs GPU:** a monitor of 165 Hz or more at a resolution above `targetRes` → info, e.g. "High refresh rates at 1440p are hard to reach with this GPU."
+- **Refresh rate vs GPU:** a monitor of 240 Hz or more at exactly the GPU's `targetRes` → info, e.g. "High refresh rates (240 Hz) at 1440p are hard to reach with this GPU." Above `targetRes`, only the resolution warning shows (no refresh note on top).
 - **Desk width:** the monitor's width plus the speakers (if any) wider than the desk's `widthMm` → warning. Use the same numbers the 3D desk uses in Phase 12.
 - **Sync tech vs GPU brand (info):** a monitor with `adaptiveSync: 'G-Sync'` (a hardware module) plus an AMD GPU → "This monitor's G-Sync module needs an NVIDIA GPU for variable refresh; it still works as a normal monitor." FreeSync monitors stay silent (they work on both brands).
 - **Monitor arm vs monitor (warning):** the monitor's `sizeIn` above the arm's `maxSizeIn`, or its `weightKg` above the arm's `maxLoadKg` → warning. Monitors get `weightKg` (panel without stand); arms already have `maxSizeIn` and `maxLoadKg`.

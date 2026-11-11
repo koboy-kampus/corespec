@@ -36,7 +36,7 @@ A rule only runs when every part it reads has been picked. For example, the GPU-
 | 13  | Desk width (`desk-width`)                        | Desk `widthMm`, monitor width, speaker width               | Monitor width + 2 × (speaker width + 50 mm gap) is more than the desk's width                     | Warning  | The monitor and speakers need about 120.7 cm of desk, but this desk is 105 cm wide.                        |
 | 14  | Monitor arm vs monitor (`arm-fit`)               | Arm `maxSizeIn`, `maxLoadKg`; monitor `sizeIn`, `weightKg` | Monitor bigger than the arm's limit, or heavier than its load (per monitor)¹                      | Warning  | This monitor arm can't safely hold the monitor: 34″ is above its 27″ limit.                                |
 
-**Covered by unit tests only, so far.** Rule 11 and the weight half of rule 14 (¹) are covered by unit tests; no catalogue item triggers them yet. No catalogue monitor runs at 240 Hz or more, and the heaviest monitor (6.3 kg) is lighter than the lowest arm load (6.5 kg). The size half of rule 14 can be triggered from the UI (a 34″ monitor on a 27″ arm).
+**¹ Covered by unit tests; no catalogue item triggers it yet.** The weight half of rule 14 can't fire from the UI: the heaviest monitor (6.3 kg) is lighter than the lowest arm load (6.5 kg). The size half can (a 34″ monitor on a 27″ arm). Every other rule can be triggered from the UI; rule 11 fires with the LG UltraGear 27GS95QE (1440p, 240 Hz) and a 1440p-class GPU.
 
 **GPU class (`targetRes`)** is a rough, hand-picked class per GPU (the resolution it's aimed at in current games at high settings), stated as approximate in `types/parts.ts`. It is a guide, not a benchmark.
 

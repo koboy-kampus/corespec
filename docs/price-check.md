@@ -43,6 +43,7 @@ Every setup item in the catalogue, not only the ones in suggested setups. Update
 | Monitor       | LG UltraGear 27GR75Q                 | `monitor-lg-ultragear-27gr75q`                  | 1440p Sweet Spot    | Rp 3.600.000   |           |        |         |
 | Monitor       | Samsung Odyssey G5 27" C27G55T       | `monitor-samsung-odyssey-g5-27-c27g55t`         | —                   | Rp 3.900.000   |           |        |         |
 | Monitor       | LG UltraGear 27GR93U                 | `monitor-lg-ultragear-27gr93u`                  | Creator Workstation | Rp 8.500.000   |           |        |         |
+| Monitor       | LG UltraGear 27GS95QE                | `monitor-lg-ultragear-27gs95qe`                 | —                   | Rp 12.100.000  |           |        |         |
 | Monitor       | Alienware AW3423DW                   | `monitor-alienware-aw3423dw`                    | —                   | Rp 16.500.000  |           |        |         |
 | Monitor arm   | North Bayou F80                      | `arm-north-bayou-f80`                           | 1440p Sweet Spot    | Rp 300.000     |           |        |         |
 | Monitor arm   | North Bayou F160 Dual                | `arm-north-bayou-f160-dual`                     | —                   | Rp 550.000     |           |        |         |
@@ -95,4 +96,4 @@ Every setup item in the catalogue, not only the ones in suggested setups. Update
 | Chair         | DXRacer Formula Series               | `chair-dxracer-formula-series`                  | —                   | Rp 4.200.000   |           |        |         |
 | Chair         | Herman Miller Aeron                  | `chair-herman-miller-aeron`                     | —                   | Rp 25.000.000  |           |        |         |
 
-56 setup items. Prices copied from the data on 2026-11-11.
+57 setup items. Prices copied from the data on 2026-11-11.

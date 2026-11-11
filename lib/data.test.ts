@@ -109,7 +109,7 @@ describe("presets", () => {
 
 describe("setup catalogue", () => {
   const expected: Record<string, number> = {
-    monitor: 6,
+    monitor: 7,
     keyboard: 6,
     mouse: 6,
     headset: 6,
