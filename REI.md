@@ -325,12 +325,12 @@ Micro-interactions: cards lift (`translateY(-2px)`) and border brightens on hove
 
 ---
 
-## 8. Session 2 — Phases 9 to 15
+## 8. Session 2 — Phases 9 to 16
 
 > **How to use (session 2):** open Claude Code in the repo and say:
 > `Read REI.md section 8 and HANDOFF.md, then start Phase 9.`
 
-Phases 0–8 are done and live on Vercel (see `HANDOFF.md`). Session 2 adds **setup items** (monitor, mouse, keyboard and the rest of a desk setup) with their own **3D desk view**, **marketplace links** with checked prices, and a smoothing pass. **Login and the backend come last (Phase 15)**, in a later session, on purpose.
+Phases 0–8 are done and live on Vercel (see `HANDOFF.md`). Session 2 adds **setup items** (monitor, mouse, keyboard and the rest of a desk setup) with their own **3D desk view**, a **curated tiered catalogue** with **marketplace links** and checked prices, a **3D model pipeline** for real models, and a smoothing pass. **Login and the backend come last (Phase 16)**, in a later session, on purpose.
 
 **Everything in sections 0, 3, 6 and 7 still applies**: one phase at a time, plan → implement → verify → summary → commit + push, then stop and wait for "next". On top of that:
 
@@ -412,17 +412,29 @@ A second 3D view for the setup. In the builder viewport, a toggle **PC | Desk** 
   - monitor (stand, thin bezel, screen with a soft emissive glow), keyboard, mouse, mousepad under both, speakers either side of the monitor, webcam on top of the monitor, mic on a small stand, headset on a hook or stand;
   - the chair in front of the desk;
   - the PC itself as a simplified box sized from the chosen case, on the floor beside the desk or on the desk when it's small (ITX), with a glow for the case's side panel.
-- Reuse what exists: the drop animation, the coral glow for items flagged by Phase 11 rules, hover tooltips, `frameloop="demand"`, `dpr={[1, 2]}`, the keyboard camera controls, the reduced-motion behaviour, the screen-reader text description, the WebGL fallback and the error fallback.
+- Reuse what exists: the drop animation, the amber warning glow for items flagged by Phase 11 rules (coral stays for errors, and setup rules never produce errors), hover tooltips, `frameloop="demand"`, `dpr={[1, 2]}`, the keyboard camera controls, the reduced-motion behaviour, the screen-reader text description, the WebGL fallback and the error fallback.
 - **Camera:** a fixed "seated view" preset plus orbit with limits; clicking a setup slot eases the camera to that item.
 - **Shared builds:** `/b/[code]` shows the PC | Desk toggle when the build has setup items, with the same touch and wheel behaviour as the PC view today.
-- Models: procedural is fine. A GLTF model is allowed only through the existing pipeline (CC0 or CC BY 3.0, `credits.json`, under 1 MB, tests).
+- Models: procedural is fine. Real models come through the Phase 14 pipeline.
 - Measure the desk scene's extra JS (gzip) and add it to the summary.
 
-**Done when:** adding and removing any setup item animates on the desk, a too-narrow desk glows coral, and the PC view behaves exactly as before.
+**Done when:** adding and removing any setup item animates on the desk, the items hanging over a too-narrow desk glow amber, and the PC view behaves exactly as before.
 
-### Phase 13 — Marketplace links and checked prices
+### Phase 13 — Curated tiers, marketplace links and checked prices
 
-Still **no backend**. Links and checked prices live in the JSON so Phase 15 can move them into the database later.
+Still **no backend**. Tiers, links and checked prices live in the JSON so Phase 16 can move them into the database later.
+
+**Part A — Curated tiered catalogue.** CoreSpec stays a **curated** catalogue, not a database of every product on the market.
+
+- **Tier field:** add a required `tier: 'budget' | 'mid' | 'high'` to every PC part and setup item.
+- **3 × 3 × 3:** every category (8 PC + 12 setup) gets **3 items per tier, 9 in total**. Assign tiers by what each product is aimed at, not only by price, and note in a code comment that tiers are an approximate judgement.
+- **Never remove or rename an existing item** to reach 9: old share links and saved builds point at those ids. Add new items where a tier is short; if a category ends up with more than 3 in a tier, keep them and say so in the summary.
+- **New items:** same rules as before: real products sold in Indonesia, approximate integer IDR prices, full specs and `dims`, added to `docs/price-check.md` (or the CSV from Part B).
+- **Presets and suggested setups don't change**, and their totals stay the same.
+- **Picker:** tier chips (**Budget / Mid / High-end**) as a filter, plus a small tier label on each row. The default sort stays as it is.
+- **Tests:** every category has at least 3 items per tier; every id that existed before this phase still exists; preset totals are unchanged.
+
+**Part B — Marketplace links and checked prices.** Outbound links only: no checkout, no cart, no stock on CoreSpec.
 
 - **Data:** each part and setup item gets optional `listings: { marketplace: 'tokopedia' | 'shopee' | 'blibli'; url: string; priceIDR: number; checkedAt: string }[]`.
 - **Price shown:** the lowest checked listing price when there is one, otherwise the estimate. The UI makes the difference clear: "Checked 12 Nov" vs "Estimate".
@@ -434,26 +446,76 @@ Still **no backend**. Links and checked prices live in the JSON so Phase 15 can 
 - **Rei's workflow:** add `data/price-check.csv` (one row per item: id, name, marketplace, url, price, checked date) that Rei can fill in Excel or Google Sheets. Add `npm run prices:apply` (a script in `scripts/`) that validates the CSV (known ids, integer prices, real dates, https URLs on the 3 marketplace domains) and writes the listings into the JSON. It must print what it changed and fail loudly on bad rows. Replace the table in `docs/price-check.md` with short instructions for this workflow.
 - Update `pricesAsOf` logic: show the newest `checkedAt` when listings exist. Update `/prices` to explain estimate vs checked.
 
-**Done when:** a test CSV with 3 rows becomes 3 buy buttons with "Checked" dates, a bad row is rejected with a clear message, and parts without listings show search links.
+**Done when:** every category has 3 items per tier with tier chips in the picker, a test CSV with 3 rows becomes 3 buy buttons with "Checked" dates, a bad row is rejected with a clear message, and parts without listings show search links.
 
-### Phase 14 — Smoothing pass and handoff
+### Phase 14 — 3D model pipeline v2
+
+Set up the system so Rei can add real 3D models one at a time from Blender, without touching code and without breaking the viewer or the page speed. **This phase builds the pipeline; it doesn't need many new models.** Moving today's 3 models (CPU, RAM, GPU) into it is enough to prove it works; add a model for another category only if you find one with an allowed licence.
+
+**Fallback chain.** Every part and setup item resolves its look in this order:
+
+1. **Product model:** the item's own `modelId`, if it has one;
+2. **Category model:** the default model for its category (today: CPU, RAM, GPU), scaled to the item's `dims` by `fitModel`, exactly like now;
+3. **Procedural box:** what's drawn today.
+
+A model that fails to load falls back to the next step, as it does today.
+
+**Data.**
+
+- Replace the hard-coded `MODELS` object in `lib/viewer/models.ts` with `data/models.json`. One entry per model: `id`, `file`, `basis`, `recolour` (optional), `credit` (an id in `data/credits.json`) and `defaultFor` (a category, for category models only).
+- Add optional `modelId?: string` to PC parts and setup items.
+- Add `resolveModel(item)` in `lib/viewer/` that walks the chain and returns a model entry or `null`. The PC scene and the desk scene both use it, so setup items (monitor, keyboard, chair and so on) can get models too.
+- Load models only for items that are on screen, and load each model file once even when several items share it.
+
+**Licences.** Anything in `public/models/` can be downloaded by any visitor, so putting a model on the site counts as redistributing it.
+
+- Add **CC BY 4.0** to `ALLOWED_LICENCES`, next to CC0 1.0 and CC BY 3.0. CC BY models need author, source, licence URL and changes in `credits.json`, and they show on `/credits` (the existing tests already check this).
+- **Never allowed**, and listed in `docs/models.md` with the reason: models imported through the IKEA Browser add-on (IKEA's terms apply; the add-on grants no licence), BlendKit **Royalty Free** assets (BlendKit only allows them where users can't easily extract them, and a web `.glb` is easy to extract), Sketchfab **Standard/Store** licences, and any **NC**, **ND** or **SA** Creative Commons licence.
+- **No brand logos** on any model (section 6). Remove them in Blender.
+
+**Size budgets** (tests enforce them; keep the Phase 9 performance):
+
+- Each model file is **under 400 KB** after compression (was 1 MB).
+- The **heaviest possible build** (the largest model per category, PC and setup together) loads **under 2.5 MB** of models in total.
+- Textures are resized to **at most 1024 px** and compressed to **WebP** by `npm run models`. Add `sharp` as a dev dependency so this step actually runs.
+- Keep recolouring to the CoreSpec palette as the default, so models and procedural boxes look like one set. A model may keep its own textures only when its entry says so, with a one-line reason.
+
+**Tools for Rei.**
+
+- `npm run models` keeps doing the compression: dedup, prune, weld, texture resize, Draco. It now reads `data/models.json` and fails loudly on a missing credit, a disallowed licence or an over-budget file.
+- Add `npm run models:check <file>`: it prints a source model's size, triangle count, material names (for the `recolour` map), texture sizes, bounding box and whether it's over budget. Rei runs it before adding a model.
+- **Don't use gltfjsx to generate a component per model.** Models are data, not code: adding a model must never need a new component. gltfjsx is fine for inspecting a file.
+- Write `docs/models.md` for Rei: allowed sources (CC0 or CC BY on Poly Pizza and Sketchfab, CC0 on BlendKit), the forbidden list above, and a **Blender export checklist**:
+  - apply all transforms; units in metres; +Y up;
+  - origin at the bottom centre;
+  - remove logos and hidden parts;
+  - give materials clear names;
+  - export **glTF Binary (.glb)** without Draco (the pipeline adds it);
+  - save it as `models-src/<id>.glb`, then add the `models.json` and `credits.json` entries and run `npm run models` and `npm test`.
+  Walk through one example from start to finish.
+
+**Tests:** every `modelId` exists in `models.json`; every model entry has a credit with an allowed licence; both size budgets; `resolveModel` for each step of the chain; and the PC view and desk view look the same as before for the 3 moved models (compare screenshots in e2e).
+
+**Done when:** today's 3 models run through `data/models.json` with nothing changed on screen, `docs/models.md` exists, and adding a test model with a fake disallowed licence or a 500 KB file fails the tests with a clear message.
+
+### Phase 15 — Smoothing pass and handoff
 
 - Lighthouse (mobile) on `/`, `/builder` and `/b/[code]` again; fix anything that got worse since Phase 9.
 - Go through every page at 375, 768 and 1440 px; fix rough edges (spacing, long names, empty states, loading states).
 - Add a `.gitattributes` (e.g. `* text=auto eol=lf`) so the Windows CRLF/LF noise in `git status` stops; renormalise once in its own commit.
 - Known issue: in exploded view on narrow phones, the lifted cooler can leave the top of the viewport. Fix it by fitting the camera.
 - Update the README (screenshots of the setup tab and the desk view), `/about`, the sitemap and the credits.
-- **Rewrite `HANDOFF.md`** for session 2: what was built per phase, checks with real numbers, leftovers, and what Phase 15 needs.
+- **Rewrite `HANDOFF.md`** for session 2: what was built per phase, checks with real numbers, leftovers, and what Phase 16 needs.
 
 **Done when:** all checks are green and `HANDOFF.md` is current.
 
-### Phase 15 — Login and backend *(later session — don't start without Rei saying so)*
+### Phase 16 — Login and backend *(later session — don't start without Rei saying so)*
 
 Rei's supervisor suggested user and admin login, because examiners like seeing it. Outline only; plan it in detail when Rei starts this phase.
 
 - **Supabase** (Auth + Postgres), using `@supabase/ssr` with Next 16 (read the Next docs first).
 - **Rei creates the Supabase project himself** and puts the keys in `.env.local` and Vercel. You never see, print or ask for their values. The service-role key is server-only and never gets a `NEXT_PUBLIC_` prefix (section 7).
-- **Tables:** `profiles` (id, name, `role`: `user` | `admin`), `builds` (owner, name, parts, timestamps), `parts` (seeded from the JSON, PC and setup), `listings` (seeded from the JSON). Row Level Security on every table: users read and write only their own builds; only admins write parts and listings; everyone can read parts and listings.
+- **Tables:** `profiles` (id, name, `role`: `user` | `admin`), `builds` (owner, name, parts, timestamps), `parts` (seeded from the JSON, PC and setup, with `tier` and `modelId`), `listings` (seeded from the JSON). Row Level Security on every table: users read and write only their own builds; only admins write parts and listings; everyone can read parts and listings.
 - **Pages:** `/login` and `/register` (styled to the design system; the supervisor wants these to look good), account menu in the navbar, `/admin` guarded on the server.
 - **Admin panel:** CRUD for parts, setup items and listings (with "mark as checked today"), so price checks move from the CSV into the browser.
 - **Guests keep working with localStorage.** After logging in, offer "Import builds from this browser".
@@ -462,7 +524,7 @@ Rei's supervisor suggested user and admin login, because examiners like seeing i
 
 ---
 
-**Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".**
+**Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
 
 ---
 
