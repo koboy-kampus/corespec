@@ -55,6 +55,26 @@ interface CameraRigProps {
   keysRef?: RefObject<CameraKeys | null>;
   /** One finger is left to the page; two fingers rotate and pinch-zoom. */
   embedded?: boolean;
+  /**
+   * Optional framing for scenes other than the PC case (the desk view). The defaults
+   * are the PC view's, so leaving them out changes nothing there.
+   */
+  view?: CameraView;
+}
+
+export interface CameraView {
+  /** What the home view looks at (scene units). Default: the origin. */
+  target?: Vec3;
+  /** Direction from the target to the home camera position. */
+  dir?: Vec3;
+  /** Up/down orbit limits, in radians from straight above. */
+  polar?: [number, number];
+  /** Left/right orbit limits, in radians (none by default). */
+  azimuth?: [number, number];
+  /** Zoom limits, as shares of the home distance. */
+  zoom?: [number, number];
+  /** Scales the fitted home distance (below 1 starts closer). */
+  fit?: number;
 }
 
 /** Distance that fits the case's bounding sphere in both the vertical and horizontal field of view. */
@@ -76,7 +96,18 @@ export function CameraRig({
   exploded = false,
   keysRef,
   embedded = false,
+  view,
 }: CameraRigProps) {
+  const [tx, ty, tz] = view?.target ?? [0, 0, 0];
+  const [dx, dy, dz] = view?.dir ?? HOME_DIR.toArray();
+  const homeDir = useMemo(
+    () => new Vector3(dx, dy, dz).normalize(),
+    [dx, dy, dz],
+  );
+  const [minPolar, maxPolar] = view?.polar ?? [MIN_POLAR, MAX_POLAR];
+  const [minAz, maxAz] = view?.azimuth ?? [-Infinity, Infinity];
+  const [minZoom, maxZoom] = view?.zoom ?? [MIN_ZOOM, MAX_ZOOM];
+  const fit = view?.fit ?? 1;
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
   const invalidate = useThree((s) => s.invalidate);
@@ -93,16 +124,19 @@ export function CameraRig({
 
   const [sx, sy, sz] = caseSize;
   const dist = useMemo(
-    () => fitDistance([sx, sy, sz], camera.fov, aspect) * (exploded ? 1.25 : 1),
-    [sx, sy, sz, camera.fov, aspect, exploded],
+    () =>
+      fitDistance([sx, sy, sz], camera.fov, aspect) *
+      (exploded ? 1.25 : 1) *
+      fit,
+    [sx, sy, sz, camera.fov, aspect, exploded, fit],
   );
   const [fx, fy, fz] = focus ?? [NaN, NaN, NaN];
 
   useEffect(() => {
-    const toTarget = focus ? new Vector3(fx, fy, fz) : new Vector3(0, 0, 0);
+    const toTarget = focus ? new Vector3(fx, fy, fz) : new Vector3(tx, ty, tz);
     const toPos = toTarget
       .clone()
-      .addScaledVector(HOME_DIR, focus ? dist * FOCUS_ZOOM : dist);
+      .addScaledVector(homeDir, focus ? dist * FOCUS_ZOOM : dist);
     if (!placed.current) {
       // First frame: jump straight to the home view.
       camera.position.copy(toPos);
@@ -122,7 +156,7 @@ export function CameraRig({
     invalidate();
     // focus is read through fx/fy/fz so a new array with the same point doesn't restart the ease
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fx, fy, fz, dist, camera, invalidate]);
+  }, [fx, fy, fz, tx, ty, tz, homeDir, dist, camera, invalidate]);
 
   useEffect(() => {
     const c = controls.current;
@@ -144,8 +178,9 @@ export function CameraRig({
         camera.position.clone().sub(target),
       );
       change(s);
-      s.phi = MathUtils.clamp(s.phi, MIN_POLAR, MAX_POLAR);
-      s.radius = MathUtils.clamp(s.radius, dist * MIN_ZOOM, dist * MAX_ZOOM);
+      s.phi = MathUtils.clamp(s.phi, minPolar, maxPolar);
+      s.theta = MathUtils.clamp(s.theta, minAz, maxAz);
+      s.radius = MathUtils.clamp(s.radius, dist * minZoom, dist * maxZoom);
       camera.position.copy(target).add(new Vector3().setFromSpherical(s));
       camera.lookAt(target);
       controls.current?.update();
@@ -165,8 +200,8 @@ export function CameraRig({
         tween.current = {
           fromPos: camera.position.clone(),
           fromTarget: (controls.current?.target ?? lookAt.current).clone(),
-          toPos: HOME_DIR.clone().multiplyScalar(dist),
-          toTarget: new Vector3(0, 0, 0),
+          toPos: new Vector3(tx, ty, tz).addScaledVector(homeDir, dist),
+          toTarget: new Vector3(tx, ty, tz),
           t: 0,
         };
         invalidate();
@@ -175,7 +210,22 @@ export function CameraRig({
     return () => {
       keysRef.current = null;
     };
-  }, [keysRef, camera, dist, invalidate]);
+  }, [
+    keysRef,
+    camera,
+    dist,
+    invalidate,
+    homeDir,
+    tx,
+    ty,
+    tz,
+    minPolar,
+    maxPolar,
+    minAz,
+    maxAz,
+    minZoom,
+    maxZoom,
+  ]);
 
   useFrame((_, rawDelta) => {
     const delta = clampDelta(rawDelta);
@@ -202,10 +252,12 @@ export function CameraRig({
       enableDamping
       dampingFactor={0.08}
       enablePan={false}
-      minDistance={dist * MIN_ZOOM}
-      maxDistance={dist * MAX_ZOOM}
-      minPolarAngle={MIN_POLAR}
-      maxPolarAngle={MAX_POLAR}
+      minDistance={dist * minZoom}
+      maxDistance={dist * maxZoom}
+      minPolarAngle={minPolar}
+      maxPolarAngle={maxPolar}
+      minAzimuthAngle={minAz}
+      maxAzimuthAngle={maxAz}
       rotateSpeed={0.7}
       // No mapping for one finger means the controls ignore it.
       touches={embedded ? EMBEDDED_TOUCHES : DEFAULT_TOUCHES}

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -29,6 +28,7 @@ import { CaseShell } from "./case-shell";
 import { ACCENT, type Flag } from "./palette";
 import { PartMesh } from "./part-mesh";
 import { PartTooltip } from "./part-tooltip";
+import { hasWebGL, usePresence } from "./scene-common";
 
 export interface SceneProps {
   parts: ResolvedBuild;
@@ -68,41 +68,6 @@ const BASE_YAW = -0.35;
 const PART_DROP = 160; // mm
 const CASE_DROP = 60;
 const SWAY_FRAME_MS = 1000 / 30;
-
-function hasWebGL(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
-    gl?.getExtension("WEBGL_lose_context")?.loseContext();
-    return gl !== null;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Keeps removed items around (marked leaving) until their exit animation ends.
- * Same key = same instance, so a part that moves keeps its spring state.
- */
-function usePresence(items: Item[]) {
-  const [prev, setPrev] = useState(items);
-  const [leaving, setLeaving] = useState<Item[]>([]);
-  if (items !== prev) {
-    const now = new Set(items.map((i) => i.key));
-    const gone = prev.filter((p) => !now.has(p.key));
-    const goneKeys = new Set(gone.map((g) => g.key));
-    setLeaving((l) => [
-      ...l.filter((x) => !now.has(x.key) && !goneKeys.has(x.key)),
-      ...gone,
-    ]);
-    setPrev(items);
-  }
-  const done = useCallback(
-    (key: string) => setLeaving((l) => l.filter((x) => x.key !== key)),
-    [],
-  );
-  return { leaving, done };
-}
 
 /** Slow turntable spin for the landing hero. Keeps requesting frames only while spinning. */
 function Turntable({

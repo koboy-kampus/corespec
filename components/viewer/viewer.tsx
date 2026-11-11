@@ -7,6 +7,7 @@ import {
   useState,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "cn";
@@ -36,7 +37,7 @@ const Scene = dynamic(() => import("./scene"), {
 });
 
 /** If the 3D scene crashes (lost GPU, driver bug), show the static drawing instead. */
-class SceneBoundary extends Component<
+export class SceneBoundary extends Component<
   { fallback: ReactNode; children: ReactNode },
   { failed: boolean }
 > {
@@ -75,7 +76,7 @@ const ROTATE_STEP = 0.18; // radians per key press
 const ZOOM_STEP = 0.85;
 
 /** Arrow keys orbit, +/- zoom, R resets. Returns true when the key was handled. */
-function handleCameraKey(key: string, cam: CameraKeys): boolean {
+export function handleCameraKey(key: string, cam: CameraKeys): boolean {
   switch (key) {
     case "ArrowLeft":
       cam.rotate(ROTATE_STEP, 0);
@@ -106,13 +107,42 @@ function handleCameraKey(key: string, cam: CameraKeys): boolean {
   }
 }
 
-/** Sizes the canvas to its box, respects reduced motion and pauses the spin when off screen. */
-export function Viewer({
+/** What a shell hands its scene. */
+export interface ShellContext {
+  reducedMotion: boolean;
+  paused: boolean;
+  cameraKeysRef?: RefObject<CameraKeys | null>;
+}
+
+interface ShellProps {
+  className?: string;
+  onResetView?: () => void;
+  lazy?: boolean;
+  /** "builder" is interactive (keys, orbit); "showcase" is the landing hero. */
+  mode: "builder" | "showcase";
+  embedded?: boolean;
+  fallback: ReactNode;
+  /** Screen-reader name of the interactive 3D widget. */
+  label?: string;
+  children: (ctx: ShellContext) => ReactNode;
+}
+
+/**
+ * Sizes the canvas to its box, respects reduced motion, pauses the showcase spin
+ * when off screen, waits (when lazy), handles camera keys and the embedded
+ * wheel/touch rules, and falls back to the drawing if the scene crashes. Shared by
+ * the PC viewer and the desk viewer (Phase 12).
+ */
+export function ViewerShell({
   className,
   onResetView,
   lazy = false,
-  ...props
-}: ViewerProps) {
+  mode,
+  embedded = false,
+  fallback,
+  label = "3D build preview. Arrow keys rotate, plus and minus zoom, R resets the view.",
+  children,
+}: ShellProps) {
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const ref = useRef<HTMLDivElement>(null);
   // The hero is decoration: wait until a quarter of it is on screen (on phones it
@@ -120,21 +150,20 @@ export function Viewer({
   const ready = useNearAndIdle(
     ref,
     lazy,
-    props.mode === "showcase" ? { margin: "0px", minVisible: 0.25 } : undefined,
+    mode === "showcase" ? { margin: "0px", minVisible: 0.25 } : undefined,
   );
   const [onScreen, setOnScreen] = useState(true);
   const cameraKeysRef = useRef<CameraKeys | null>(null);
-  const interactive = props.mode === "builder";
+  const interactive = mode === "builder";
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || props.mode !== "showcase") return;
+    if (!el || mode !== "showcase") return;
     const io = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting));
     io.observe(el);
     return () => io.disconnect();
-  }, [props.mode]);
+  }, [mode]);
 
-  const embedded = !!props.embedded;
   useEffect(() => {
     const el = ref.current;
     if (!el || !embedded) return;
@@ -169,8 +198,7 @@ export function Viewer({
             // A focusable 3D widget with its own keys, so screen readers pass them through.
             tabIndex: 0,
             role: "application",
-            "aria-label":
-              "3D build preview. Arrow keys rotate, plus and minus zoom, R resets the view.",
+            "aria-label": label,
             onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
               if (e.altKey || e.ctrlKey || e.metaKey || !cameraKeysRef.current)
                 return;
@@ -183,17 +211,37 @@ export function Viewer({
         : {})}
     >
       {ready ? (
-        <SceneBoundary fallback={props.fallback}>
-          <Scene
-            {...props}
-            reducedMotion={reducedMotion}
-            paused={!onScreen}
-            cameraKeysRef={interactive ? cameraKeysRef : undefined}
-          />
+        <SceneBoundary fallback={fallback}>
+          {children({
+            reducedMotion,
+            paused: !onScreen,
+            cameraKeysRef: interactive ? cameraKeysRef : undefined,
+          })}
         </SceneBoundary>
       ) : (
-        props.fallback
+        fallback
       )}
     </div>
+  );
+}
+
+/** The PC build viewer: the shell plus the PC scene. */
+export function Viewer({
+  className,
+  onResetView,
+  lazy = false,
+  ...props
+}: ViewerProps) {
+  return (
+    <ViewerShell
+      className={className}
+      onResetView={onResetView}
+      lazy={lazy}
+      mode={props.mode}
+      embedded={props.embedded}
+      fallback={props.fallback}
+    >
+      {(ctx) => <Scene {...props} {...ctx} />}
+    </ViewerShell>
   );
 }

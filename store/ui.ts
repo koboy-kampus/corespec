@@ -15,9 +15,13 @@ interface UiState {
   activeSlot: Category | null;
   setActiveSlot: (category: Category | null) => void;
 
-  /** Which slot group the slot list shows (Phase 12 also switches the 3D view). */
+  /** Which slot group the slot list shows. Switching it also switches the 3D view. */
   slotGroup: "pc" | "setup";
   setSlotGroup: (group: "pc" | "setup") => void;
+
+  /** Which 3D view the viewport shows (Phase 12). The PC | Desk switch sets it alone. */
+  view3d: "pc" | "desk";
+  setView3d: (view: "pc" | "desk") => void;
 
   /** 3D exploded view: parts pulled out toward the glass. */
   exploded: boolean;
@@ -37,7 +41,11 @@ export const useUiStore = create<UiState>((set) => ({
   setActiveSlot: (activeSlot) => set({ activeSlot }),
 
   slotGroup: "pc",
-  setSlotGroup: (slotGroup) => set({ slotGroup }),
+  setSlotGroup: (slotGroup) =>
+    set({ slotGroup, view3d: slotGroup === "setup" ? "desk" : "pc" }),
+
+  view3d: "pc",
+  setView3d: (view3d) => set({ view3d }),
 
   exploded: false,
   setExploded: (exploded) => set({ exploded }),

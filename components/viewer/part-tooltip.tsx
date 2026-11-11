@@ -6,16 +6,16 @@ import { CATEGORY_LABEL } from "@/lib/categories";
 import { formatIDR } from "@/lib/format";
 import { partLabel } from "@/lib/parts";
 import type { Vec3 } from "@/lib/viewer/layout";
-import type { Part } from "@/types/parts";
+import type { Item } from "@/types/parts";
 import type { Flag } from "./palette";
 
-/** Hover label for a part in the 3D view: slot, name, price and any issue. */
+/** Hover label for a part or setup item in the 3D view: slot, name, price and any issue. */
 export function PartTooltip({
   part,
   position,
   flag,
 }: {
-  part: Part;
+  part: Item;
   position: Vec3;
   flag?: Flag;
 }) {

@@ -25,17 +25,53 @@ interface AnimatedProps {
   children: ReactNode;
 }
 
-/** Fades every material under `root`, remembering each one's resting opacity. */
-function applyOpacity(root: Object3D, f: number) {
+type FadeData = {
+  baseOpacity?: number;
+  animF?: number;
+  fade?: number;
+  depthWrite?: boolean;
+};
+
+function setOpacity(mat: Material, data: FadeData) {
+  const base = data.baseOpacity ?? 1;
+  mat.opacity = base * (data.animF ?? 1) * (data.fade ?? 1);
+  mat.transparent = base < 1 || mat.opacity < 0.999;
+  // Only items given an extra fade (setFade) change depthWrite: faded, they
+  // shouldn't hide what's behind them. The enter/leave fade leaves it alone.
+  if (data.fade !== undefined) {
+    data.depthWrite ??= mat.depthWrite;
+    mat.depthWrite = data.fade < 0.999 ? false : data.depthWrite;
+  }
+}
+
+function eachMaterial(root: Object3D, fn: (m: Material, d: FadeData) => void) {
   root.traverse((o) => {
     const m = (o as Object3D & { material?: Material | Material[] }).material;
     if (!m) return;
     for (const mat of Array.isArray(m) ? m : [m]) {
-      const data = mat.userData as { baseOpacity?: number };
+      const data = mat.userData as FadeData;
       data.baseOpacity ??= mat.opacity;
-      mat.opacity = data.baseOpacity * f;
-      mat.transparent = data.baseOpacity < 1 || f < 0.999;
+      fn(mat, data);
     }
+  });
+}
+
+/** Fades every material under `root` for the enter/leave animation. */
+function applyOpacity(root: Object3D, f: number) {
+  eachMaterial(root, (mat, data) => {
+    data.animF = f;
+    setOpacity(mat, data);
+  });
+}
+
+/**
+ * An extra fade on top of the enter/leave animation, e.g. the desk view's chair when
+ * it stands between the camera and the screen.
+ */
+export function setFade(root: Object3D, fade: number) {
+  eachMaterial(root, (mat, data) => {
+    data.fade = fade;
+    setOpacity(mat, data);
   });
 }
 
