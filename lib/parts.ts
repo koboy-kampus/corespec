@@ -154,7 +154,4 @@ export function buildTotalIDR(parts: Build["parts"]): number {
   return buildTotals(parts).totalIDR;
 }
 
-/** "AMD Ryzen 5 7600" */
-export function partLabel(part: Item): string {
-  return `${part.brand} ${part.name}`;
-}
+export { partLabel } from "@/lib/labels";

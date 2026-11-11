@@ -45,13 +45,11 @@ export interface CameraKeys {
 }
 
 interface CameraRigProps {
-  /** Case outer size in scene units, used to frame it. */
+  /** Size of the box to frame (the case, or the exploded build), in scene units. */
   caseSize: Vec3;
   /** Point to ease toward (scene units), or null for the home view. */
   focus: Vec3 | null;
   interactive: boolean;
-  /** Pull back a little so exploded parts stay in frame. */
-  exploded?: boolean;
   /** Filled with keyboard controls while mounted (builder only). */
   keysRef?: RefObject<CameraKeys | null>;
   /** One finger is left to the page; two fingers rotate and pinch-zoom. */
@@ -86,7 +84,6 @@ export function CameraRig({
   caseSize,
   focus,
   interactive,
-  exploded = false,
   keysRef,
   embedded = false,
   view,
@@ -117,11 +114,8 @@ export function CameraRig({
 
   const [sx, sy, sz] = caseSize;
   const dist = useMemo(
-    () =>
-      fitDistance([sx, sy, sz], camera.fov, aspect) *
-      (exploded ? 1.25 : 1) *
-      fit,
-    [sx, sy, sz, camera.fov, aspect, exploded, fit],
+    () => fitDistance([sx, sy, sz], camera.fov, aspect) * fit,
+    [sx, sy, sz, camera.fov, aspect, fit],
   );
   const [fx, fy, fz] = focus ?? [NaN, NaN, NaN];
 

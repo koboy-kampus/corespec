@@ -1,18 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Monitor, Move3d } from "lucide-react";
 import { cn } from "cn";
 import { CaseDrawing } from "@/components/landing/case-drawing";
-import {
-  DeskDescription,
-  DeskViewer,
-} from "@/components/viewer/desk-viewer";
+import { DeskDescription, DeskViewer } from "@/components/viewer/desk-viewer";
 import { ExplodeToggle } from "@/components/viewer/explode-toggle";
 import { Viewer } from "@/components/viewer/viewer";
 import { ViewToggle } from "@/components/viewer/view-toggle";
-import { deriveBuild } from "@/lib/derive";
-import type { Build } from "@/types/parts";
+import type { CompatResult } from "@/lib/compat/rules";
+import type { Flag } from "@/components/viewer/palette";
+import type { PcCategory, ResolvedBuild, ResolvedSetup } from "@/types/parts";
+
+/** What the shared page works out on the server (deriveBuild), so the catalogue isn't shipped. */
+export interface SharedViewerData {
+  resolved: ResolvedBuild;
+  severityByCategory: Partial<Record<PcCategory, Flag>>;
+  setup: ResolvedSetup;
+  setupResults: CompatResult[];
+  setupFilled: number;
+}
 
 /**
  * The 3D view of a shared build, with orbit controls and flagged parts glowing.
@@ -20,9 +27,13 @@ import type { Build } from "@/types/parts";
  * It sits in a scrolling page, so a plain wheel and a one-finger swipe scroll the
  * page; Ctrl+wheel, pinch and two fingers move the camera (in both views).
  */
-export function SharedViewer({ parts }: { parts: Build["parts"] }) {
-  const { resolved, severityByCategory, setup, setupResults, setupFilled } =
-    useMemo(() => deriveBuild(parts), [parts]);
+export function SharedViewer({
+  resolved,
+  severityByCategory,
+  setup,
+  setupResults,
+  setupFilled,
+}: SharedViewerData) {
   const [exploded, setExploded] = useState(false);
   const [view, setView] = useState<"pc" | "desk">("pc");
   // The desk scene loads the first time it's shown, then stays mounted.
@@ -115,7 +126,8 @@ export function SharedViewer({ parts }: { parts: Build["parts"] }) {
       <p
         className={cn(
           "pointer-events-none absolute left-3.5 flex items-center gap-1.5 label-micro text-micro-sm text-fg-3 pointer-coarse:hidden",
-          setupFilled > 0 ? "bottom-3.5" : "top-3.5",
+          // At the top it stops short of the Exploded view button, wrapping if it must.
+          setupFilled > 0 ? "bottom-3.5" : "top-3.5 right-40",
         )}
       >
         <Move3d className="size-3.5" aria-hidden />

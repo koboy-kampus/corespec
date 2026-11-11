@@ -162,7 +162,8 @@ export function Viewport({ className }: { className?: string }) {
 
       {!pcEmpty ? (
         <>
-          <p className="pointer-events-none absolute bottom-3.5 left-3.5 hidden items-center gap-1.5 label-micro text-micro-sm text-fg-3 sm:flex">
+          {/* Only with the side-by-side layout: below xl the parts sheet covers the bottom. */}
+          <p className="pointer-events-none absolute bottom-3.5 left-3.5 hidden items-center gap-1.5 label-micro text-micro-sm text-fg-3 xl:flex">
             <Move3d className="size-3.5" aria-hidden />
             Drag or arrow keys to rotate · Scroll or +/− to zoom · R resets
           </p>

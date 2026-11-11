@@ -659,3 +659,29 @@ export function partClashes(scene: SceneLayout, tolerance = 0.5): string[] {
     }
   return out;
 }
+
+/**
+ * The box the camera frames (mm): the case, and in the exploded view every part
+ * where it has moved to. Framing this instead of only the case keeps the lifted
+ * cooler and the pulled-out parts on screen, even on a narrow phone.
+ */
+export function viewFrame(
+  scene: SceneLayout,
+  exploded: boolean,
+): { center: Vec3; size: Vec3 } {
+  const half = scene.case.size.map((v) => v / 2);
+  const min = half.map((v) => -v) as Vec3;
+  const max = [...half] as Vec3;
+  if (exploded)
+    for (const p of scene.parts) {
+      const b = partBounds({ ...p, origin: explodedOrigin(p, true) });
+      for (let i = 0; i < 3; i++) {
+        min[i] = Math.min(min[i], b.min[i]);
+        max[i] = Math.max(max[i], b.max[i]);
+      }
+    }
+  return {
+    center: [0, 1, 2].map((i) => (min[i] + max[i]) / 2) as Vec3,
+    size: [0, 1, 2].map((i) => max[i] - min[i]) as Vec3,
+  };
+}

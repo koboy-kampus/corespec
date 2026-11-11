@@ -16,6 +16,7 @@ import {
   focusPoint,
   layoutBuild,
   partBounds,
+  viewFrame,
   type CaseLayout,
   type PartLayout,
   type Vec3,
@@ -195,7 +196,16 @@ function SceneCanvas({
     if (!activeSlot || activeSlot === "case" || mode !== "builder") return null;
     return focusPoint(scene, activeSlot).map((v) => v * MM_TO_UNITS) as Vec3;
   }, [scene, activeSlot, mode]);
-  const caseSize = scene.case.size.map((v) => v * MM_TO_UNITS) as Vec3;
+  // The camera frames the case, or in the exploded view everything that moved out.
+  const frame = useMemo(() => viewFrame(scene, exploded), [scene, exploded]);
+  const frameSize = frame.size.map((v) => v * MM_TO_UNITS) as Vec3;
+  const [cx, cy, cz] = frame.center.map((v) => v * MM_TO_UNITS);
+  // Exploded, a little extra room so the lifted cooler clears the buttons that
+  // sit over the top of the view (PC/Desk, Assemble).
+  const view = useMemo(
+    () => ({ target: [cx, cy, cz] as Vec3, fit: exploded ? 1.15 : 1 }),
+    [cx, cy, cz, exploded],
+  );
 
   const render = (item: Item, isLeaving: boolean) => (
     <Animated
@@ -257,10 +267,10 @@ function SceneCanvas({
         </group>
       </Turntable>
       <CameraRig
-        caseSize={caseSize}
+        caseSize={frameSize}
+        view={view}
         focus={focus}
         interactive={mode === "builder"}
-        exploded={exploded}
         keysRef={cameraKeysRef}
         embedded={embedded}
       />

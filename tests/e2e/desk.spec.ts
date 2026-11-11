@@ -103,9 +103,7 @@ test("a too-narrow desk flags only what hangs over its edge", async ({
   await expect(text).toContainText(
     "Highlighted with warnings: Edifier R1080BT",
   );
-  await expect(text).toContainText(
-    "They hang over the edge of the IKEA MICKE",
-  );
+  await expect(text).toContainText("They hang over the edge of the IKEA MICKE");
   // The desk itself isn't one of the highlighted items.
   await expect(text).not.toContainText(/warnings: [^.]*IKEA MICKE/);
 });

@@ -13,7 +13,12 @@ and see every price in Rupiah.
 - **Live compatibility checks.** Socket, memory type, RAM slots, board and case form
   factor, GPU length, cooler height, PSU size and power headroom. Problem parts glow
   coral in 3D and are flagged in the part picker.
-- **Prices in Rupiah.** Approximate street prices with the "as of" date always shown.
+- **Desk setup in 3D.** Monitor, arm, keyboard, mouse, chair, desk and 6 more
+  categories, placed on a to-scale desk with its own checks (desk width, monitor
+  vs graphics card, arm limits, adaptive sync).
+- **Prices in Rupiah.** Each price is marked _Checked_ (a marketplace listing
+  checked by hand, with its date) or _Estimate_, and links to Tokopedia or
+  Shopee. Every category has Budget, Mid and High-end options.
 - **Wattage estimate** with a 1.3× PSU headroom target.
 - **My builds.** Saved automatically in the browser; rename, duplicate, delete.
 - **Share links.** The whole build lives in the URL (`/b/<code>`), with a read-only
@@ -25,7 +30,11 @@ and see every price in Rupiah.
 | ----------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
 | ![An ITX case flagging three parts](docs/screenshots/compatibility.png) | ![Exploded 3D view](docs/screenshots/exploded.png) | ![Builder on a phone](docs/screenshots/mobile.png) |
 
-More: [landing page](docs/screenshots/landing.png) · [shared build](docs/screenshots/shared.png)
+| Setup tab                                                           | Desk view                                      |
+| ------------------------------------------------------------------- | ---------------------------------------------- |
+| ![The setup tab with a suggested setup](docs/screenshots/setup.png) | ![The 3D desk view](docs/screenshots/desk.png) |
+
+More: [landing page](docs/screenshots/landing.png) · [shared build](docs/screenshots/shared.png) · [5-minute demo script](docs/demo-script.md)
 
 ## Tech stack
 

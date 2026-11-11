@@ -3,7 +3,7 @@
 import { CATEGORY_LABEL } from "@/lib/categories";
 import type { CompatResult } from "@/lib/compat/rules";
 import { DESK } from "@/lib/desk";
-import { partLabel } from "@/lib/parts";
+import { partLabel } from "@/lib/labels";
 import { deskSummary } from "@/lib/viewer/desk-highlights";
 import type { Case, ResolvedSetup } from "@/types/parts";
 

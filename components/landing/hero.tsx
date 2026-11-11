@@ -88,7 +88,11 @@ export function Hero() {
           />
 
           <div className="hero-enter relative [animation-delay:100ms]">
-            <HeroViewer />
+            <HeroViewer
+              parts={showcase.parts}
+              gpuLengthMm={showcase.gpu.lengthMm}
+              psuWatts={showcase.psuWatts}
+            />
           </div>
 
           <div className="hero-enter relative z-10 -mt-16 flex justify-center [animation-delay:250ms] sm:-mt-24 lg:absolute lg:right-0 lg:bottom-0 lg:mt-0 lg:block">

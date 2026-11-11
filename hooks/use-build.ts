@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { deriveBuild } from "@/lib/derive";
 import { useBuildStore } from "@/store/build";
 
@@ -30,15 +30,4 @@ export function useBuildDerived() {
   return useMemo(() => deriveBuild(parts), [parts]);
 }
 
-/** True when the media query matches; false on the server. */
-export function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const mql = window.matchMedia(query);
-      mql.addEventListener("change", onChange);
-      return () => mql.removeEventListener("change", onChange);
-    },
-    () => window.matchMedia(query).matches,
-    () => false,
-  );
-}
+export { useMediaQuery } from "./use-media-query";

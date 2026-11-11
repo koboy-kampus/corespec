@@ -10,7 +10,10 @@ import {
   layoutBuild,
   partBounds,
   partClashes,
+  viewFrame,
 } from "./layout";
+import { PerspectiveCamera, Vector3 } from "three";
+import { fitDistance } from "./fit";
 import { clampDelta, easeInOutCubic, isSettled, stepSpring } from "./spring";
 
 const TOLERANCE = 1; // mm
@@ -219,4 +222,58 @@ describe("parts never intersect", () => {
     }
     expect(builds).toBeGreaterThan(1000);
   }, 60_000);
+});
+
+describe("the exploded view stays in frame", () => {
+  // The camera rig's home view: fov 30°, looking from the front, a bit above.
+  const HOME_DIR = new Vector3(-0.32, 0.26, 1).normalize();
+
+  /** Every corner of every part, exploded, projected to the screen (-1..1). */
+  function onScreen(build: ResolvedBuild, aspect: number, exploded: boolean) {
+    const scene = layoutBuild(build);
+    const frame = viewFrame(scene, exploded);
+    const camera = new PerspectiveCamera(30, aspect, 0.1, 1e6);
+    const target = new Vector3(...frame.center);
+    camera.position
+      .copy(target)
+      .addScaledVector(HOME_DIR, fitDistance(frame.size, 30, aspect));
+    camera.lookAt(target);
+    camera.updateMatrixWorld();
+    const out: string[] = [];
+    for (const p of scene.parts) {
+      const { min, max } = partBounds({
+        ...p,
+        origin: explodedOrigin(p, exploded),
+      });
+      for (const x of [min[0], max[0]])
+        for (const y of [min[1], max[1]])
+          for (const z of [min[2], max[2]]) {
+            const v = new Vector3(x, y, z).project(camera);
+            if (Math.abs(v.x) > 1 || Math.abs(v.y) > 1)
+              out.push(`${p.category} at ${v.x.toFixed(2)}, ${v.y.toFixed(2)}`);
+          }
+    }
+    return out;
+  }
+
+  it.each(presets.map((p) => [p.name, p] as const))(
+    "%s: every exploded part is on screen, phone to widescreen",
+    (_, preset) => {
+      for (const aspect of [0.46, 0.75, 1, 1.8]) {
+        const build = resolveBuild(preset.parts);
+        expect(onScreen(build, aspect, true), `aspect ${aspect}`).toEqual([]);
+        expect(onScreen(build, aspect, false), `aspect ${aspect}`).toEqual([]);
+      }
+    },
+  );
+
+  it("frames just the case when not exploded, as before", () => {
+    const scene = layoutBuild(resolveBuild(presets[1].parts));
+    expect(viewFrame(scene, false)).toEqual({
+      center: [0, 0, 0],
+      size: scene.case.size,
+    });
+    const out = viewFrame(scene, true);
+    expect(out.size[1]).toBeGreaterThan(scene.case.size[1]); // the cooler lifts
+  });
 });

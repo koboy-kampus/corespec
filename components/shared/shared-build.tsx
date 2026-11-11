@@ -118,7 +118,13 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
           aria-label="Build preview"
           className="relative isolate h-[44vh] min-h-[300px] overflow-hidden rounded-card border border-line bg-surface/40 lg:h-[600px]"
         >
-          <SharedViewer parts={shared.parts} />
+          <SharedViewer
+            resolved={d.resolved}
+            severityByCategory={d.severityByCategory}
+            setup={d.setup}
+            setupResults={d.setupResults}
+            setupFilled={d.setupFilled}
+          />
         </section>
 
         <div className="flex min-w-0 flex-col gap-6 rounded-card border border-line bg-surface p-5 shadow-edge">

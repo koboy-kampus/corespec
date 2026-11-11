@@ -11,7 +11,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "cn";
-import { useMediaQuery } from "@/hooks/use-build";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useNearAndIdle } from "@/hooks/use-near-and-idle";
 import { reportError } from "@/lib/sentry";
 import type { CameraKeys } from "./camera-rig";

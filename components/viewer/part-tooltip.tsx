@@ -4,7 +4,7 @@ import { Html } from "@react-three/drei";
 import { cn } from "cn";
 import { CATEGORY_LABEL } from "@/lib/categories";
 import { formatIDR } from "@/lib/format";
-import { partLabel } from "@/lib/parts";
+import { partLabel } from "@/lib/labels";
 import { shownPrice } from "@/lib/prices";
 import type { Vec3 } from "@/lib/viewer/layout";
 import type { Item } from "@/types/parts";

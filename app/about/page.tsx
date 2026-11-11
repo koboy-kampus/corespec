@@ -26,12 +26,19 @@ export default function Page() {
           <li>
             Adds the rest of the desk: {CATALOG_STATS.setupItems} setup items
             across {CATALOG_STATS.setupCategories} categories (monitor,
-            keyboard, mouse, chair, desk and more), with PC, setup and total
-            costs.
+            keyboard, mouse, chair, desk and more), shown on a 3D desk, with PC,
+            setup and total costs.
+          </li>
+          <li>
+            Sorts every category into Budget, Mid and High-end, and links each
+            item to Tokopedia or Shopee: a listing checked by hand where there
+            is one, otherwise a marketplace search.
           </li>
           <li>
             Checks compatibility as you go: CPU socket, memory type, RAM slots,
-            board and case size, GPU length, cooler height and power supply.
+            board and case size, GPU length, cooler height and power supply. For
+            the desk: monitor against the graphics card, desk width, monitor arm
+            limits and adaptive sync.
           </li>
           <li>Estimates power draw against your PSU.</li>
           <li>
