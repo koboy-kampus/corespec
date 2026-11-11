@@ -113,17 +113,25 @@ const TOP_GAP = 24;
 const SHROUD_H = 100;
 
 /**
- * Board fractions per form factor: socket centre (from the rear edge / from the top),
- * the first RAM slot (from the socket toward the front) and the PCIe x16 slot (from the top).
+ * Board fractions per form factor: socket centre (from the rear edge / from the top)
+ * and the first RAM slot (from the socket toward the front).
  */
 const BOARD_POINTS: Record<
   BoardFF,
-  { socketU: number; socketV: number; ramU: number; pcieV: number }
+  { socketU: number; socketV: number; ramU: number }
 > = {
-  ATX: { socketU: 0.4, socketV: 0.3, ramU: 0.27, pcieV: 0.5 },
-  mATX: { socketU: 0.42, socketV: 0.34, ramU: 0.27, pcieV: 0.53 },
-  ITX: { socketU: 0.45, socketV: 0.38, ramU: 0.3, pcieV: 0.82 },
+  ATX: { socketU: 0.4, socketV: 0.3, ramU: 0.27 },
+  mATX: { socketU: 0.42, socketV: 0.34, ramU: 0.27 },
+  ITX: { socketU: 0.45, socketV: 0.38, ramU: 0.3 },
 };
+
+/**
+ * Socket centre to the top of the PCIe x16 slot. Real boards keep about this much
+ * room, so the biggest tower coolers (an NH-D15 hangs 75 mm below the socket) and
+ * 133 mm DIMMs end above the graphics card. Fixed in mm, not a fraction of the
+ * board, so a shorter board can't pull the slot up into the cooler.
+ */
+export const SOCKET_TO_PCIE = 80;
 
 /**
  * Case fans: up to three 120 mm intakes on the front panel (92 mm in narrow cases),
@@ -203,7 +211,7 @@ export function anchorMap(
   const boardBottom = top - bl;
 
   const socket: Vec3 = [rearEdge - p.socketU * bw, top - p.socketV * bl, pcbZ];
-  const pcieY = top - p.pcieV * bl;
+  const pcieY = socket[1] - SOCKET_TO_PCIE;
 
   // A shroud only fits when there's room under the board for a PSU.
   const roomBelow = boardBottom - min[1];
@@ -584,4 +592,35 @@ export function explodedOrigin(p: PartLayout, exploded: boolean): Vec3 {
   if (!exploded) return p.origin;
   const o = EXPLODE_MM[p.category];
   return [p.origin[0] + o[0], p.origin[1] + o[1], p.origin[2] + o[2]];
+}
+
+/**
+ * Pairs of parts whose blocks intersect (deeper than `tolerance` mm on every axis),
+ * e.g. "cooler × gpu". The board is left out: everything mounts on it.
+ */
+export function partClashes(scene: SceneLayout, tolerance = 0.5): string[] {
+  const boxes = scene.parts
+    .filter((p) => p.category !== "motherboard")
+    .map((p) => ({
+      category: p.category,
+      blocks: p.blocks.map((b) => ({
+        min: b.pos.map((v, i) => p.origin[i] + v - b.size[i] / 2),
+        max: b.pos.map((v, i) => p.origin[i] + v + b.size[i] / 2),
+      })),
+    }));
+  const out: string[] = [];
+  for (let i = 0; i < boxes.length; i++)
+    for (let j = i + 1; j < boxes.length; j++) {
+      const hit = boxes[i].blocks.some((a) =>
+        boxes[j].blocks.some((b) =>
+          [0, 1, 2].every(
+            (k) =>
+              Math.min(a.max[k], b.max[k]) - Math.max(a.min[k], b.min[k]) >
+              tolerance,
+          ),
+        ),
+      );
+      if (hit) out.push(`${boxes[i].category} × ${boxes[j].category}`);
+    }
+  return out;
 }

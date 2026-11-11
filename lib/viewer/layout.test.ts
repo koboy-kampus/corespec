@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { getPart, resolveBuild } from "@/lib/parts";
+import { check } from "@/lib/compat/check";
+import { getPart, getPartsByCategory, resolveBuild } from "@/lib/parts";
 import { presets } from "@/lib/presets";
+import { showcase } from "@/lib/showcase";
 import type { ResolvedBuild } from "@/types/parts";
-import { explodedOrigin, focusPoint, layoutBuild, partBounds } from "./layout";
+import {
+  explodedOrigin,
+  focusPoint,
+  layoutBuild,
+  partBounds,
+  partClashes,
+} from "./layout";
 import { clampDelta, easeInOutCubic, isSettled, stepSpring } from "./spring";
 
 const TOLERANCE = 1; // mm
@@ -159,4 +167,56 @@ describe("board details and exploded view", () => {
       expect(explodedOrigin(p, false)).toEqual(p.origin);
     }
   });
+});
+
+describe("parts never intersect", () => {
+  it("the landing hero's showcase build has no intersecting parts", () => {
+    // The hero renders this exact build through the same layoutBuild as the builder.
+    expect(partClashes(layoutBuild(showcase.parts))).toEqual([]);
+  });
+
+  it.each(presets.map((p) => [p.name, p] as const))(
+    "%s has no intersecting parts",
+    (_, preset) => {
+      expect(partClashes(layoutBuild(resolveBuild(preset.parts)))).toEqual([]);
+    },
+  );
+
+  it("finds a clash when two parts share space", () => {
+    const scene = layoutBuild(resolveBuild(presets[1].parts));
+    const gpu = scene.parts.find((p) => p.category === "gpu")!;
+    const cooler = scene.parts.find((p) => p.category === "cooler")!;
+    gpu.origin = [...cooler.origin];
+    expect(partClashes(scene)).toContain("cooler × gpu");
+  });
+
+  it("no tower cooler or RAM reaches the graphics card, in any compatible build", () => {
+    let builds = 0;
+    for (const board of getPartsByCategory("motherboard")) {
+      const cpu = getPartsByCategory("cpu").find(
+        (c) => c.socket === board.socket,
+      );
+      for (const cooler of getPartsByCategory("cooler"))
+        for (const gpu of getPartsByCategory("gpu"))
+          for (const ram of getPartsByCategory("ram"))
+            for (const pcCase of getPartsByCategory("case")) {
+              const parts = {
+                motherboard: board.id,
+                cpu: cpu?.id,
+                cooler: cooler.id,
+                gpu: gpu.id,
+                ram: ram.id,
+                case: pcCase.id,
+              };
+              if (check(parts).some((r) => r.severity === "error")) continue;
+              builds++;
+              const clashes = partClashes(layoutBuild(resolveBuild(parts)));
+              expect(
+                clashes.filter((c) => c.includes("gpu")),
+                JSON.stringify(parts),
+              ).toEqual([]);
+            }
+    }
+    expect(builds).toBeGreaterThan(1000);
+  }, 60_000);
 });
