@@ -40,7 +40,7 @@ A rule only runs when every part it reads has been picked. For example, the GPU-
 
 **GPU class (`targetRes`)** is a rough, hand-picked class per GPU (the resolution it's aimed at in current games at high settings), stated as approximate in `types/parts.ts`. It is a guide, not a benchmark.
 
-**Desk width numbers** come from `frontageMm()` in `lib/desk.ts`, the same function the 3D desk (Phase 12) uses to place the monitor and speakers, so the warning and the picture agree.
+**Desk width numbers** come from `frontageMm()` in `lib/desk.ts`, the same function the 3D desk (Phase 12) uses to place the monitor and speakers, so the warning and the picture agree. In the 3D desk view, only the items that hang over the edge glow amber, and that edge of the desk gets a thin amber line (`deskHighlights()` in `lib/viewer/desk-highlights.ts`); a unit test checks that something hangs over exactly when the rule warns.
 
 **Monitor weight** is the panel without its stand (what an arm holds), approximate.
 

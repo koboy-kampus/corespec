@@ -110,10 +110,6 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
           aria-label="Build preview"
           className="relative isolate h-[44vh] min-h-[300px] overflow-hidden rounded-card border border-line bg-surface/40 lg:h-[600px]"
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_45%,rgba(254,46,75,0.16),transparent_60%)]"
-          />
           <SharedViewer parts={shared.parts} />
         </section>
 

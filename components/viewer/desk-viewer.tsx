@@ -5,6 +5,15 @@ import { cn } from "cn";
 import { ViewerShell, ViewerSkeleton } from "./viewer";
 import type { DeskSceneProps } from "./desk-scene";
 
+/**
+ * The desk view's screen-reader text. It runs the desk layout (to know what hangs
+ * over the edge), so it loads with the desk scene, not with the PC builder.
+ */
+export const DeskDescription = dynamic(
+  () => import("./desk-description").then((m) => m.DeskDescription),
+  { ssr: false },
+);
+
 // Its own chunk: the PC builder and the landing page never download the desk scene.
 const DeskScene = dynamic(() => import("./desk-scene"), {
   ssr: false,

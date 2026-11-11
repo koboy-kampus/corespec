@@ -35,8 +35,10 @@ export type DeskTone =
   | "screen"
   /** Emissive: light bars, lamps, LED strips. */
   | "light"
-  /** Emissive: the PC's glass side panel. */
-  | "glass";
+  /** The PC's smoked glass side panel (see-through). */
+  | "smoke"
+  /** Parts glimpsed through the PC's glass. */
+  | "pcb";
 
 export interface DeskBlock {
   /** Centre, relative to the item's origin. */
@@ -45,6 +47,11 @@ export interface DeskBlock {
   tone: DeskTone;
   /** Drawn as an upright cylinder fitted to the box (poles, mic bases). */
   round?: boolean;
+  /**
+   * Curved panel: the ends come this many mm toward the person. The box already
+   * includes it (its depth is the panel's thickness plus the curve).
+   */
+  bend?: number;
 }
 
 /** A slot in the desk scene: a setup category, or the PC as one box. */
@@ -59,10 +66,12 @@ export interface DeskItemLayout {
   blocks: DeskBlock[];
   /** Where it ended up. */
   spot: "desk" | "floor" | "monitor" | "edge";
+  /** Turned about its origin's vertical axis, in radians (the chair). */
+  rotY?: number;
 }
 
 /** Anything with an origin and blocks. */
-export type Placed = Pick<DeskItemLayout, "origin" | "blocks">;
+export type Placed = Pick<DeskItemLayout, "origin" | "blocks" | "rotY">;
 
 export interface DeskLayout {
   desk: { widthMm: number; depthMm: number; heightMm: number; ghost: boolean };
@@ -92,8 +101,13 @@ const CLEARANCE = 15;
 const GRID = 20;
 const PANEL_T = 40;
 const BEZEL = 8;
-/** Gap between the desk's front edge and the chair. */
-const CHAIR_GAP = 180;
+/** Gap between the desk's front edge and the chair: pulled out, as if just stood up. */
+const CHAIR_GAP = 600;
+/** The chair is turned a little and sits off-centre, so it doesn't hide the desk. */
+const CHAIR_TURN = -0.8;
+const CHAIR_SHIFT = 0.3;
+/** How far a curved screen's ends come forward, per mm of width (about an 1800R curve). */
+const CURVE_SAG = 1 / 14;
 /** Sit/stand desks are drawn at seated height (Rei's call in Phase 12). */
 export const SEATED_HEIGHT_MM = 730;
 
@@ -118,13 +132,30 @@ function panelHeight(m: Monitor): number {
   return Math.min(m.dims!.l * ratio, m.dims!.h - 60);
 }
 
-/** World-space boxes of an item's blocks. */
+/**
+ * World-space boxes of an item's blocks. A turned item (the chair) gives the
+ * axis-aligned box around each turned block, same rotation as three.js `rotation.y`.
+ */
 export function itemBoxes(item: Placed): Box[] {
+  const r = item.rotY ?? 0;
+  const cos = Math.cos(r);
+  const sin = Math.sin(r);
   return item.blocks.map((b) => {
-    const c = b.pos.map((p, i) => p + item.origin[i]) as Vec3;
+    const [bx, by, bz] = b.pos;
+    const local: Vec3 = r
+      ? [bx * cos + bz * sin, by, -bx * sin + bz * cos]
+      : [bx, by, bz];
+    const half: Vec3 = r
+      ? [
+          (Math.abs(cos) * b.size[0] + Math.abs(sin) * b.size[2]) / 2,
+          b.size[1] / 2,
+          (Math.abs(sin) * b.size[0] + Math.abs(cos) * b.size[2]) / 2,
+        ]
+      : [b.size[0] / 2, b.size[1] / 2, b.size[2] / 2];
+    const c = local.map((p, i) => p + item.origin[i]) as Vec3;
     return {
-      min: c.map((v, i) => v - b.size[i] / 2) as Vec3,
-      max: c.map((v, i) => v + b.size[i] / 2) as Vec3,
+      min: c.map((v, i) => v - half[i]) as Vec3,
+      max: c.map((v, i) => v + half[i]) as Vec3,
     };
   });
 }
@@ -251,12 +282,41 @@ function lampBlocks(l: number, w: number, h: number): DeskBlock[] {
   ];
 }
 
+/**
+ * The PC: a frame with a smoked glass side toward the chair, and a few dim shapes
+ * behind it (board, graphics card, cooler, PSU cover) hinting at the parts inside.
+ * Case length along x, width along z; everything stays inside l × h × w.
+ */
 function pcBlocks(c: Case): DeskBlock[] {
-  // Glass side facing the chair: case length along x, width along z.
   const { l, w, h } = c.dims!;
+  const t = 12;
+  const inner = w - 2 * t;
+  const back = -w / 2 + t; // inside face of the far panel
+  const shroud = Math.min(h * 0.2, 110);
   return [
-    block(0, 0, 0, [l, h, w], "dark"),
-    block(0, 20, w / 2 + 1, [l - 40, h - 40, 2], "glass"),
+    block(0, 0, -w / 2 + t / 2, [l, h, t], "dark"), // far side panel
+    block(0, 0, t / 2, [l, t, w - t], "dark"), // floor
+    block(0, h - t, t / 2, [l, t, w - t], "dark"), // roof
+    block(-l / 2 + t / 2, t, t / 2, [t, h - 2 * t, w - t], "dark"), // front
+    block(l / 2 - t / 2, t, t / 2, [t, h - 2 * t, w - t], "dark"), // back
+    block(0, t, w / 2 - 2, [l - 2 * t, h - 2 * t, 3], "smoke"), // glass
+    // Inside, seen through the glass.
+    block(0, t, 0, [l - 2 * t, shroud, inner * 0.9], "dark"), // PSU cover
+    block(l * 0.05, t + shroud + h * 0.06, back + 3, [l * 0.6, h * 0.62, 6], "pcb"),
+    block(
+      l * 0.02,
+      t + shroud + h * 0.12,
+      back + 6 + inner * 0.25,
+      [l * 0.62, Math.min(48, h * 0.1), inner * 0.45],
+      "black",
+    ),
+    block(
+      l * 0.12,
+      t + shroud + h * 0.4,
+      back + 6 + inner * 0.2,
+      [Math.min(80, l * 0.2), Math.min(90, h * 0.2), inner * 0.38],
+      "steel",
+    ),
   ];
 }
 
@@ -364,6 +424,30 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
   });
 
   const { monitor, arm, speakers, lighting, webcam } = setup;
+  const { keyboard, mouse, mousepad } = setup;
+  const zEnd = D / 2 - EDGE;
+  const kb = keyboard?.dims;
+  // Mice are longer than they're wide: run the long side toward the person.
+  const ms = mouse?.dims
+    ? {
+        l: Math.min(mouse.dims.l, mouse.dims.w),
+        w: Math.max(mouse.dims.l, mouse.dims.w),
+        h: mouse.dims.h,
+      }
+    : undefined;
+  /** Depth the front row needs (keyboard and mouse; the pad shrinks to fit). */
+  const frontNeed = Math.max(kb?.w ?? 0, ms?.w ?? 0);
+
+  /** What stands at the back of the desk top: an x range and its front edge. */
+  const backRow: { x0: number; x1: number; front: number }[] = [];
+  /** Where the front row can start over [x0, x1]: past whatever stands behind it. */
+  const rowStart = (x0: number, x1: number) =>
+    Math.max(
+      back,
+      ...backRow
+        .filter((r) => r.x1 + CLEARANCE > x0 && r.x0 - CLEARANCE < x1)
+        .map((r) => r.front),
+    ) + 30;
 
   // Monitor arm: a clamp on the back edge, a pole, and a link toward the screen.
   const poleZ = -D / 2 + 60;
@@ -389,15 +473,16 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
       ],
       spot: "edge",
     });
+    backRow.push({ x0: -55, x1: 55, front: poleZ + 55 });
   }
 
   // Monitor: on its stand at the back of the desk, or hanging on the arm.
-  let backFront = back; // front edge of the back row, on the desk surface
   let screenTop: Vec3 | null = null;
   let lookAt: Vec3 = [0, H + 300, back + 150];
   if (monitor) {
     const { l, w, h } = monitor.dims!;
     const ph = panelHeight(monitor);
+    const bend = monitor.curved ? l * CURVE_SAG * 0.5 : 0;
     let panelBottom: number;
     let panelZ: number;
     const blocks: DeskBlock[] = [];
@@ -408,21 +493,44 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
       const neckZ = back + w * 0.35;
       panelBottom = h - ph;
       panelZ = neckZ + 15 + PANEL_T / 2;
+      // The foot is drawn shallower on a shallow desk, so the keyboard still fits
+      // in front of it (never shallower than the neck needs).
+      const baseD = clamp(
+        zEnd - 10 - frontNeed - 30 - back,
+        neckZ + 30 - back,
+        w,
+      );
+      const baseL = Math.min(l * 0.42, 280);
       blocks.push(
-        block(0, 0, back + w / 2, [Math.min(l * 0.42, 280), 18, w], "black"),
+        block(0, 0, back + baseD / 2, [baseL, 18, baseD], "black"),
         block(0, 18, neckZ, [50, panelBottom + ph * 0.4 - 18, 30], "black"),
       );
-      backFront = Math.max(backFront, back + w);
+      backRow.push({ x0: -baseL / 2, x1: baseL / 2, front: back + baseD });
     }
+    // A curved panel's ends come toward the person: the box grows by the curve,
+    // and the middle stays where a flat panel would be.
+    const curve = bend ? { bend } : {};
     blocks.push(
-      block(0, panelBottom, panelZ, [l, ph, PANEL_T], "black"),
-      block(
-        0,
-        panelBottom + BEZEL,
-        panelZ + PANEL_T / 2 + 1,
-        [l - 2 * BEZEL, ph - 2 * BEZEL, 2],
-        "screen",
-      ),
+      {
+        ...block(
+          0,
+          panelBottom,
+          panelZ + bend / 2,
+          [l, ph, PANEL_T + bend],
+          "black",
+        ),
+        ...curve,
+      },
+      {
+        ...block(
+          0,
+          panelBottom + BEZEL,
+          panelZ + PANEL_T / 2 + 2 + bend / 2,
+          [l - 2 * BEZEL, ph - 2 * BEZEL, 2 + bend],
+          "screen",
+        ),
+        ...curve,
+      },
     );
     add(ctx, {
       key: "monitor",
@@ -438,9 +546,15 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
   // Speakers either side of the monitor, the same spacing the desk-width rule uses.
   if (speakers) {
     const { l, w, h } = speakers.dims!;
-    const cx = frontageMm(monitor, speakers) / 2 - l / 2;
-    // In front of the arm's clamp when there is one.
-    const z0 = arm ? poleZ + 70 : back;
+    // With an arm but no monitor, they move apart to clear the arm's clamp
+    // (the desk-width rule only counts them when there's no monitor, and two
+    // speakers either side of a clamp are far narrower than any desk).
+    const cx = Math.max(
+      frontageMm(monitor, speakers) / 2 - l / 2,
+      arm && !monitor ? 55 + CLEARANCE + l / 2 : 0,
+    );
+    // In front of the arm's clamp, but only when they'd stand in its way.
+    const z0 = arm && cx - l / 2 < 55 + CLEARANCE ? poleZ + 70 : back;
     const z = z0 + w / 2;
     add(ctx, {
       key: "speakers",
@@ -454,9 +568,9 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
       ),
       spot: "desk",
     });
-    backFront = Math.max(backFront, z0 + w);
+    for (const x of [-cx, cx])
+      backRow.push({ x0: x - l / 2, x1: x + l / 2, front: z0 + w });
   }
-  if (arm) backFront = Math.max(backFront, poleZ + 55);
 
   // Light bar and webcam sit on top of the screen (the webcam on the bar, when both).
   let top = screenTop;
@@ -486,35 +600,32 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     });
   }
 
-  // Front row: mousepad, keyboard and mouse, as close to the front edge as fits.
-  const zStart = backFront + 30;
-  const zEnd = D / 2 - EDGE;
-  const { keyboard, mouse, mousepad } = setup;
-  const kb = keyboard?.dims;
-  // Mice are longer than they're wide: run the long side toward the person.
-  const ms = mouse?.dims
-    ? {
-        l: Math.min(mouse.dims.l, mouse.dims.w),
-        w: Math.max(mouse.dims.l, mouse.dims.w),
-        h: mouse.dims.h,
-      }
-    : undefined;
+  // Front row: mousepad, keyboard and mouse, as close to the front edge as fits,
+  // and never past it.
   const groupW = (kb?.l ?? 0) + (kb && ms ? 60 : 0) + (ms?.l ?? 0);
   const kbX = kb ? -groupW / 2 + kb.l / 2 : 0;
   const mouseX = ms ? (kb ? groupW / 2 - ms.l / 2 : 200) : 0;
-  const rowZ = (depth: number) =>
-    Math.max(zStart + depth / 2, zEnd - 10 - depth / 2);
+  const rowZ = (x: number, l: number, depth: number) =>
+    Math.min(
+      zEnd - depth / 2,
+      Math.max(
+        rowStart(x - l / 2, x + l / 2) + depth / 2,
+        zEnd - 10 - depth / 2,
+      ),
+    );
+  const zStart = rowStart(-groupW / 2, groupW / 2);
 
   let pad: { x: number; z: number; l: number; w: number; h: number } | null =
     null;
   if (mousepad) {
     const { l, w, h } = mousepad.dims!;
     const pl = Math.min(l, W - 2 * EDGE);
-    const pw = Math.max(60, Math.min(w, zEnd - zStart));
     // Big enough for both? Then under both, otherwise under the mouse.
     const under = pl >= groupW + 40 || !ms ? 0 : mouseX;
     const x = clamp(under, -W / 2 + EDGE + pl / 2, W / 2 - EDGE - pl / 2);
-    const z = Math.max(zStart + pw / 2, zEnd - pw / 2);
+    const start = rowStart(x - pl / 2, x + pl / 2);
+    const pw = Math.max(60, Math.min(w, zEnd - start));
+    const z = Math.min(zEnd - pw / 2, Math.max(start + pw / 2, zEnd - pw / 2));
     pad = { x, z, l: pl, w: pw, h };
     add(ctx, {
       key: "mousepad",
@@ -531,12 +642,13 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     Math.abs(z - pad.z) < (w + pad.w) / 2
       ? pad.h
       : 0;
+  // The mouse lines up with the keyboard when there is one.
+  const kbZ = kb ? rowZ(kbX, kb.l, kb.w) : 0;
   if (keyboard && kb) {
-    const z = rowZ(kb.w);
     add(ctx, {
       key: "keyboard",
       id: keyboard.id,
-      origin: [kbX, H + restOn(kbX, z, kb.l, kb.w), z],
+      origin: [kbX, H + restOn(kbX, kbZ, kb.l, kb.w), kbZ],
       blocks: [
         block(0, 0, 0, [kb.l, kb.h * 0.6, kb.w], "dark"),
         block(
@@ -551,7 +663,10 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     });
   }
   if (mouse && ms) {
-    const z = kb ? rowZ(kb.w) : rowZ(ms.w);
+    const z = Math.min(
+      zEnd - ms.w / 2,
+      Math.max(kb ? kbZ : -Infinity, rowZ(mouseX, ms.l, ms.w)),
+    );
     add(ctx, {
       key: "mouse",
       id: mouse.id,
@@ -590,15 +705,16 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     });
   }
 
-  // Chair in front of the desk.
+  // Chair in front of the desk, pulled out and turned a little, as if just stood up.
   if (setup.chair) {
     const { l, w, h } = setup.chair.dims!;
     add(ctx, {
       key: "chair",
       id: setup.chair.id,
-      origin: [0, 0, D / 2 + CHAIR_GAP + w / 2],
+      origin: [W * CHAIR_SHIFT, 0, D / 2 + CHAIR_GAP + w / 2],
       blocks: chairBlocks(l, w, h),
       spot: "floor",
+      rotY: CHAIR_TURN,
     });
   }
 
@@ -666,7 +782,7 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
   const bounds = union(ctx.items.flatMap(itemBoxes));
   const room: Box = {
     min: [-W / 2 - 450, 0, -D / 2],
-    max: [W / 2 + 250, H + 550, D / 2 + CHAIR_GAP + 650],
+    max: [W / 2 + 250, H + 550, D / 2 + CHAIR_GAP + 500],
   };
   return {
     desk: { widthMm: W, depthMm: D, heightMm: H, ghost: !desk },
@@ -675,6 +791,24 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     bounds,
     frame: union([bounds, room]),
   };
+}
+
+/** Where the seated view looks from (before normalising): behind the chair, above eye height. */
+export const SEATED_DIR: Vec3 = [0.15, 0.65, 1];
+/** The seated view's distance, as a share of the distance that fits the whole frame. */
+export const SEATED_FIT = 0.95;
+
+/**
+ * What the seated view aims at: between the desk top and the screen, centred on
+ * what's framed (a PC on the floor pulls it left), so the whole setup fits.
+ */
+export function seatedTarget(layout: DeskLayout): Vec3 {
+  const { min, max } = layout.frame;
+  return [
+    ((min[0] + max[0]) / 2 + layout.lookAt[0]) / 2,
+    (layout.desk.heightMm + layout.lookAt[1]) / 2,
+    ((min[2] + max[2]) / 2 + layout.lookAt[2]) / 2,
+  ];
 }
 
 /** Point the camera eases to for a slot: the middle of that item. */

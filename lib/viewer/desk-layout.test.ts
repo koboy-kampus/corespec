@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { deskWidth } from "@/lib/compat/setup-rules";
 import { CATALOG, SETUP_CATALOG } from "@/lib/parts";
 import type { Case, ResolvedSetup } from "@/types/parts";
+import { fitDistance } from "./fit";
 import {
+  SEATED_DIR,
+  SEATED_FIT,
   SEATED_HEIGHT_MM,
   boxesOverlap,
   deskFocus,
@@ -11,10 +14,13 @@ import {
   itemBounds,
   itemBoxes,
   layoutDesk,
+  seatedTarget,
   segmentHitsBox,
+  type Box,
   type DeskKey,
   type DeskLayout,
 } from "./desk-layout";
+import type { Vec3 } from "./layout";
 
 const S = SETUP_CATALOG;
 const byId = <T extends { id: string }>(list: T[], id: string) =>
@@ -36,6 +42,14 @@ const item = (l: DeskLayout, key: DeskKey) => {
   return found;
 };
 const bounds = (l: DeskLayout, key: DeskKey) => itemBounds(item(l, key));
+
+/** Front-row items that stick out past the desk's front edge. */
+function pastFront(l: DeskLayout): string[] {
+  return (["keyboard", "mouse", "mousepad"] as const).filter((k) => {
+    const found = l.items.find((i) => i.key === k);
+    return !!found && itemBounds(found).max[2] > l.desk.depthMm / 2 + 0.5;
+  });
+}
 
 /** Every pair of different items, checked box by box. */
 function overlaps(l: DeskLayout): string[] {
@@ -157,9 +171,46 @@ describe("items on and around the desk", () => {
     );
   });
 
-  it("puts the chair in front of the desk", () => {
+  it("puts the chair in front of the desk, pulled out and turned", () => {
     const l = layoutDesk({ desk: micke, chair: S.chair[0] });
     expect(bounds(l, "chair").min[2]).toBeGreaterThan(micke.depthMm / 2);
+    expect(item(l, "chair").rotY).not.toBe(0);
+  });
+
+  it("boxes a turned item by its turned corners", () => {
+    const flat = {
+      origin: [0, 0, 0] as Vec3,
+      blocks: [
+        {
+          pos: [0, 50, 0] as Vec3,
+          size: [200, 100, 100] as Vec3,
+          tone: "dark" as const,
+        },
+      ],
+    };
+    const quarter = itemBounds({ ...flat, rotY: Math.PI / 2 });
+    expect(quarter.max[0]).toBeCloseTo(50);
+    expect(quarter.max[2]).toBeCloseTo(100);
+    const eighth = itemBounds({ ...flat, rotY: Math.PI / 4 });
+    expect(eighth.max[0]).toBeCloseTo(300 / 2 / Math.SQRT2);
+  });
+
+  it("curves a curved monitor toward the person, and leaves flat ones flat", () => {
+    for (const m of S.monitor) {
+      const blocks = item(layoutDesk({ monitor: m }), "monitor").blocks;
+      expect(blocks.filter((b) => b.bend).length, m.id).toBe(m.curved ? 2 : 0);
+    }
+  });
+
+  it("keeps the PC's smoked glass and the parts inside within the case's size", () => {
+    for (const c of [nr200, terra, lancool]) {
+      const l = layoutDesk({ desk: mittzon }, c);
+      const b = bounds(l, "pc");
+      expect(b.max[0] - b.min[0]).toBeCloseTo(c.dims!.l);
+      expect(b.max[1] - b.min[1]).toBeCloseTo(c.dims!.h);
+      expect(b.max[2] - b.min[2]).toBeCloseTo(c.dims!.w);
+      expect(item(l, "pc").blocks.some((x) => x.tone === "smoke")).toBe(true);
+    }
   });
 
   it("puts an ITX-only case on the desk and other cases on the floor", () => {
@@ -225,9 +276,33 @@ describe("no overlaps", () => {
                   overlaps(l),
                   `${JSON.stringify(setup)} ${c?.id}`,
                 ).toEqual([]);
+                expect(pastFront(l), `${d.id} ${c?.id}`).toEqual([]);
                 n++;
               }
     expect(n).toBe(4 * S.monitor.length * 5 * 3 * 5 * 4);
+  }, 30_000);
+
+  it("never puts the keyboard, mouse or pad past the front edge", () => {
+    let n = 0;
+    for (const d of S.desk)
+      for (const m of [undefined, ...S.monitor])
+        for (const arm of [undefined, ...S.arm])
+          for (const sp of [undefined, ...S.speakers])
+            for (const kb of S.keyboard) {
+              const l = layoutDesk({
+                desk: d,
+                monitor: m,
+                arm,
+                speakers: sp,
+                keyboard: kb,
+                mouse: S.mouse[n % S.mouse.length],
+                mousepad: S.mousepad[n % S.mousepad.length],
+              });
+              n++;
+              const why = `${d.id} ${m?.id} ${arm?.id} ${sp?.id} ${kb.id}`;
+              expect(pastFront(l), why).toEqual([]);
+              expect(overlaps(l), why).toEqual([]);
+            }
   }, 30_000);
 
   it("stays clear with every item but no desk, monitor or keyboard", () => {
@@ -270,25 +345,48 @@ describe("camera helpers", () => {
     ).toBe(false);
   });
 
-  it("the chair sits between the seated camera and the screen, so the view fades it", () => {
+  /** Where the seated camera ends up, for a fitted distance `dist` (mm). */
+  const seatedCamera = (l: DeskLayout, dist: number): Vec3 => {
+    const t = seatedTarget(l);
+    const n = Math.hypot(...SEATED_DIR);
+    return t.map((v, i) => v + (SEATED_DIR[i] / n) * dist) as Vec3;
+  };
+  const grow = (b: Box, by: number): Box => ({
+    min: b.min.map((v) => v - by) as Vec3,
+    max: b.max.map((v) => v + by) as Vec3,
+  });
+
+  it("from the seated view, no chair hides the screen (so it shows, unfaded)", () => {
+    for (const d of S.desk)
+      for (const chair of S.chair)
+        for (const m of S.monitor)
+          for (const arm of [undefined, S.arm[0]]) {
+            const l = layoutDesk({ desk: d, monitor: m, arm, chair }, lancool);
+            const box = grow(bounds(l, "chair"), 60);
+            const { min, max } = l.frame;
+            const size = [0, 1, 2].map((i) => max[i] - min[i]) as Vec3;
+            // The same distance the camera rig fits, for a phone, a square and a wide viewport.
+            for (const aspect of [0.45, 1, 1.8]) {
+              const dist = fitDistance(size, 30, aspect) * SEATED_FIT;
+              expect(
+                segmentHitsBox(seatedCamera(l, dist), l.lookAt, box),
+                `${d.id} ${chair.id} ${m.id} ${arm?.id} ${aspect}`,
+              ).toBe(false);
+            }
+          }
+  });
+
+  it("from behind the chair at eye height it hides the screen, so the fade still has a job", () => {
     const l = layoutDesk({ desk: micke, monitor: aw, chair: S.chair[1] });
     const chair = bounds(l, "chair");
-    const behind: [number, number, number] = [0, 1250, chair.max[2] + 400];
+    const behind: Vec3 = [
+      (chair.min[0] + chair.max[0]) / 2,
+      1100,
+      chair.max[2] + 600,
+    ];
     expect(segmentHitsBox(behind, l.lookAt, chair)).toBe(true);
     // From high above the desk the line clears it.
     expect(segmentHitsBox([0, 3000, 0], l.lookAt, chair)).toBe(false);
-  });
-
-  it("the chair hides the keyboard area from a high view, which the scene also checks", () => {
-    const l = layoutDesk({ desk: mittzon, monitor: aw, chair: S.chair[0] });
-    const chair = bounds(l, "chair");
-    const camera: [number, number, number] = [0, 2100, chair.max[2] + 900];
-    const front: [number, number, number] = [
-      0,
-      l.desk.heightMm,
-      mittzon.depthMm / 2 - 120,
-    ];
-    expect(segmentHitsBox(camera, front, chair)).toBe(true);
   });
 
   it("focuses a slot on the middle of its item", () => {

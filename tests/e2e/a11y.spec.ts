@@ -92,3 +92,28 @@ test("no axe violations: replace-preset dialog open", async ({ page }) => {
   await page.waitForTimeout(600);
   expect(await audit(page)).toEqual([]);
 });
+
+test("no axe violations: builder desk view", async ({ page }) => {
+  await openPreset(page, "sweet-spot-1440p");
+  await page.getByRole("tab", { name: /^Setup/ }).click();
+  await expect(page.getByTestId("desk-view").locator("canvas")).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(await audit(page)).toEqual([]);
+});
+
+test("no axe violations: shared build, desk view", async ({ page }) => {
+  await openPreset(page, "sweet-spot-1440p");
+  // Add the preset's suggested setup, so the shared page has a desk view.
+  await page.getByRole("tab", { name: /^Setup/ }).click();
+  await page.getByRole("button", { name: "Add suggested setup" }).click();
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  const url = await page.getByLabel("Share link").inputValue();
+  await page.goto(new URL(url).pathname);
+  await page
+    .getByRole("group", { name: "3D view" })
+    .getByRole("button", { name: "Desk" })
+    .click();
+  await expect(page.getByTestId("desk-view").locator("canvas")).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(await audit(page)).toEqual([]);
+});

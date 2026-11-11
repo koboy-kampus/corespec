@@ -27,8 +27,9 @@ export const TONES: Record<
 export const CASE_TONE = { color: "#221f23", roughness: 0.55, metalness: 0.55 };
 
 /**
- * Desk view tones (Phase 12). Same dark look as the PC parts; the three emissive
- * tones (screen, light, glass) glow from their own material, with no post-processing.
+ * Desk view tones (Phase 12). A touch lighter than the PC parts, so black items
+ * still read against the dark page; the screen and lights glow from their own
+ * material, with no post-processing.
  */
 export const DESK_TONES: Record<
   DeskTone,
@@ -38,21 +39,24 @@ export const DESK_TONES: Record<
     metalness: number;
     emissive?: string;
     emissiveIntensity?: number;
+    /** See-through (the PC's smoked glass). */
+    opacity?: number;
   }
 > = {
-  desk: { color: "#3b373e", roughness: 0.7, metalness: 0.15 },
-  leg: { color: "#4a474c", roughness: 0.4, metalness: 0.8 },
-  dark: { color: "#38343c", roughness: 0.45, metalness: 0.45 },
-  black: { color: "#141215", roughness: 0.5, metalness: 0.3 },
-  steel: { color: "#5a575b", roughness: 0.35, metalness: 0.85 },
-  fabric: { color: "#232026", roughness: 0.9, metalness: 0.05 },
-  pad: { color: "#18161a", roughness: 0.95, metalness: 0 },
+  desk: { color: "#6a676c", roughness: 0.75, metalness: 0.05 },
+  leg: { color: "#545257", roughness: 0.4, metalness: 0.75 },
+  dark: { color: "#46434a", roughness: 0.5, metalness: 0.35 },
+  black: { color: "#2b292e", roughness: 0.55, metalness: 0.25 },
+  steel: { color: "#7a787c", roughness: 0.35, metalness: 0.8 },
+  fabric: { color: "#38353b", roughness: 0.9, metalness: 0.05 },
+  pad: { color: "#242226", roughness: 0.95, metalness: 0 },
+  /** The emissive map (a soft gradient) comes from the scene. */
   screen: {
-    color: "#0b0d14",
-    roughness: 0.2,
+    color: "#05060a",
+    roughness: 0.25,
     metalness: 0.1,
-    emissive: "#5b6fae",
-    emissiveIntensity: 0.4,
+    emissive: "#ffffff",
+    emissiveIntensity: 0.55,
   },
   light: {
     color: "#fff4ea",
@@ -61,11 +65,17 @@ export const DESK_TONES: Record<
     emissive: "#fff1e0",
     emissiveIntensity: 1.4,
   },
-  glass: {
-    color: "#1a1c22",
-    roughness: 0.1,
+  smoke: {
+    color: "#121317",
+    roughness: 0.08,
+    metalness: 0.3,
+    opacity: 0.55,
+  },
+  pcb: {
+    color: "#2c3038",
+    roughness: 0.7,
     metalness: 0.2,
-    emissive: "#8d9bd0",
-    emissiveIntensity: 0.12,
+    emissive: "#3b4256",
+    emissiveIntensity: 0.25,
   },
 };

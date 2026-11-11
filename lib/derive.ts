@@ -40,7 +40,7 @@ export function deriveBuild(parts: Build["parts"]) {
     severityByCategory,
     /** Setup rule results (warning/info), shown under their own heading. */
     setupResults,
-    /** Setup items involved in a setup warning (for Phase 12's coral glow). */
+    /** Setup items involved in a setup warning (the desk view's amber glow). */
     setupFlagged: flaggedPartIds(setupResults),
     setupSeverity,
     pcIDR,

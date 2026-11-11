@@ -6,18 +6,15 @@ import { cn } from "cn";
 import { CaseDrawing } from "@/components/landing/case-drawing";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
-import { DeskViewer } from "@/components/viewer/desk-viewer";
+import {
+  DeskDescription,
+  DeskViewer,
+} from "@/components/viewer/desk-viewer";
 import { ExplodeToggle } from "@/components/viewer/explode-toggle";
 import { Viewer } from "@/components/viewer/viewer";
 import { ViewToggle } from "@/components/viewer/view-toggle";
-import {
-  CATEGORY_LABEL,
-  isPcCategory,
-  isSetupCategory,
-} from "@/lib/categories";
-import { DESK } from "@/lib/desk";
+import { isPcCategory, isSetupCategory } from "@/lib/categories";
 import { partLabel } from "@/lib/parts";
-import type { DeskKey } from "@/lib/viewer/desk-layout";
 import { useBuildDerived } from "@/hooks/use-build";
 import { presets } from "@/lib/presets";
 import { useBuildStore } from "@/store/build";
@@ -41,31 +38,6 @@ function BuildDescription() {
   );
 }
 
-/** The desk view's text twin: what's on and around the desk, and what's flagged. */
-function DeskDescription() {
-  const { setup, setupSeverity, resolved } = useBuildDerived();
-  const items = Object.values(setup);
-  const flagged = items.filter((i) => setupSeverity[i.category]);
-  const { widthMm, depthMm } = DESK.fallback;
-  return (
-    <p className="sr-only">
-      3D desk preview showing{" "}
-      {items.length
-        ? items
-            .map((i) => `${CATEGORY_LABEL[i.category]}: ${partLabel(i)}`)
-            .join(", ")
-        : "no setup items"}
-      {resolved.case ? `, and the PC in the ${partLabel(resolved.case)}` : ""}.
-      {setup.desk
-        ? ""
-        : ` No desk picked: a ${widthMm / 10} × ${depthMm / 10} cm stand-in desk is shown.`}
-      {flagged.length
-        ? ` Highlighted with warnings: ${flagged.map((i) => partLabel(i)).join(", ")}.`
-        : ""}
-    </p>
-  );
-}
-
 function DeskFallback() {
   return (
     <div className="flex size-full flex-col items-center justify-center gap-2 p-6 text-center">
@@ -80,7 +52,7 @@ function DeskFallback() {
 
 /** Centre viewport: the live 3D build, with the empty state on top when nothing is picked. */
 export function Viewport({ className }: { className?: string }) {
-  const { resolved, filled, severityByCategory, setup, setupSeverity } =
+  const { resolved, filled, severityByCategory, setup, setupResults } =
     useBuildDerived();
   const view = useUiStore((s) => s.view3d);
   const setView = useUiStore((s) => s.setView3d);
@@ -89,9 +61,6 @@ export function Viewport({ className }: { className?: string }) {
   const [deskSeen, setDeskSeen] = useState(view === "desk");
   if (view === "desk" && !deskSeen) setDeskSeen(true);
   const desk = view === "desk";
-  const deskFlags: Partial<Record<DeskKey, true>> = Object.fromEntries(
-    Object.keys(setupSeverity).map((k) => [k, true]),
-  );
   const openPicker = useUiStore((s) => s.openPicker);
   const activeSlot = useUiStore((s) => s.activeSlot);
   const setActiveSlot = useUiStore((s) => s.setActiveSlot);
@@ -109,10 +78,13 @@ export function Viewport({ className }: { className?: string }) {
         className,
       )}
     >
-      {/* coral glow + blueprint grid */}
+      {/* coral glow (fainter behind the desk, so it doesn't tint it) + blueprint grid */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_45%,rgba(254,46,75,0.16),transparent_60%)]"
+        className={cn(
+          "pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_45%,rgba(254,46,75,0.16),transparent_60%)] transition-opacity duration-300",
+          desk && "opacity-35",
+        )}
       />
       <div
         aria-hidden
@@ -166,7 +138,7 @@ export function Viewport({ className }: { className?: string }) {
           <DeskViewer
             setup={setup}
             pcCase={resolved.case}
-            flagged={deskFlags}
+            warnings={setupResults}
             activeSlot={
               activeSlot && isSetupCategory(activeSlot) ? activeSlot : null
             }
@@ -174,7 +146,13 @@ export function Viewport({ className }: { className?: string }) {
             className="absolute inset-0"
             fallback={<DeskFallback />}
           />
-          {desk ? <DeskDescription /> : null}
+          {desk ? (
+            <DeskDescription
+              setup={setup}
+              pcCase={resolved.case}
+              results={setupResults}
+            />
+          ) : null}
         </div>
       ) : null}
 
