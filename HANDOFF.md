@@ -242,6 +242,7 @@ Session 1's table of known false positives (`mask-image`, design tokens, `SENTRY
   - An option is a vector (SVG) poster, which is never an LCP candidate. It would need its own drawing of the scene, and matching the 3D render exactly would be hard.
   - Another is to make the hero image smaller than the heading on phones.
   - Re-run `npm run hero:poster` whenever the showcase build or the 3D look changes; the e2e test will say so.
+- **Builder PageSpeed (mobile) is about 84 live** after Phases 13–15, down from 97 (Rei's measurement): there's more catalogue data. Look at loading catalogue data per category (the picker only needs the open category; the slot list and checks need only the chosen items).
 - **`/b/[code]` TBT** sits at the 600 ms target (560–615 ms). The same deferral as the hero (mount the 3D after the first interaction) would help, but there the 3D view is the point of the page, so it's a judgement call.
 
 ---
