@@ -1,0 +1,5 @@
+id,name,marketplace,url,price,checked
+cpu-amd-ryzen-5-5600,"AMD Ryzen 5 5600",tokopedia,https://www.tokopedia.com/example-store/amd-ryzen-5-5600,1599000,2026-11-01
+cpu-amd-ryzen-5-5600,"AMD Ryzen 5 5600",shopee,https://shopee.co.id/AMD-Ryzen-5-5600-i.1.2,1575000,2026-11-02
+monitor-aoc-24g4,"AOC 24G4",blibli,https://www.blibli.com/p/aoc-24g4/ps--EXAMPLE-1,1799000,2026-10-20
+gpu-msi-geforce-rtx-5060-ventus-2x-8gb,"MSI GeForce RTX 5060 Ventus 2X 8GB",,,,

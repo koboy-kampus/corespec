@@ -20,6 +20,7 @@ import deskJson from "@/data/setup/desk.json";
 import armJson from "@/data/setup/arm.json";
 import lightingJson from "@/data/setup/lighting.json";
 import { isPcCategory } from "@/lib/categories";
+import { newestCheck, shownPrice } from "@/lib/prices";
 import type {
   Build,
   Category,
@@ -75,7 +76,15 @@ export const ALL_ITEMS: Item[] = [...ALL_PARTS, ...ALL_SETUP];
 
 const byId = new Map<string, Item>(ALL_ITEMS.map((p) => [p.id, p]));
 
-export const PRICES_AS_OF: string = metaJson.pricesAsOf;
+/** When the estimates (`priceIDR`) were last updated: data/meta.json. */
+export const ESTIMATES_AS_OF: string = metaJson.pricesAsOf;
+/** The newest marketplace check, when any listing has been checked. */
+export const NEWEST_CHECK: string | undefined = newestCheck(ALL_ITEMS);
+/**
+ * The date prices are "as of": the newest checked listing when there is one,
+ * otherwise the estimates' date.
+ */
+export const PRICES_AS_OF: string = NEWEST_CHECK ?? ESTIMATES_AS_OF;
 
 /** Live catalogue size, e.g. for "64 parts across 8 categories". */
 export const CATALOG_STATS = {
@@ -130,7 +139,8 @@ export function resolveSetup(parts: Build["parts"]): ResolvedSetup {
   return resolveWhere(parts, (c) => !isPcCategory(c)) as ResolvedSetup;
 }
 
-const sum = (items: Item[]) => items.reduce((s, p) => s + p.priceIDR, 0);
+/** Adds up what's shown: checked prices where there are any, estimates otherwise. */
+const sum = (items: Item[]) => items.reduce((s, p) => s + shownPrice(p), 0);
 
 /** PC subtotal, setup subtotal and their total, in integer rupiah. */
 export function buildTotals(parts: Build["parts"]) {

@@ -1,6 +1,7 @@
 import { check, checkSetup, type CompatResult } from "@/lib/compat/check";
 import { partLabel } from "@/lib/parts";
 import { isPcCategory } from "@/lib/categories";
+import { shownPrice } from "@/lib/prices";
 import { partSpecs, type Facet } from "@/lib/specs";
 import type { Build, Item, Tier } from "@/types/parts";
 
@@ -82,8 +83,8 @@ export function filterParts<T extends Item>(
   const result = parts.filter((p) => {
     if (f.tiers.length && !f.tiers.includes(p.tier)) return false;
     if (f.brands.length && !f.brands.includes(p.brand)) return false;
-    if (f.minPrice != null && p.priceIDR < f.minPrice) return false;
-    if (f.maxPrice != null && p.priceIDR > f.maxPrice) return false;
+    if (f.minPrice != null && shownPrice(p) < f.minPrice) return false;
+    if (f.maxPrice != null && shownPrice(p) > f.maxPrice) return false;
     for (const facet of facets) {
       const chosen = f.facets[facet.key];
       if (chosen?.length && !chosen.includes(facet.value(p))) return false;
@@ -97,9 +98,9 @@ export function filterParts<T extends Item>(
   });
   return result.sort((a, b) => {
     if (f.sort === "price-asc")
-      return a.priceIDR - b.priceIDR || a.name.localeCompare(b.name);
+      return shownPrice(a) - shownPrice(b) || a.name.localeCompare(b.name);
     if (f.sort === "price-desc")
-      return b.priceIDR - a.priceIDR || a.name.localeCompare(b.name);
+      return shownPrice(b) - shownPrice(a) || a.name.localeCompare(b.name);
     return partLabel(a).localeCompare(partLabel(b));
   });
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { shownPrice } from "@/lib/prices";
 import { CATALOG, SETUP_CATALOG, getPart } from "@/lib/parts";
 import { facetsFor, formatCapacity, partSpecs } from "@/lib/specs";
 import {
@@ -15,13 +16,14 @@ const gpus = CATALOG.gpu;
 
 describe("filterParts", () => {
   it("sorts by price ascending by default", () => {
-    const prices = filterParts(gpus, DEFAULT_FILTERS).map((g) => g.priceIDR);
+    // Sorted by the price shown: a checked listing where there is one.
+    const prices = filterParts(gpus, DEFAULT_FILTERS).map(shownPrice);
     expect(prices).toEqual([...prices].sort((a, b) => a - b));
   });
 
   it("sorts by price descending and by name", () => {
     const desc = filterParts(gpus, { ...DEFAULT_FILTERS, sort: "price-desc" });
-    expect(desc[0].priceIDR).toBe(Math.max(...gpus.map((g) => g.priceIDR)));
+    expect(shownPrice(desc[0])).toBe(Math.max(...gpus.map(shownPrice)));
     const byName = filterParts(gpus, { ...DEFAULT_FILTERS, sort: "name" }).map(
       (g) => g.brand,
     );
@@ -50,16 +52,23 @@ describe("filterParts", () => {
       maxPrice: 11_000_000,
     });
     expect(
-      mid.every((g) => g.priceIDR >= 6_000_000 && g.priceIDR <= 11_000_000),
+      mid.every(
+        (g) => shownPrice(g) >= 6_000_000 && shownPrice(g) <= 11_000_000,
+      ),
     ).toBe(true);
-    expect(mid.length).toBe(3);
+    expect(mid.length).toBe(
+      gpus.filter(
+        (g) => shownPrice(g) >= 6_000_000 && shownPrice(g) <= 11_000_000,
+      ).length,
+    );
+    expect(mid.length).toBeGreaterThan(0);
   });
 
   it("filters by tier (any of the chosen tiers) and keeps the default sort", () => {
     const mid = filterParts(gpus, { ...DEFAULT_FILTERS, tiers: ["mid"] });
     expect(mid.length).toBeGreaterThanOrEqual(3);
     expect(mid.every((g) => g.tier === "mid")).toBe(true);
-    const prices = mid.map((g) => g.priceIDR);
+    const prices = mid.map(shownPrice);
     expect(prices).toEqual([...prices].sort((a, b) => a - b));
     const two = filterParts(gpus, {
       ...DEFAULT_FILTERS,

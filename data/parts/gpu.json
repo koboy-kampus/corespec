@@ -54,7 +54,15 @@
     "tdpW": 160,
     "vramGb": 16,
     "vendor": "AMD",
-    "targetRes": "1440p"
+    "targetRes": "1440p",
+    "listings": [
+      {
+        "marketplace": "tokopedia",
+        "url": "https://www.tokopedia.com/toko-expert-komputer/sapphire-pulse-amd-radeon-rx-9060-xt-gaming-oc-16gb-gddr6-1731599374040204485",
+        "priceIDR": 12450000,
+        "checkedAt": "2026-11-11"
+      }
+    ]
   },
   {
     "id": "gpu-asus-dual-geforce-rtx-5060-ti-16gb",

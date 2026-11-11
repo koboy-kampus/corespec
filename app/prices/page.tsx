@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DocPage, DocSection } from "@/components/legal/doc-page";
 import { formatDate } from "@/lib/format";
-import { PRICES_AS_OF } from "@/lib/parts";
+import { ESTIMATES_AS_OF, NEWEST_CHECK } from "@/lib/parts";
+import { STALE_DAYS } from "@/lib/prices";
 import { LEGAL_UPDATED } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Price disclaimer",
   description:
-    "Prices on CoreSpec are estimates in Rupiah. Check the store before buying.",
+    "Prices on CoreSpec are estimates or hand-checked marketplace prices in Rupiah. Check the store before buying.",
 };
 
 export default function Page() {
@@ -19,7 +20,8 @@ export default function Page() {
       lead={
         <p>
           <strong className="text-fg">
-            Prices are estimates — check the store before buying.
+            Prices are estimates or checked by hand, never live — check the
+            store before buying.
           </strong>{" "}
           CoreSpec helps you plan a build. It is not a shop and its prices are
           not quotes.
@@ -28,16 +30,44 @@ export default function Page() {
       updated={`Updated ${formatDate(LEGAL_UPDATED)}`}
     >
       <DocSection title="Where the prices come from">
+        <p>Every price is labelled with where it comes from:</p>
+        <ul>
+          <li>
+            <strong>Checked</strong>, with a date: we found the item on
+            Tokopedia, Shopee or Blibli and noted its price by hand on that day.
+            When an item has more than one checked listing, CoreSpec shows the
+            lowest. A check older than {STALE_DAYS} days gets a{" "}
+            <em>Price may have changed</em> note.
+          </li>
+          <li>
+            <strong>Estimate</strong>: an approximate street price, last updated
+            on <strong>{formatDate(ESTIMATES_AS_OF)}</strong>.
+          </li>
+        </ul>
         <p>
-          Prices are estimates and are being checked against Indonesian stores.
-          Always confirm in the store before buying. The current prices were
-          last updated on <strong>{formatDate(PRICES_AS_OF)}</strong>, and that
-          date also appears at the bottom of the builder. They are not live and
-          don&apos;t come from any retailer&apos;s feed.
+          Totals add up the prices as shown, checked or estimate.
+          {NEWEST_CHECK ? (
+            <>
+              {" "}
+              The newest check was on{" "}
+              <strong>{formatDate(NEWEST_CHECK)}</strong>.
+            </>
+          ) : null}{" "}
+          Prices are not live: CoreSpec never reads them from a shop, and
+          doesn&apos;t use any retailer&apos;s feed. The same goes for setup
+          items (monitors, keyboards, desks and the rest).
         </p>
+      </DocSection>
+
+      <DocSection title="Links to shops">
         <p>
-          The same goes for setup items (monitors, keyboards, desks and the
-          rest): their prices are estimates too.
+          An item with a checked listing has a <em>View on …</em> link to that
+          exact listing. Otherwise you get <em>Search on Tokopedia</em> and{" "}
+          <em>Search on Shopee</em>, which open the shop&apos;s own search for
+          the product&apos;s name, so they never point at a product we
+          haven&apos;t checked. Links open in a new tab. CoreSpec earns nothing
+          from them: they aren&apos;t affiliate links, and checkout, stock and
+          delivery are entirely up to the shop.
         </p>
       </DocSection>
 

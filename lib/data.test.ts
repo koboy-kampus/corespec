@@ -10,6 +10,7 @@ import {
   CATALOG_STATS,
   PRICES_AS_OF,
   buildTotalIDR,
+  getItem,
 } from "@/lib/parts";
 import { presets, presetSummary } from "@/lib/presets";
 import idsBeforePhase13 from "@/lib/__fixtures__/ids-before-phase-13.json";
@@ -115,7 +116,10 @@ describe("presets", () => {
     "sweet-spot-1440p": 18_000_000,
     "creator-workstation": 35_000_000,
   };
-  /** PC and setup totals as they were before Phase 13: new items never change them. */
+  /**
+   * PC and setup totals of the estimates, as they were before Phase 13: new items
+   * never change them. (What's shown follows checked prices: see lib/prices.test.ts.)
+   */
   const fixedTotals: Record<string, [number, number]> = {
     "budget-1080p": [9_080_000, 4_530_000],
     "sweet-spot-1440p": [17_618_000, 15_330_000],
@@ -123,7 +127,7 @@ describe("presets", () => {
   };
 
   it.each(presets.map((p) => [p.id, p] as const))(
-    "%s fills all 8 slots and lands within 10%% of its target budget",
+    "%s fills all 8 slots and its estimates land within 10%% of its target budget",
     (id, preset) => {
       expect(Object.keys(preset.parts).sort()).toEqual([...CATEGORIES].sort());
       // The suggested setup only names real setup items in the right slot.
@@ -131,11 +135,15 @@ describe("presets", () => {
         expect(
           SETUP_CATALOG[c as keyof typeof SETUP_CATALOG].map((i) => i.id),
         ).toContain(id);
-      const { totalIDR } = presetSummary(preset);
-      expect(totalIDR).toBe(buildTotalIDR(preset.parts));
-      expect(totalIDR).toBe(fixedTotals[id][0]);
-      expect(presetSummary(preset).setupIDR).toBe(fixedTotals[id][1]);
-      expect(Math.abs(totalIDR - targets[id]) / targets[id]).toBeLessThan(0.1);
+      expect(presetSummary(preset).totalIDR).toBe(buildTotalIDR(preset.parts));
+      const estimate = (ids: Record<string, string>) =>
+        Object.values(ids).reduce((s, i) => s + getItem(i)!.priceIDR, 0);
+      const pcEstimate = estimate(preset.parts);
+      expect(pcEstimate).toBe(fixedTotals[id][0]);
+      expect(estimate(preset.setup ?? {})).toBe(fixedTotals[id][1]);
+      expect(Math.abs(pcEstimate - targets[id]) / targets[id]).toBeLessThan(
+        0.1,
+      );
     },
   );
 });

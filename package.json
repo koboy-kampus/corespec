@@ -15,7 +15,8 @@
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "models": "node scripts/build-models.mjs"
+    "models": "node scripts/build-models.mjs",
+    "prices:apply": "node scripts/prices-apply.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

@@ -11,6 +11,7 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon } from "@/components/ui/category-icon";
 import { PriceTag } from "@/components/ui/price-tag";
+import { shownPrice } from "@/lib/prices";
 import { Tip } from "@/components/ui/tooltip";
 import { useBuildDerived } from "@/hooks/use-build";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -86,7 +87,7 @@ function SlotRow({
               <span className="min-w-0 flex-1 truncate spec text-spec-sm text-fg-3">
                 {partSpecs(part).join(" · ")}
               </span>
-              <PriceTag value={part.priceIDR} size="sm" tone="default" />
+              <PriceTag value={shownPrice(part)} size="sm" tone="default" />
             </span>
             {/* The button's name is its visible text plus what it does. */}
             <span className="sr-only">, change</span>

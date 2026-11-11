@@ -96,6 +96,12 @@ test("a friend opens the link and copies the build", async ({
   browser,
 }) => {
   await openPreset(page, "sweet-spot-1440p");
+  // The total follows checked prices, so read it rather than hard-code it.
+  const total = await page
+    .getByRole("region", { name: "Build summary" })
+    .getByText(/^Rp\s?[\d.]+$/)
+    .first()
+    .textContent();
   const path = await shareLink(page);
 
   // Fresh browser storage, like a different person.
@@ -106,7 +112,7 @@ test("a friend opens the link and copies the build", async ({
   await expect(friend.getByRole("heading", { level: 1 })).toHaveText(
     "1440p Sweet Spot",
   );
-  await expect(friend.getByText("Rp 17.618.000").first()).toBeVisible();
+  await expect(friend.getByText(total!, { exact: true }).first()).toBeVisible();
   await expect(friend.locator("canvas")).toHaveCount(1);
   await expect(friend.locator('meta[name="robots"]')).toHaveAttribute(
     "content",

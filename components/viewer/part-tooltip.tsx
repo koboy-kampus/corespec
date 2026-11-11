@@ -5,6 +5,7 @@ import { cn } from "cn";
 import { CATEGORY_LABEL } from "@/lib/categories";
 import { formatIDR } from "@/lib/format";
 import { partLabel } from "@/lib/parts";
+import { shownPrice } from "@/lib/prices";
 import type { Vec3 } from "@/lib/viewer/layout";
 import type { Item } from "@/types/parts";
 import type { Flag } from "./palette";
@@ -44,7 +45,7 @@ export function PartTooltip({
           {partLabel(part)}
         </p>
         <p className="spec text-spec-sm text-accent">
-          {formatIDR(part.priceIDR)}
+          {formatIDR(shownPrice(part))}
         </p>
       </div>
     </Html>

@@ -11,6 +11,7 @@ import { useBuildStore } from "@/store/build";
 import { BuildActions } from "./build-actions";
 import { CompatPanel } from "./compat-panel";
 import { Subtotals } from "./subtotals";
+import { WhereToBuy } from "./where-to-buy";
 import { WattageMeter } from "./wattage-meter";
 
 /** Inline-editable build name: commits on blur or Enter, Esc cancels. */
@@ -56,10 +57,15 @@ export function BuildSummary({ className }: { className?: string }) {
     drawW,
     results,
     resolved,
+    setup,
     filled,
     setupFilled,
     setupResults,
   } = useBuildDerived();
+  const chosen = [
+    ...CATEGORIES.flatMap((c) => resolved[c] ?? []),
+    ...Object.values(setup),
+  ];
 
   return (
     <section
@@ -90,6 +96,13 @@ export function BuildSummary({ className }: { className?: string }) {
         <Subtotals pcIDR={pcIDR} setupIDR={setupIDR} />
         <BuildActions hasParts={filled > 0} />
       </div>
+
+      {chosen.length ? (
+        <>
+          <div className="h-px bg-line" />
+          <WhereToBuy items={chosen} />
+        </>
+      ) : null}
 
       <div className="h-px bg-line" />
       <WattageMeter drawW={drawW} psuW={resolved.psu?.watts} />

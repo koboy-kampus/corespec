@@ -15,7 +15,7 @@ export const INDEXED_PATHS = [
 ] as const;
 
 /** When the Privacy, Credits and price pages were last reviewed. */
-export const LEGAL_UPDATED = "2026-11-09";
+export const LEGAL_UPDATED = "2026-11-11";
 
 /** Public contact address for privacy questions, shown on the Privacy page. */
 export const CONTACT_EMAIL = "syahreyhanpratamanandi@gmail.com";

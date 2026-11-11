@@ -4,6 +4,7 @@ import { formatMM } from "@/lib/format";
 import { buildTotalIDR, partLabel, resolveBuild } from "@/lib/parts";
 import { POWER, estimateDrawW, headroomRatio } from "@/lib/power";
 import { getPreset } from "@/lib/presets";
+import { shownPrice } from "@/lib/prices";
 import { sharePath } from "@/lib/share";
 import type { Category } from "@/types/parts";
 
@@ -35,7 +36,7 @@ export interface ShowcaseRow {
 /** Share of the total per category: the three biggest, then everything else as "Other". */
 function costSplit() {
   const byCat = Object.values(parts)
-    .map((p) => ({ label: CATEGORY_LABEL[p.category], price: p.priceIDR }))
+    .map((p) => ({ label: CATEGORY_LABEL[p.category], price: shownPrice(p) }))
     .sort((a, b) => b.price - a.price);
   const top = byCat.slice(0, 3);
   const other = byCat.slice(3).reduce((s, p) => s + p.price, 0);
@@ -64,7 +65,9 @@ export const showcase = {
   /** Every slot, in builder order, so the rows add up to the total. */
   rows: CATEGORIES.flatMap((c): ShowcaseRow[] => {
     const p = parts[c];
-    return p ? [{ category: c, name: partLabel(p), priceIDR: p.priceIDR }] : [];
+    return p
+      ? [{ category: c, name: partLabel(p), priceIDR: shownPrice(p) }]
+      : [];
   }),
   costSplit: costSplit(),
   checks: [
@@ -81,5 +84,9 @@ export const showcase = {
   ],
   /** The share link the builder would make for this build. */
   sharePath: sharePath({ name: preset.name, parts: preset.parts }),
-  gpu: { name: partLabel(gpu), priceIDR: gpu.priceIDR, lengthMm: gpu.lengthMm },
+  gpu: {
+    name: partLabel(gpu),
+    priceIDR: shownPrice(gpu),
+    lengthMm: gpu.lengthMm,
+  },
 };

@@ -74,8 +74,11 @@ test("About page says who made it and that prices are estimates", async ({
 test("price disclaimer wording and date", async ({ page }) => {
   await page.goto("/prices");
   await expect(
+    page.getByText(/Prices are estimates or checked by hand, never live/),
+  ).toBeVisible();
+  await expect(
     page.getByText(
-      /Prices are estimates and are being checked against Indonesian stores\. Always confirm in the store before buying\./,
+      /Prices are not live: CoreSpec never reads them from a shop/,
     ),
   ).toBeVisible();
   await expect(page.getByText("entered by hand")).toHaveCount(0);

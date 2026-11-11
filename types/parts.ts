@@ -35,14 +35,33 @@ export type AnchorId =
  */
 export type Tier = "budget" | "mid" | "high";
 
+/** Marketplaces CoreSpec links to (outbound links only, never fetched). */
+export type Marketplace = "tokopedia" | "shopee" | "blibli";
+
+/**
+ * A real listing Rei checked by hand (Phase 13), written by `npm run prices:apply`
+ * from data/price-check.csv. Never scraped.
+ */
+export interface Listing {
+  marketplace: Marketplace;
+  /** https, on that marketplace's own domain. */
+  url: string;
+  priceIDR: number;
+  /** When the price was checked: YYYY-MM-DD. */
+  checkedAt: string;
+}
+
 /** Fields every catalogue item has, PC part or setup item. */
 export interface ItemBase {
   id: string; // 'cpu-amd-ryzen-7-7800x3d', 'monitor-aoc-24g4'
   category: Category;
   brand: string;
   name: string;
-  priceIDR: number; // integer rupiah
+  /** Estimate, integer rupiah. What's shown is `shownPrice()` (lib/prices.ts). */
+  priceIDR: number;
   tier: Tier;
+  /** Checked marketplace listings, if any (lowest price wins). */
+  listings?: Listing[];
   dims?: { l: number; w: number; h: number }; // mm → sizes placeholder meshes
   model?: string; // GLTF path, optional (later)
 }

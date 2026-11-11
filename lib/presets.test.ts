@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildTotals } from "@/lib/parts";
+import { buildTotals, getItem } from "@/lib/parts";
+import { shownPrice } from "@/lib/prices";
 import { getPreset, presetSummary, suggestedSetupFor } from "@/lib/presets";
 
 const preset = (id: string) => getPreset(id)!;
@@ -35,14 +36,14 @@ describe("suggested setups", () => {
 
 describe("build totals", () => {
   it("splits PC and setup and adds them up", () => {
-    const t = buildTotals({
-      cpu: "cpu-amd-ryzen-5-7600",
-      monitor: "monitor-aoc-24g4",
-    });
+    const cpu = getItem("cpu-amd-ryzen-5-7600")!;
+    const monitor = getItem("monitor-aoc-24g4")!;
+    const t = buildTotals({ cpu: cpu.id, monitor: monitor.id });
+    // Shown prices: a checked listing where there is one, the estimate otherwise.
     expect(t).toEqual({
-      pcIDR: 2_900_000,
-      setupIDR: 1_850_000,
-      totalIDR: 4_750_000,
+      pcIDR: shownPrice(cpu),
+      setupIDR: shownPrice(monitor),
+      totalIDR: shownPrice(cpu) + shownPrice(monitor),
     });
   });
 });

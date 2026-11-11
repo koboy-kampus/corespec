@@ -1,0 +1,4 @@
+id,name,marketplace,url,price,checked
+cpu-amd-ryzen-5-5600,AMD Ryzen 5 5600,shopee,http://shopee.co.id/x,1.575.000,02/11/2026
+cpu-made-up,Made Up,tokopedia,https://tokopedia.com.evil.example/x,100,2026-11-01
+monitor-aoc-24g4,AOC 24G4,shopee,https://www.tokopedia.com/x,100,2026-02-30

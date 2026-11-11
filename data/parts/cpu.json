@@ -51,7 +51,15 @@
     "socket": "AM5",
     "cores": 6,
     "threads": 12,
-    "tdpW": 65
+    "tdpW": 65,
+    "listings": [
+      {
+        "marketplace": "shopee",
+        "url": "https://shopee.co.id/AMD-Ryzen-5-7600-Up-To-5.1-GHz-Prosessor-AM5-i.1906588479.49617294442",
+        "priceIDR": 2747000,
+        "checkedAt": "2026-11-11"
+      }
+    ]
   },
   {
     "id": "cpu-amd-ryzen-5-9600x",

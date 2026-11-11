@@ -2,10 +2,13 @@
 
 import { AlertTriangle, Check, XCircle } from "lucide-react";
 import { cn } from "cn";
+import { PriceSource } from "@/components/ui/price-source";
 import { PriceTag } from "@/components/ui/price-tag";
+import { ShopLinks } from "@/components/ui/shop-links";
 import type { CompatResult } from "@/lib/compat/check";
 import { partLabel } from "@/lib/parts";
 import { TIER_LABEL } from "@/lib/picker";
+import { shownPrice } from "@/lib/prices";
 import { partSpecs } from "@/lib/specs";
 import type { Item } from "@/types/parts";
 
@@ -60,7 +63,8 @@ export function PartRow({ part, issues, selected, onSelect }: PartRowProps) {
             </ul>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <PriceTag value={part.priceIDR} />
+            <PriceTag value={shownPrice(part)} />
+            <PriceSource item={part} />
             <span className="label-micro text-micro-sm text-fg-3">
               <span className="sr-only">Tier: </span>
               {TIER_LABEL[part.tier]}
@@ -96,6 +100,8 @@ export function PartRow({ part, issues, selected, onSelect }: PartRowProps) {
           </p>
         ) : null}
       </button>
+      {/* Links can't sit inside the row's button: they get their own line under it. */}
+      <ShopLinks item={part} className="px-4 pt-1.5" />
     </li>
   );
 }

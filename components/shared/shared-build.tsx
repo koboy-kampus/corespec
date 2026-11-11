@@ -5,12 +5,15 @@ import { BuildStatus } from "@/components/builds/build-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon } from "@/components/ui/category-icon";
+import { PriceSource } from "@/components/ui/price-source";
 import { PriceTag } from "@/components/ui/price-tag";
+import { PricesNote } from "@/components/ui/prices-note";
+import { ShopLinks } from "@/components/ui/shop-links";
 import { Subtotals } from "@/components/builder/subtotals";
 import { CATEGORIES, CATEGORY_LABEL, SETUP_CATEGORIES } from "@/lib/categories";
 import { deriveBuild } from "@/lib/derive";
-import { formatDate } from "@/lib/format";
-import { PRICES_AS_OF, partLabel } from "@/lib/parts";
+import { partLabel } from "@/lib/parts";
+import { shownPrice } from "@/lib/prices";
 import type { SharedBuild } from "@/lib/share";
 import { partSpecs } from "@/lib/specs";
 import type { Category, Item } from "@/types/parts";
@@ -37,8 +40,12 @@ function ItemRow({ category, part }: { category: Category; part?: Item }) {
               <span className="min-w-0 flex-1 truncate spec text-spec-sm text-fg-3">
                 {partSpecs(part).join(" · ")}
               </span>
-              <PriceTag value={part.priceIDR} size="sm" tone="default" />
+              <PriceTag value={shownPrice(part)} size="sm" tone="default" />
             </p>
+            <div className="mt-1 flex items-start justify-between gap-3">
+              <ShopLinks item={part} />
+              <PriceSource item={part} className="shrink-0" />
+            </div>
           </>
         ) : (
           <p className="text-[13px] leading-[18px] text-fg-3">Not chosen</p>
@@ -154,10 +161,7 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
         </div>
       </div>
 
-      <p className="text-[12px] leading-4 text-fg-3">
-        Prices are approximate, as of {formatDate(PRICES_AS_OF)}. Check the
-        store before buying.
-      </p>
+      <PricesNote className="text-[12px] leading-4 text-fg-3" />
     </div>
   );
 }

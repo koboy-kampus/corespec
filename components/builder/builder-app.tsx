@@ -4,8 +4,8 @@ import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useBuildDerived, useBuildHydration } from "@/hooks/use-build";
 import { CATEGORIES } from "@/lib/categories";
-import { formatDate, formatIDR } from "@/lib/format";
-import { PRICES_AS_OF } from "@/lib/parts";
+import { formatIDR } from "@/lib/format";
+import { PricesNote } from "@/components/ui/prices-note";
 import { getPreset } from "@/lib/presets";
 import { useBuildStore } from "@/store/build";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,10 +46,7 @@ function StatusBar() {
         <p className="label-micro text-micro-sm text-fg-3">
           CoreSpec builder · Rev 0.1
         </p>
-        <p className="text-[12px] leading-4 text-fg-3">
-          Prices are approximate, as of {formatDate(PRICES_AS_OF)}. Check the
-          store before buying.
-        </p>
+        <PricesNote className="text-[12px] leading-4 text-fg-3" />
       </div>
     </div>
   );

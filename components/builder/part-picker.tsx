@@ -139,7 +139,7 @@ function PickerBody({ category }: { category: Category }) {
           <div className="min-w-0">
             <DialogTitle>Choose {label.toLowerCase()}</DialogTitle>
             <DialogDescription className="text-[13px] leading-5">
-              {all.length} options · prices approximate
+              {all.length} options · estimated prices unless marked Checked
               {isSetupCategory(category) ? " · optional" : ""}
             </DialogDescription>
           </div>
