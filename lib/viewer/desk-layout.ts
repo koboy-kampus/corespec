@@ -52,6 +52,10 @@ export interface DeskBlock {
    * includes it (its depth is the panel's thickness plus the curve).
    */
   bend?: number;
+  /** Leaned back about its own x axis, in radians (top toward +z): a reclined backrest. */
+  tilt?: number;
+  /** Turned about its own vertical axis, in radians, after the tilt: the legs of a 5-star base. */
+  turn?: number;
 }
 
 /** A slot in the desk scene: a setup category, or the PC as one box. */
@@ -101,11 +105,16 @@ const CLEARANCE = 15;
 const GRID = 20;
 const PANEL_T = 40;
 const BEZEL = 8;
-/** Gap between the desk's front edge and the chair: pulled out, as if just stood up. */
-const CHAIR_GAP = 600;
-/** The chair is turned a little and sits off-centre, so it doesn't hide the desk. */
-const CHAIR_TURN = -0.8;
-const CHAIR_SHIFT = 0.3;
+/**
+ * The chair stands beside the desk's right end, near its front edge, turned to
+ * face the desk: about as far from the camera as the desk, so it's drawn at a
+ * normal size and never stands between the camera and the desk, legs or PC.
+ */
+const CHAIR_SIDE_GAP = 150;
+/** Faces mostly toward the desk (−x), a little toward its front. */
+const CHAIR_TURN = 1.2;
+/** Room kept right of the desk for any chair, so the view doesn't jump when one is added. */
+const CHAIR_ROOM = 1050;
 /** How far a curved screen's ends come forward, per mm of width (about an 1800R curve). */
 const CURVE_SAG = 1 / 14;
 /** Sit/stand desks are drawn at seated height (Rei's call in Phase 12). */
@@ -132,26 +141,50 @@ function panelHeight(m: Monitor): number {
   return Math.min(m.dims!.l * ratio, m.dims!.h - 60);
 }
 
+type Mat3 = [Vec3, Vec3, Vec3];
+/** Turn about y, same sense as three.js `rotation.y`. */
+const rotationY = (a: number): Mat3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [
+    [c, 0, s],
+    [0, 1, 0],
+    [-s, 0, c],
+  ];
+};
+/** Turn about x, same sense as three.js `rotation.x`. */
+const rotationX = (a: number): Mat3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [
+    [1, 0, 0],
+    [0, c, -s],
+    [0, s, c],
+  ];
+};
+const mul = (a: Mat3, b: Mat3): Mat3 =>
+  a.map((row) =>
+    [0, 1, 2].map((j) => row.reduce((sum, v, k) => sum + v * b[k][j], 0)),
+  ) as Mat3;
+const apply = (m: Mat3, v: Vec3): Vec3 =>
+  m.map((row) => row.reduce((sum, x, j) => sum + x * v[j], 0)) as Vec3;
+
 /**
  * World-space boxes of an item's blocks. A turned item (the chair) gives the
  * axis-aligned box around each turned block, same rotation as three.js `rotation.y`.
  */
 export function itemBoxes(item: Placed): Box[] {
-  const r = item.rotY ?? 0;
-  const cos = Math.cos(r);
-  const sin = Math.sin(r);
+  const turnItem = rotationY(item.rotY ?? 0);
   return item.blocks.map((b) => {
-    const [bx, by, bz] = b.pos;
-    const local: Vec3 = r
-      ? [bx * cos + bz * sin, by, -bx * sin + bz * cos]
-      : [bx, by, bz];
-    const half: Vec3 = r
-      ? [
-          (Math.abs(cos) * b.size[0] + Math.abs(sin) * b.size[2]) / 2,
-          b.size[1] / 2,
-          (Math.abs(sin) * b.size[0] + Math.abs(cos) * b.size[2]) / 2,
-        ]
-      : [b.size[0] / 2, b.size[1] / 2, b.size[2] / 2];
+    const local = apply(turnItem, b.pos);
+    // The block's own tilt, then turn, then the item's turn (three.js "YXZ" order).
+    const m = mul(
+      turnItem,
+      mul(rotationY(b.turn ?? 0), rotationX(b.tilt ?? 0)),
+    );
+    const half = m.map(
+      (row) => row.reduce((sum, v, j) => sum + Math.abs(v) * b.size[j], 0) / 2,
+    ) as Vec3;
     const c = local.map((p, i) => p + item.origin[i]) as Vec3;
     return {
       min: c.map((v, i) => v - half[i]) as Vec3,
@@ -247,20 +280,72 @@ function speakerBlocks(l: number, w: number, h: number): DeskBlock[] {
   ];
 }
 
+/** How far the backrest leans back from upright. */
+const RECLINE = 0.22;
+
+/**
+ * An office chair facing −z: a 5-star base on casters, a gas cylinder, a seat
+ * cushion, armrests and a slightly reclined backrest. Everything stays within
+ * l × h × w.
+ */
 function chairBlocks(l: number, w: number, h: number): DeskBlock[] {
-  const seatY = 440;
-  const backT = 70;
+  const r = Math.min(l, w) * 0.46; // base radius, to the caster centres
+  const caster = 46;
+  const legY = 40;
+  const legT = 26;
+  const seatTop = 470;
+  const cushion = 90;
+  const plateY = seatTop - cushion - 30;
+  const legs = [0, 1, 2, 3, 4].flatMap((k) => {
+    const a = (k * 2 * Math.PI) / 5;
+    const [sx, sz] = [Math.sin(a), Math.cos(a)];
+    const len = r - 20;
+    return [
+      {
+        ...block(
+          sx * (len / 2 + 20),
+          legY,
+          sz * (len / 2 + 20),
+          [44, legT, len],
+          "black",
+        ),
+        turn: a,
+      },
+      block(sx * r, 0, sz * r, [caster, legY + 6, caster], "black", true),
+    ];
+  });
+  // Backrest: a slab leaning back from just above the seat's rear edge.
+  const backT = 80;
+  const backH = h - seatTop - 40;
+  const lean = Math.sin(RECLINE);
+  const up = Math.cos(RECLINE);
+  const pivotY = seatTop - 20;
+  const pivotZ = w / 2 - backH * lean - (backT / 2) * up - 5;
+  const back: DeskBlock = {
+    pos: [0, pivotY + (backH / 2) * up, pivotZ + (backH / 2) * lean],
+    size: [l * 0.7, backH, backT],
+    tone: "fabric",
+    tilt: RECLINE,
+  };
+  const armX = l * 0.39 + 25;
   return [
-    block(0, 0, 0, [l * 0.9, 30, w * 0.9], "black"),
-    block(0, 30, 0, [60, seatY - 30, 60], "steel", true),
-    block(0, seatY, -backT / 2, [l * 0.78, 80, w * 0.78 - backT], "fabric"),
+    ...legs,
+    block(0, legY - 4, 0, [80, legT + 8, 80], "black", true), // hub
+    block(0, legY + legT, 0, [56, 150, 56], "black", true), // cylinder sleeve
+    block(0, legY + legT, 0, [36, plateY - legY - legT, 36], "steel", true), // gas cylinder
+    block(0, plateY, 0, [l * 0.42, 30, w * 0.42], "dark"), // tilt mechanism
     block(
       0,
-      seatY,
-      w * 0.39 - backT / 2,
-      [l * 0.72, h - seatY, backT],
+      seatTop - cushion,
+      -w * 0.06,
+      [l * 0.78, cushion, w * 0.72],
       "fabric",
     ),
+    ...[-1, 1].flatMap((s) => [
+      block(s * armX, plateY + 10, -w * 0.04, [30, 230, 40], "dark"),
+      block(s * armX, plateY + 240, -w * 0.06, [50, 24, w * 0.4], "black"),
+    ]),
+    back,
   ];
 }
 
@@ -302,7 +387,13 @@ function pcBlocks(c: Case): DeskBlock[] {
     block(0, t, w / 2 - 2, [l - 2 * t, h - 2 * t, 3], "smoke"), // glass
     // Inside, seen through the glass.
     block(0, t, 0, [l - 2 * t, shroud, inner * 0.9], "dark"), // PSU cover
-    block(l * 0.05, t + shroud + h * 0.06, back + 3, [l * 0.6, h * 0.62, 6], "pcb"),
+    block(
+      l * 0.05,
+      t + shroud + h * 0.06,
+      back + 3,
+      [l * 0.6, h * 0.62, 6],
+      "pcb",
+    ),
     block(
       l * 0.02,
       t + shroud + h * 0.12,
@@ -705,14 +796,20 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     });
   }
 
-  // Chair in front of the desk, pulled out and turned a little, as if just stood up.
+  // Chair beside the desk's right end, near the front edge, turned toward the desk.
   if (setup.chair) {
     const { l, w, h } = setup.chair.dims!;
+    const blocks = chairBlocks(l, w, h);
+    const own = itemBounds({ origin: [0, 0, 0], blocks, rotY: CHAIR_TURN });
     add(ctx, {
       key: "chair",
       id: setup.chair.id,
-      origin: [W * CHAIR_SHIFT, 0, D / 2 + CHAIR_GAP + w / 2],
-      blocks: chairBlocks(l, w, h),
+      origin: [
+        W / 2 + CHAIR_SIDE_GAP - own.min[0],
+        0,
+        D / 2 - 80 - (own.min[2] + own.max[2]) / 2,
+      ],
+      blocks,
       spot: "floor",
       rotY: CHAIR_TURN,
     });
@@ -782,7 +879,7 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
   const bounds = union(ctx.items.flatMap(itemBoxes));
   const room: Box = {
     min: [-W / 2 - 450, 0, -D / 2],
-    max: [W / 2 + 250, H + 550, D / 2 + CHAIR_GAP + 500],
+    max: [W / 2 + CHAIR_ROOM, H + 550, D / 2 + 450],
   };
   return {
     desk: { widthMm: W, depthMm: D, heightMm: H, ghost: !desk },
@@ -793,19 +890,30 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
   };
 }
 
-/** Where the seated view looks from (before normalising): behind the chair, above eye height. */
-export const SEATED_DIR: Vec3 = [0.15, 0.65, 1];
+/**
+ * What the chair must never hide: the middle of the screen, the desk top, and the
+ * PC. The desk view fades the chair when it stands between the camera and any of them.
+ */
+export function chairFadeTargets(layout: DeskLayout): Vec3[] {
+  const { heightMm: H } = layout.desk;
+  const pc = layout.items.find((i) => i.key === "pc");
+  return [layout.lookAt, [0, H, 0], ...(pc ? [boxCenter(itemBounds(pc))] : [])];
+}
+
+/** Where the seated view looks from (before normalising): in front of the desk, a little left (the chair stands right), above eye height. */
+export const SEATED_DIR: Vec3 = [-0.12, 0.65, 1];
 /** The seated view's distance, as a share of the distance that fits the whole frame. */
 export const SEATED_FIT = 0.95;
 
 /**
- * What the seated view aims at: between the desk top and the screen, centred on
- * what's framed (a PC on the floor pulls it left), so the whole setup fits.
+ * What the seated view aims at: between the desk top and the screen, centred
+ * across what's framed (the PC's room on the left, the chair's on the right), so
+ * the whole setup fits.
  */
 export function seatedTarget(layout: DeskLayout): Vec3 {
   const { min, max } = layout.frame;
   return [
-    ((min[0] + max[0]) / 2 + layout.lookAt[0]) / 2,
+    (min[0] + max[0]) / 2,
     (layout.desk.heightMm + layout.lookAt[1]) / 2,
     ((min[2] + max[2]) / 2 + layout.lookAt[2]) / 2,
   ];

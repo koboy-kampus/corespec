@@ -8,6 +8,7 @@ import {
   SEATED_FIT,
   SEATED_HEIGHT_MM,
   boxesOverlap,
+  chairFadeTargets,
   deskFocus,
   deskHeightMm,
   isSmallCase,
@@ -171,10 +172,54 @@ describe("items on and around the desk", () => {
     );
   });
 
-  it("puts the chair in front of the desk, pulled out and turned", () => {
-    const l = layoutDesk({ desk: micke, chair: S.chair[0] });
-    expect(bounds(l, "chair").min[2]).toBeGreaterThan(micke.depthMm / 2);
-    expect(item(l, "chair").rotY).not.toBe(0);
+  it("puts the chair beside the desk's right end, near the front edge, facing the desk", () => {
+    for (const d of S.desk)
+      for (const chair of S.chair) {
+        const l = layoutDesk({ desk: d, chair });
+        const b = bounds(l, "chair");
+        const why = `${d.id} ${chair.id}`;
+        expect(b.min[0], why).toBeGreaterThan(d.widthMm / 2);
+        const cz = (b.min[2] + b.max[2]) / 2;
+        expect(cz, why).toBeGreaterThan(0);
+        expect(cz, why).toBeLessThan(d.depthMm / 2);
+        // The seat faces local −z; turned, that points toward the desk (−x).
+        const r = item(l, "chair").rotY!;
+        expect(-Math.sin(r), why).toBeLessThan(-0.7);
+      }
+  });
+
+  it("draws a recognisable chair within its size: 5-star base, cylinder, seat, reclined back", () => {
+    for (const chair of S.chair) {
+      const c = item(layoutDesk({ chair }), "chair");
+      const legs = c.blocks.filter((b) => b.turn !== undefined);
+      expect(legs.length, chair.id).toBe(5);
+      expect(
+        c.blocks.filter((b) => b.round && b.tone === "black").length,
+      ).toBeGreaterThanOrEqual(5);
+      expect(c.blocks.some((b) => b.round && b.tone === "steel")).toBe(true);
+      expect(c.blocks.some((b) => b.tone === "fabric" && !b.tilt)).toBe(true);
+      expect(
+        c.blocks.some((b) => b.tone === "fabric" && (b.tilt ?? 0) > 0),
+      ).toBe(true);
+      const own = itemBounds({ ...c, origin: [0, 0, 0], rotY: 0 });
+      const { l, w, h } = chair.dims!;
+      expect(own.max[0] - own.min[0], chair.id).toBeLessThanOrEqual(l + 0.5);
+      expect(own.max[1] - own.min[1], chair.id).toBeLessThanOrEqual(h + 0.5);
+      expect(own.max[2] - own.min[2], chair.id).toBeLessThanOrEqual(w + 0.5);
+      expect(own.min[1]).toBeCloseTo(0);
+    }
+  });
+
+  it("keeps the same frame with or without a chair, so the view doesn't jump", () => {
+    for (const d of S.desk)
+      for (const chair of S.chair) {
+        const without = layoutDesk({ desk: d, monitor: aw }, lancool).frame;
+        const withChair = layoutDesk(
+          { desk: d, monitor: aw, chair },
+          lancool,
+        ).frame;
+        expect(withChair, `${d.id} ${chair.id}`).toEqual(without);
+      }
   });
 
   it("boxes a turned item by its turned corners", () => {
@@ -193,6 +238,21 @@ describe("items on and around the desk", () => {
     expect(quarter.max[2]).toBeCloseTo(100);
     const eighth = itemBounds({ ...flat, rotY: Math.PI / 4 });
     expect(eighth.max[0]).toBeCloseTo(300 / 2 / Math.SQRT2);
+    // A block's own turn counts the same as the item's.
+    const own = itemBounds({
+      ...flat,
+      blocks: [{ ...flat.blocks[0], turn: Math.PI / 2 }],
+    });
+    expect(own.max[0]).toBeCloseTo(50);
+    expect(own.max[2]).toBeCloseTo(100);
+    // Leaned back a quarter turn, its height and depth swap.
+    const leaned = itemBounds({
+      ...flat,
+      blocks: [{ ...flat.blocks[0], tilt: Math.PI / 2 }],
+    });
+    expect(leaned.max[1] - leaned.min[1]).toBeCloseTo(100);
+    expect(leaned.max[2] - leaned.min[2]).toBeCloseTo(100);
+    expect(leaned.max[0]).toBeCloseTo(100);
   });
 
   it("curves a curved monitor toward the person, and leaves flat ones flat", () => {
@@ -356,33 +416,46 @@ describe("camera helpers", () => {
     max: b.max.map((v) => v + by) as Vec3,
   });
 
-  it("from the seated view, no chair hides the screen (so it shows, unfaded)", () => {
+  it("from the seated view, the chair hides nothing: screen, desk top, legs or PC (so it shows, unfaded)", () => {
     for (const d of S.desk)
       for (const chair of S.chair)
         for (const m of S.monitor)
-          for (const arm of [undefined, S.arm[0]]) {
-            const l = layoutDesk({ desk: d, monitor: m, arm, chair }, lancool);
-            const box = grow(bounds(l, "chair"), 60);
-            const { min, max } = l.frame;
-            const size = [0, 1, 2].map((i) => max[i] - min[i]) as Vec3;
-            // The same distance the camera rig fits, for a phone, a square and a wide viewport.
-            for (const aspect of [0.45, 1, 1.8]) {
-              const dist = fitDistance(size, 30, aspect) * SEATED_FIT;
-              expect(
-                segmentHitsBox(seatedCamera(l, dist), l.lookAt, box),
-                `${d.id} ${chair.id} ${m.id} ${arm?.id} ${aspect}`,
-              ).toBe(false);
+          for (const c of [lancool, nr200])
+            for (const arm of [undefined, S.arm[0]]) {
+              const l = layoutDesk({ desk: d, monitor: m, arm, chair }, c);
+              const box = grow(bounds(l, "chair"), 60);
+              const { min, max } = l.frame;
+              const size = [0, 1, 2].map((i) => max[i] - min[i]) as Vec3;
+              const { widthMm: W, depthMm: D, heightMm: H } = l.desk;
+              const corners = [-1, 1].flatMap((sx) =>
+                [-1, 1].flatMap((sz) =>
+                  [0, H].map((y) => [(sx * W) / 2, y, (sz * D) / 2] as Vec3),
+                ),
+              );
+              const points = [...chairFadeTargets(l), ...corners];
+              // The same distance the camera rig fits, for a phone, a square and a wide viewport.
+              for (const aspect of [0.45, 1, 1.8]) {
+                const cam = seatedCamera(
+                  l,
+                  fitDistance(size, 30, aspect) * SEATED_FIT,
+                );
+                for (const p of points)
+                  expect(
+                    segmentHitsBox(cam, p, box),
+                    `${d.id} ${chair.id} ${m.id} ${c.id} ${arm?.id} ${aspect} ${p}`,
+                  ).toBe(false);
+              }
             }
-          }
   });
 
   it("from behind the chair at eye height it hides the screen, so the fade still has a job", () => {
     const l = layoutDesk({ desk: micke, monitor: aw, chair: S.chair[1] });
     const chair = bounds(l, "chair");
+    // Orbited round to the right, behind the chair's back, at eye height.
     const behind: Vec3 = [
-      (chair.min[0] + chair.max[0]) / 2,
+      chair.max[0] + 600,
       1100,
-      chair.max[2] + 600,
+      (chair.min[2] + chair.max[2]) / 2,
     ];
     expect(segmentHitsBox(behind, l.lookAt, chair)).toBe(true);
     // From high above the desk the line clears it.

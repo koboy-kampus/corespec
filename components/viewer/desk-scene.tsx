@@ -18,9 +18,9 @@ import {
 } from "three";
 import type { CompatResult } from "@/lib/compat/rules";
 import {
+  chairFadeTargets,
   deskFocus,
   itemBounds,
-  itemBoxes,
   layoutDesk,
   SEATED_DIR,
   SEATED_FIT,
@@ -89,7 +89,11 @@ function DeskLights() {
       <directionalLight position={[2, 7, 9]} intensity={2.6} />
       <directionalLight position={[-7, 4, 3]} intensity={0.6} />
       {/* A faint coral rim from behind, the brand colour without tinting the desk. */}
-      <directionalLight position={[-6, 3, -6]} intensity={0.35} color="#fe2e4b" />
+      <directionalLight
+        position={[-6, 3, -6]}
+        intensity={0.35}
+        color="#fe2e4b"
+      />
     </>
   );
 }
@@ -113,69 +117,73 @@ function screenTexture(): Texture {
   return screenMap;
 }
 
-let floorMap: Texture | null = null;
-/** The floor fades out toward its edge, so it has no hard border. */
-function floorTexture(): Texture {
-  if (floorMap) return floorMap;
-  const c = document.createElement("canvas");
-  c.width = 128;
-  c.height = 128;
-  const g = c.getContext("2d")!;
-  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0, "rgba(255,255,255,0.9)");
-  grad.addColorStop(0.45, "rgba(255,255,255,0.45)");
-  grad.addColorStop(0.8, "rgba(255,255,255,0.1)");
-  grad.addColorStop(1, "rgba(255,255,255,0)");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 128, 128);
-  floorMap = new CanvasTexture(c);
-  return floorMap;
-}
-
-let blobMap: Texture | null = null;
-/** A soft dark blob, for shadows: dense in the middle, gone at the edge. */
-function blobTexture(): Texture {
-  if (blobMap) return blobMap;
-  const c = document.createElement("canvas");
-  c.width = 64;
-  c.height = 64;
-  const g = c.getContext("2d")!;
-  const grad = g.createRadialGradient(32, 32, 4, 32, 32, 32);
-  grad.addColorStop(0, "rgba(255,255,255,1)");
-  grad.addColorStop(0.5, "rgba(255,255,255,0.6)");
-  grad.addColorStop(1, "rgba(255,255,255,0)");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 64, 64);
-  blobMap = new CanvasTexture(c);
-  return blobMap;
-}
+/** e^(−k·r²), shifted and scaled so it's 1 in the middle (r = 0) and 0 at the edge (r = 1). */
+const gauss = (r: number, k: number) =>
+  (Math.exp(-k * r * r) - Math.exp(-k)) / (1 - Math.exp(-k));
 
 /**
- * Soft contact shadows: a blurred dark patch under everything that stands on the
- * floor (desk legs, the PC, the chair), and a faint one under the desk top. Plain
- * textured planes from the layout: no extra render pass, cheap on phones.
+ * A round greyscale alpha map: `peak · gauss(r, k)` from the middle out, 0 at the
+ * edge. Grey on black, not white with alpha: three.js reads an alphaMap's green
+ * channel, so transparency in the canvas itself would be ignored (a hard disc).
+ */
+function radialMap(px: number, k: number, peak: number): Texture {
+  const c = document.createElement("canvas");
+  c.width = px;
+  c.height = px;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, px, px);
+  const grad = g.createRadialGradient(
+    px / 2,
+    px / 2,
+    0,
+    px / 2,
+    px / 2,
+    px / 2,
+  );
+  for (let i = 0; i <= 16; i++) {
+    const r = i / 16;
+    const v = Math.round(255 * peak * gauss(r, k));
+    grad.addColorStop(r, `rgb(${v},${v},${v})`);
+  }
+  g.fillStyle = grad;
+  g.fillRect(0, 0, px, px);
+  return new CanvasTexture(c);
+}
+
+let floorMap: Texture | null = null;
+/** The floor fades out smoothly from the middle, so it has no visible edge. */
+const floorTexture = () => (floorMap ??= radialMap(256, 2.5, 0.6));
+
+let blobMap: Texture | null = null;
+/** A soft shadow: densest in the middle, gone well before the edge. */
+const blobTexture = () => (blobMap ??= radialMap(64, 4, 1));
+
+/**
+ * Soft contact shadows: one wide, faint patch under each thing that stands on the
+ * floor (the desk, the PC, the chair), never a dark disc per leg. Plain textured
+ * planes from the layout: no extra render pass, cheap on phones.
  */
 function FloorShadows({ layout }: { layout: DeskLayout }) {
   const blobs = useMemo(() => {
     const out: { x: number; z: number; sx: number; sz: number; o: number }[] =
       [];
     const { widthMm: W, depthMm: D, ghost } = layout.desk;
-    // The faded stand-in desk casts faded shadows too.
-    const deskShade = ghost ? 0.35 : 1;
-    out.push({ x: 0, z: 0, sx: W * 1.1, sz: D * 1.25, o: 0.35 * deskShade });
-    for (const item of layout.items)
-      for (const b of itemBoxes(item)) {
-        if (b.min[1] > 5) continue; // only what touches the floor
-        const sx = b.max[0] - b.min[0];
-        const sz = b.max[2] - b.min[2];
-        out.push({
-          x: (b.min[0] + b.max[0]) / 2,
-          z: (b.min[2] + b.max[2]) / 2,
-          sx: sx * 1.6 + 140,
-          sz: sz * 1.6 + 140,
-          o: item.key === "desk" ? 0.5 * deskShade : 0.5,
-        });
-      }
+    // The faded stand-in desk casts a fainter shadow too.
+    out.push({ x: 0, z: 0, sx: W * 1.3, sz: D * 1.5, o: ghost ? 0.12 : 0.38 });
+    for (const item of layout.items) {
+      if (item.key === "desk" || item.spot !== "floor") continue;
+      const b = itemBounds(item);
+      const sx = b.max[0] - b.min[0];
+      const sz = b.max[2] - b.min[2];
+      out.push({
+        x: (b.min[0] + b.max[0]) / 2,
+        z: (b.min[2] + b.max[2]) / 2,
+        sx: sx * 1.4 + 200,
+        sz: sz * 1.4 + 200,
+        o: 0.4,
+      });
+    }
     return out;
   }, [layout]);
   return (
@@ -240,6 +248,8 @@ function BlockMesh({
   const screen = b.tone === "screen";
   const tint = screen ? undefined : glow;
   const opacity = ghost ? 0.35 : (tone.opacity ?? 1);
+  const rotation: [number, number, number, "YXZ"] | undefined =
+    b.tilt || b.turn ? [b.tilt ?? 0, b.turn ?? 0, 0, "YXZ"] : undefined;
   const material = (
     <meshStandardMaterial
       color={tone.color}
@@ -269,7 +279,7 @@ function BlockMesh({
   if (b.round) {
     const r = Math.min(b.size[0], b.size[2]) / 2;
     return (
-      <mesh position={b.pos}>
+      <mesh position={b.pos} rotation={rotation}>
         <cylinderGeometry args={[r, r, b.size[1], 24]} />
         {material}
       </mesh>
@@ -281,6 +291,7 @@ function BlockMesh({
       radius={Math.min(4, Math.min(...b.size) * 0.3)}
       smoothness={2}
       position={b.pos}
+      rotation={rotation}
     >
       {material}
       {outline}
@@ -289,8 +300,9 @@ function BlockMesh({
 }
 
 /**
- * Fades the chair while it stands between the camera and the screen. It stands
- * pulled out and to one side, so from the seated view it stays visible.
+ * Fades the chair while it stands between the camera and the screen, the desk top
+ * or the PC (orbiting round behind it). It stands beside the desk, so from the
+ * seated view it stays visible.
  */
 function ChairFader({
   box,
@@ -402,10 +414,9 @@ function DeskCanvas({
     [aimX, aimY, aimZ],
   );
 
-  const [lx, ly, lz] = layout.lookAt;
-  const chairTargets = useMemo<Vec3[]>(() => [[lx, ly, lz]], [lx, ly, lz]);
-  // The floor and its soft shadows cover what's framed, plus a margin.
-  const floorSize = Math.max(max[0] - min[0], max[2] - min[2]) * 1.5;
+  const chairTargets = useMemo(() => chairFadeTargets(layout), [layout]);
+  // The floor covers what's framed and fades out well before its edge.
+  const floorSize = Math.max(max[0] - min[0], max[2] - min[2]) * 2;
 
   const itemFor = (slot: DeskKey): Item | undefined =>
     slot === "pc" ? pcCase : setup[slot];
@@ -483,7 +494,7 @@ function DeskCanvas({
         >
           <planeGeometry args={[floorSize, floorSize]} />
           <meshBasicMaterial
-            color="#262429"
+            color="#221f23"
             alphaMap={floorTexture()}
             transparent
             depthWrite={false}
