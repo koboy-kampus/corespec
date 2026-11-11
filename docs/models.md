@@ -7,7 +7,7 @@ CoreSpec draws most items as procedural boxes. A real 3D model can replace them,
 Every PC part and setup item picks its look in this order:
 
 1. **Product model:** the item's own `modelId` (in `data/parts/*.json` or `data/setup/*.json`);
-2. **Category model:** the model whose `defaultFor` is the item's category (today: `cpu`, `ram`, `gpu`);
+2. **Category model:** the model whose `defaultFor` is the item's category (today: `cpu`, `ram`, `gpu` and `keyboard`);
 3. **Procedural box:** what's drawn when there's no model.
 
 If a model fails to load, the viewer tries the next step; while one loads, the box shows. `resolveModel(item)` in `lib/viewer/models.ts` walks this chain, and both the PC view and the desk view use it. A model file is only downloaded when an item on screen uses it, and only once, however many items share it (all RAM sticks share one file).
@@ -86,7 +86,7 @@ Anything in `public/models/` can be downloaded by any visitor, so putting a mode
 - The **heaviest possible build** (for each category, the largest model any of its items can show; PC and setup together) must load **under 2.5 MB** of models.
 - Textures are resized to at most **1024 px** and converted to **WebP** by `npm run models`.
 
-Both `npm run models` and `npm test` fail with the model's name and the rule it broke. Today's 3 models are 6.6 KB (CPU), 6.1 KB (RAM) and 10.2 KB (GPU).
+Both `npm run models` and `npm test` fail with the model's name and the rule it broke. Today's 4 models are 6.6 KB (CPU), 6.1 KB (RAM), 10.2 KB (GPU) and 55 KB (keyboard).
 
 ## Blender export checklist
 

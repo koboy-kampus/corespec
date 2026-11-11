@@ -125,3 +125,20 @@ test("an empty builder loads no models", async ({ page }) => {
   await page.waitForTimeout(1000);
   expect(loads).toEqual([]);
 });
+
+test("the desk view loads a setup item's model", async ({ page }) => {
+  const loads: string[] = [];
+  page.on("request", (r) => {
+    const path = new URL(r.url()).pathname;
+    if (path.startsWith("/models/")) loads.push(path);
+  });
+  await page.goto("/builder");
+  await page.getByRole("tab", { name: /^Setup/ }).click();
+  await expect(page.getByTestId("desk-view").locator("canvas")).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(loads).toEqual([]); // no keyboard yet: no keyboard model
+
+  await page.getByRole("button", { name: /^Keyboard Choose/ }).click();
+  await page.getByRole("dialog").locator("ul > li > button").first().click();
+  await expect.poll(() => loads).toContain("/models/keyboard.glb");
+});

@@ -103,7 +103,7 @@ Each part needs `dims` (mm) so it can be drawn in 3D.
 
 ## 3D models
 
-Most parts are drawn procedurally. The CPU, RAM and GPU use small open-licence
+Most parts are drawn procedurally. The CPU, RAM, GPU and keyboards use small open-licence
 models. Models are data, not code: each one is an entry in `data/models.json`
 (with its credit in `data/credits.json`), and an item can pick its own with
 `modelId`. **How to add one, step by step: [`docs/models.md`](docs/models.md).**

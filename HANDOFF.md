@@ -340,16 +340,17 @@ The estimates match the brief's targets (about Rp 9 jt, 18 jt and 35 jt), and a 
 
 ## 7. 3D and assets
 
-| Part        | Rendering                                      | Model file              | Size                   | Licence                                                 | In credits.json |
-| ----------- | ---------------------------------------------- | ----------------------- | ---------------------- | ------------------------------------------------------- | --------------- |
-| CPU         | GLTF model                                     | `public/models/cpu.glb` | 6.6 KB (source 21 KB)  | CC0 1.0 · iPoly3D                                       | ✅              |
-| Memory      | GLTF model, one per stick                      | `public/models/ram.glb` | 6.1 KB (source 63 KB)  | CC0 1.0 · iPoly3D                                       | ✅              |
-| Graphics    | GLTF model                                     | `public/models/gpu.glb` | 10.2 KB (source 57 KB) | **CC BY 3.0** · pgonarg (attribution shown on /credits) | ✅              |
-| Motherboard | Procedural (PCB, socket, DIMM, PCIe, VRM, I/O) | —                       | —                      | ours                                                    | n/a             |
-| Cooler      | Procedural (tower, fin ribs, fan, or radiator) | —                       | —                      | ours                                                    | n/a             |
-| PSU         | Procedural (body, vent ribs)                   | —                       | —                      | ours                                                    | n/a             |
-| Storage     | Procedural (M.2 with label, or 2.5")           | —                       | —                      | ours                                                    | n/a             |
-| Case        | Procedural (walls, smoked glass, shroud, fans) | —                       | —                      | ours                                                    | n/a             |
+| Part                 | Rendering                                      | Model file                   | Size                   | Licence                                                      | In credits.json |
+| -------------------- | ---------------------------------------------- | ---------------------------- | ---------------------- | ------------------------------------------------------------ | --------------- |
+| CPU                  | GLTF model                                     | `public/models/cpu.glb`      | 6.6 KB (source 21 KB)  | CC0 1.0 · iPoly3D                                            | ✅              |
+| Memory               | GLTF model, one per stick                      | `public/models/ram.glb`      | 6.1 KB (source 63 KB)  | CC0 1.0 · iPoly3D                                            | ✅              |
+| Graphics             | GLTF model                                     | `public/models/gpu.glb`      | 10.2 KB (source 57 KB) | **CC BY 3.0** · pgonarg (attribution shown on /credits)      | ✅              |
+| Keyboard (desk view) | GLTF model, `fit: contain`                     | `public/models/keyboard.glb` | 55 KB (source 120 KB)  | **CC BY 3.0** · Alex Safayan (attribution shown on /credits) | ✅              |
+| Motherboard          | Procedural (PCB, socket, DIMM, PCIe, VRM, I/O) | —                            | —                      | ours                                                         | n/a             |
+| Cooler               | Procedural (tower, fin ribs, fan, or radiator) | —                            | —                      | ours                                                         | n/a             |
+| PSU                  | Procedural (body, vent ribs)                   | —                            | —                      | ours                                                         | n/a             |
+| Storage              | Procedural (M.2 with label, or 2.5")           | —                            | —                      | ours                                                         | n/a             |
+| Case                 | Procedural (walls, smoked glass, shroud, fans) | —                            | —                      | ours                                                         | n/a             |
 
 - **Pipeline (Phase 14):** models are data in `data/models.json` (id, basis, fit, recolour, credit, defaultFor); items can pick their own with `modelId`. `resolveModel` walks product model → category model → procedural box, in both the PC and the desk view. How to add one: [`docs/models.md`](docs/models.md).
 - **Loading:** models load lazily, only for items on screen, once per file, and are Draco-compressed. The decoder is self-hosted in `public/draco/` (WASM build only). If a model fails to load, the next one in the chain (or the box) is shown instead.

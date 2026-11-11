@@ -52,5 +52,24 @@
       "Material": "dark"
     },
     "note": "Model: X = length with the I/O bracket at -X, Y = height with the PCIe fingers at -Y, Z = thickness with the fans on +Z. Part: bracket at +x, fingers toward the board (-z), fans down (-y). A mirror; fitModel flips the winding."
+  },
+  {
+    "id": "keyboard",
+    "file": "models-src/keyboard.glb",
+    "credit": "keyboard",
+    "defaultFor": "keyboard",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "contain",
+    "note": "Low-poly keyboard: width along X, keys facing +Y, front row toward +Z. White keys (mat21) become dark, the case (mat22) black, the two accent colours steel.",
+    "recolour": {
+      "mat21": "dark",
+      "mat22": "black",
+      "mat16": "steel",
+      "mat9": "steel"
+    }
   }
 ]

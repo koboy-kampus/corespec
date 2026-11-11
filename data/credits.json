@@ -34,5 +34,17 @@
     "licence": "CC BY 3.0",
     "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
     "changes": "Scaled to each card's dimensions; mirrored so the fans face down in the case; re-materialed to the CoreSpec palette; Draco-compressed."
+  },
+  {
+    "id": "keyboard",
+    "file": "/models/keyboard.glb",
+    "source": "models-src/keyboard.glb",
+    "usedFor": "Keyboard (every keyboard)",
+    "title": "Keyboard",
+    "author": "Alex Safayan",
+    "url": "https://poly.pizza/m/fOy2zvPJAj-",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "changes": "Scaled to each keyboard's size, keeping its proportions; re-materialed to the CoreSpec palette; Draco-compressed."
   }
 ]
