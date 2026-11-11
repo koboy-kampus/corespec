@@ -1,6 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import presets from "../../data/presets.json";
-import { openPreset, watchErrors } from "./helpers";
+import { openPreset, settledShot, watchErrors } from "./helpers";
 
 /**
  * Screenshot tests for the 3D views (Phase 14): moving the models into
@@ -8,14 +8,32 @@ import { openPreset, watchErrors } from "./helpers";
  * visual.spec.ts-snapshots/ were taken before that change.
  *
  * Everything is frozen: reduced motion turns off the hero's sway, the drop-in and
- * the camera easing, and CSS animations are disabled. A 1% pixel tolerance
- * absorbs WebGL anti-aliasing noise. Baselines are per platform (made on Windows
+ * the camera easing, and CSS animations are disabled. A 0.1% pixel tolerance
+ * absorbs WebGL noise (measured: 0 pixels between runs on this machine) while
+ * still catching a small item changing: a keyboard model is 0.2% of the desk view. Baselines are per platform (made on Windows
  * Chrome); refresh them on purpose with `npx playwright test visual --update-snapshots`.
  */
-const SHOT = { maxDiffPixelRatio: 0.01, animations: "disabled" } as const;
+const SHOT = {
+  maxDiffPixelRatio: 0.001,
+  // Per-pixel colour tolerance (0 to 1; Playwright's default 0.2 lets a dark
+  // model replacing a dark box through unnoticed).
+  threshold: 0.05,
+  animations: "disabled",
+} as const;
 
 async function freeze(page: Page) {
   await page.emulateMedia({ reducedMotion: "reduce" });
+}
+
+/**
+ * Waits until every model file has downloaded and the scene has stopped
+ * changing. While a model loads its box is drawn instead, and without this wait
+ * a screenshot taken too early could match a baseline that has the box.
+ */
+async function loaded(canvas: Locator) {
+  await canvas.waitFor();
+  await canvas.page().waitForLoadState("networkidle");
+  await settledShot(canvas);
 }
 
 const pcCanvas = (page: Page) => page.getByTestId("pc-view").locator("canvas");
@@ -30,6 +48,7 @@ test.describe("3D views look the same", () => {
       await freeze(page);
       const errors = watchErrors(page);
       await openPreset(page, id);
+      await loaded(pcCanvas(page));
       await expect(pcCanvas(page)).toHaveScreenshot(`pc-${id}.png`, SHOT);
       expect(errors).toEqual([]);
     });
@@ -40,6 +59,7 @@ test.describe("3D views look the same", () => {
     await page.goto("/");
     const hero = page.locator("canvas").first();
     await expect(hero).toBeVisible({ timeout: 15_000 });
+    await loaded(hero);
     await expect(hero).toHaveScreenshot("hero.png", SHOT);
   });
 
@@ -71,6 +91,7 @@ test.describe("3D views look the same", () => {
     await page.getByRole("tab", { name: /^Setup/ }).click();
     const desk = page.getByTestId("desk-view").locator("canvas");
     await expect(desk).toBeVisible();
+    await loaded(desk);
     await expect(desk).toHaveScreenshot("desk-sweet-spot-1440p.png", SHOT);
   });
 });
