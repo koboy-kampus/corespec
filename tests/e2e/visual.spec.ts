@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import presets from "../../data/presets.json";
 import { openPreset, watchErrors } from "./helpers";
 
 /**
@@ -42,9 +43,31 @@ test.describe("3D views look the same", () => {
     await expect(hero).toHaveScreenshot("hero.png", SHOT);
   });
 
-  test("builder desk view", async ({ page }) => {
+  test("builder desk view, full setup", async ({ page }) => {
     await freeze(page);
-    await openPreset(page, "sweet-spot-1440p");
+    // The sweet-spot preset with its whole suggested setup, saved as the build.
+    const preset = presets.find((p) => p.id === "sweet-spot-1440p")!;
+    await page.goto("/builds");
+    await page.evaluate(
+      (parts) =>
+        localStorage.setItem(
+          "corespec-build",
+          JSON.stringify({
+            state: {
+              build: {
+                id: "visual-desk",
+                name: "Visual desk",
+                parts,
+                updatedAt: "2026-11-11T10:00:00.000Z",
+              },
+              saved: [],
+            },
+            version: 2,
+          }),
+        ),
+      { ...preset.parts, ...preset.setup },
+    );
+    await page.goto("/builder");
     await page.getByRole("tab", { name: /^Setup/ }).click();
     const desk = page.getByTestId("desk-view").locator("canvas");
     await expect(desk).toBeVisible();
