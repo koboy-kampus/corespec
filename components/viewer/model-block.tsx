@@ -7,7 +7,7 @@ import type { Vec3 } from "@/lib/viewer/layout";
 import { DRACO_DECODER_PATH, MODELS, type ModelId } from "@/lib/viewer/models";
 import { TONES } from "./palette";
 
-/** If a model file fails to load, keep showing the placeholder box. */
+/** If a model file fails to load, show the next model in the chain (or the box). */
 class ModelBoundary extends Component<
   { fallback: ReactNode; children: ReactNode },
   { failed: boolean }
@@ -30,19 +30,24 @@ function FittedModel({
   size: Vec3;
   glow?: string;
 }) {
-  // Loaded on first use (lazy), Draco-decoded with the self-hosted decoder, cached by URL.
-  const { scene } = useGLTF(MODELS[id].url, DRACO_DECODER_PATH);
+  const spec = MODELS[id];
+  // Loaded on first use, Draco-decoded with the self-hosted decoder. useGLTF caches
+  // by URL, so items sharing a model (every RAM stick) load its file once.
+  const { scene } = useGLTF(spec.url, DRACO_DECODER_PATH);
   const [sx, sy, sz] = size;
   const meshes = useMemo(
-    () => fitModel(scene, MODELS[id].basis, [sx, sy, sz]),
-    [scene, id, sx, sy, sz],
+    () => fitModel(scene, spec.basis, [sx, sy, sz], spec.fit),
+    [scene, spec, sx, sy, sz],
   );
   useEffect(() => () => meshes.forEach((m) => m.geometry.dispose()), [meshes]);
 
   return (
     <>
       {meshes.map((m, i) => {
-        const tone = MODELS[id].recolour[m.materialName];
+        // A model that keeps its own textures uses its own material (unless it glows).
+        if (spec.keepTextures && m.material && !glow)
+          return <mesh key={i} geometry={m.geometry} material={m.material} />;
+        const tone = spec.recolour[m.materialName];
         const look = tone ? TONES[tone] : m;
         return (
           <mesh key={i} geometry={m.geometry}>
@@ -61,28 +66,55 @@ function FittedModel({
   );
 }
 
-/** A real model fitted to the block, with the box as the loading and error fallback. */
+/** The first model in `ids` that loads, else the next one, else `fallback`. */
+function ModelChain({
+  ids,
+  size,
+  glow,
+  fallback,
+}: {
+  ids: ModelId[];
+  size: Vec3;
+  glow?: string;
+  fallback: ReactNode;
+}) {
+  const [first, ...rest] = ids;
+  if (!first || !MODELS[first]) return <>{fallback}</>;
+  const next = rest.length ? (
+    <ModelChain ids={rest} size={size} glow={glow} fallback={fallback} />
+  ) : (
+    fallback
+  );
+  return (
+    <ModelBoundary fallback={next}>
+      <Suspense fallback={fallback}>
+        <FittedModel id={first} size={size} glow={glow} />
+      </Suspense>
+    </ModelBoundary>
+  );
+}
+
+/**
+ * A real model fitted to the block: the item's own model, else its category's
+ * (resolveModel's chain), with the procedural look as the loading and error fallback.
+ */
 export function ModelBlock({
-  id,
+  ids,
   pos,
   size,
   glow,
   fallback,
 }: {
-  id: ModelId;
+  ids: ModelId[];
   pos: Vec3;
   size: Vec3;
   glow?: string;
-  /** The placeholder box, drawn at the block's centre. */
+  /** The procedural look, drawn around the block's centre. */
   fallback: ReactNode;
 }) {
   return (
     <group position={pos}>
-      <ModelBoundary fallback={fallback}>
-        <Suspense fallback={fallback}>
-          <FittedModel id={id} size={size} glow={glow} />
-        </Suspense>
-      </ModelBoundary>
+      <ModelChain ids={ids} size={size} glow={glow} fallback={fallback} />
     </group>
   );
 }

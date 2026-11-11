@@ -351,12 +351,14 @@ The estimates match the brief's targets (about Rp 9 jt, 18 jt and 35 jt), and a 
 | Storage     | Procedural (M.2 with label, or 2.5")           | —                       | —                      | ours                                                    | n/a             |
 | Case        | Procedural (walls, smoked glass, shroud, fans) | —                       | —                      | ours                                                    | n/a             |
 
-- **Loading:** models load lazily and are Draco-compressed. The decoder is self-hosted in `public/draco/` (WASM build only). If a model fails to load, the box is shown instead.
-- **Tests enforce:**
-  - every model file has a credit and keeps its source;
-  - only CC0 1.0 and CC BY 3.0 licences are allowed;
-  - each file is under 1 MB;
+- **Pipeline (Phase 14):** models are data in `data/models.json` (id, basis, fit, recolour, credit, defaultFor); items can pick their own with `modelId`. `resolveModel` walks product model → category model → procedural box, in both the PC and the desk view. How to add one: [`docs/models.md`](docs/models.md).
+- **Loading:** models load lazily, only for items on screen, once per file, and are Draco-compressed. The decoder is self-hosted in `public/draco/` (WASM build only). If a model fails to load, the next one in the chain (or the box) is shown instead.
+- **Tests and `npm run models` enforce:**
+  - every model has a credit and keeps its source; nothing unlisted is shipped;
+  - only CC0 1.0, CC BY 3.0 and CC BY 4.0 licences are allowed;
+  - each file is under 400 KB, and the heaviest possible build under 2.5 MB;
   - CC-BY entries have an author, a licence URL and the changes made.
+- **Screenshot tests** (`tests/e2e/visual.spec.ts`) keep the PC views, the hero and a desk view looking the same (baselines per platform, made on Windows Chrome).
 - **`public/` total: 280 KB** across 5 files: the Draco decoder (WASM and wrapper, about 252 KB) and 3 models (about 23 KB).
 - **`docs/screenshots/`: 1.3 MB.** It's in the repo for the README and isn't served by the app.
 - **Original sources:** `models-src/` (about 140 KB).

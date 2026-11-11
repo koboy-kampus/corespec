@@ -9,6 +9,7 @@ import {
   type Object3D,
 } from "three";
 import type { Vec3 } from "./layout";
+import type { ModelFit } from "./models";
 
 export interface FittedMesh {
   geometry: BufferGeometry;
@@ -18,17 +19,23 @@ export interface FittedMesh {
   color: string;
   roughness: number;
   metalness: number;
+  /** The original material itself, for models that keep their own textures. */
+  material?: Material;
 }
 
 /**
- * Bakes a loaded model into plain geometries that exactly fill a part's box:
- * rotate with `basis`, then scale each axis to `size` and centre on the origin.
+ * Bakes a loaded model into plain geometries that fill an item's box, centred on
+ * the origin, after rotating it with `basis`:
+ * - "stretch" (the default) scales each axis to `size`, so it fills the box exactly;
+ * - "contain" scales all axes by the same amount, as large as fits inside the box,
+ *   centred across and sitting on the box's bottom (-y).
  * The caller owns (and disposes) the returned geometries.
  */
 export function fitModel(
   root: Object3D,
   basis: [Vec3, Vec3, Vec3],
   size: Vec3,
+  fit: ModelFit = "stretch",
 ): FittedMesh[] {
   const rotate = new Matrix4().makeBasis(
     new Vector3(...basis[0]),
@@ -57,6 +64,7 @@ export function fitModel(
       color: mat?.color ? `#${mat.color.getHexString()}` : "#808080",
       roughness: mat?.roughness ?? 0.6,
       metalness: mat?.metalness ?? 0.2,
+      material: Array.isArray(raw) ? raw[0] : raw,
     });
   });
 
@@ -67,14 +75,21 @@ export function fitModel(
   }
   const center = box.getCenter(new Vector3());
   const extent = box.getSize(new Vector3());
-  const scale = new Vector3(
-    ...size.map((s, i) => s / Math.max(extent.getComponent(i), 1e-6)),
+  const perAxis = size.map(
+    (s, i) => s / Math.max(extent.getComponent(i), 1e-6),
   );
-  const fit = new Matrix4()
-    .makeScale(scale.x, scale.y, scale.z)
+  const scale =
+    fit === "contain"
+      ? new Vector3().setScalar(Math.min(...perAxis))
+      : new Vector3(...perAxis);
+  // "contain" drops the model onto the box's floor: its bottom at -size.y / 2.
+  const lift = fit === "contain" ? (extent.y * scale.y - size[1]) / 2 : 0;
+  const transform = new Matrix4()
+    .makeTranslation(0, lift, 0)
+    .multiply(new Matrix4().makeScale(scale.x, scale.y, scale.z))
     .multiply(new Matrix4().makeTranslation(-center.x, -center.y, -center.z));
   for (const m of out) {
-    m.geometry.applyMatrix4(fit);
+    m.geometry.applyMatrix4(transform);
     m.geometry.computeVertexNormals();
   }
   return out;

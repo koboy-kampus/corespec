@@ -34,10 +34,12 @@ import {
 } from "@/lib/viewer/desk-layout";
 import { deskHighlights } from "@/lib/viewer/desk-highlights";
 import { MM_TO_UNITS, type Vec3 } from "@/lib/viewer/layout";
+import { modelChain } from "@/lib/viewer/models";
 import { clampDelta } from "@/lib/viewer/spring";
 import type { Case, Item, ResolvedSetup } from "@/types/parts";
 import { Animated, setFade } from "./animated";
 import { CameraRig, type CameraKeys, type CameraView } from "./camera-rig";
+import { ModelBlock } from "./model-block";
 import { DESK_TONES, WARN } from "./palette";
 import { PartTooltip } from "./part-tooltip";
 import { hasWebGL, usePresence } from "./scene-common";
@@ -425,9 +427,27 @@ function DeskCanvas({
     const glow = highlights.glow[item.slot] ? WARN : undefined;
     const ghost = item.id === "default-desk";
     const part = itemFor(item.slot);
-    const meshes = item.blocks.map((b, i) => (
+    const blocks = item.blocks.map((b, i) => (
       <BlockMesh key={i} b={b} glow={glow} ghost={ghost} />
     ));
+    // An item with a model (its own or its category's) draws it in its own box,
+    // before the item's turn, with the procedural blocks while it loads or if it fails.
+    const models = part && !ghost ? modelChain(part).map((m) => m.id) : [];
+    const own = itemBounds({ origin: [0, 0, 0], blocks: item.blocks });
+    const centre = [0, 1, 2].map((i) => (own.min[i] + own.max[i]) / 2) as Vec3;
+    const meshes = models.length ? (
+      <ModelBlock
+        ids={models}
+        pos={centre}
+        size={[0, 1, 2].map((i) => own.max[i] - own.min[i]) as Vec3}
+        glow={glow}
+        fallback={
+          <group position={centre.map((v) => -v) as Vec3}>{blocks}</group>
+        }
+      />
+    ) : (
+      blocks
+    );
     const turned = item.rotY ? (
       <group rotation={[0, item.rotY, 0]}>{meshes}</group>
     ) : (

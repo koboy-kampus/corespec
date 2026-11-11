@@ -6,7 +6,7 @@ import type {
   Part,
   ResolvedBuild,
 } from "@/types/parts";
-import type { ModelId } from "./models";
+import { modelChain, type ModelId } from "./models";
 
 /**
  * Where every part sits inside the case, in millimetres.
@@ -38,8 +38,15 @@ export interface Block {
   pos: Vec3;
   size: Vec3;
   tone: Tone;
-  /** Draw this 3D model (fitted to `size`) instead of the box, once it has loaded. */
-  model?: ModelId;
+  /** The block a category model replaces (the CPU, each RAM stick, the GPU body). */
+  body?: boolean;
+  /**
+   * Draw the first of these models that loads (fitted to `size`) instead of the
+   * box. Filled in from data/models.json by `modelChain`.
+   */
+  models?: ModelId[];
+  /** For a model that replaces a whole part: the blocks shown while it loads or if it fails. */
+  fallback?: Block[];
 }
 /** A fan drawn as a ring on one face of a block. */
 export interface Fan {
@@ -364,7 +371,7 @@ function layoutPart(
             pos: [0, 0, d.h / 2],
             size: [d.l, d.w, d.h],
             tone: "silver",
-            model: "cpu",
+            body: true,
           },
         ],
       };
@@ -446,7 +453,7 @@ function layoutPart(
           pos: [-i * a.ramPitch, 0, d.h / 2] as Vec3,
           size: [d.w, d.l, d.h] as Vec3,
           tone: "ram" as const,
-          model: "ram" as const,
+          body: true,
         })),
       };
 
@@ -456,7 +463,7 @@ function layoutPart(
         pos: [-d.l / 2, -d.w / 2, d.h / 2],
         size: [d.l, d.w, d.h],
         tone: "dark",
-        model: "gpu",
+        body: true,
       };
       const count = fanCount(d.l);
       return {
@@ -525,10 +532,35 @@ export function layoutBuild(build: ResolvedBuild): SceneLayout {
     build.motherboard,
     build.psu?.dims?.h,
   );
-  const parts = Object.values(build)
-    .map((p) => layoutPart(p, anchors, shell))
-    .filter((p): p is PartLayout => p !== null);
+  const parts = Object.values(build).flatMap((p) => {
+    const layout = layoutPart(p, anchors, shell);
+    return layout ? [withModels(layout, p)] : [];
+  });
   return { case: shell, anchors, parts };
+}
+
+/**
+ * Puts the part's models (its own, then its category's) on the blocks they replace:
+ * the body blocks when the layout marks some, otherwise one block around the
+ * whole part, with the procedural blocks kept as its fallback.
+ */
+function withModels(layout: PartLayout, part: Part): PartLayout {
+  const models = modelChain(part).map((m) => m.id);
+  if (!models.length) return layout;
+  if (layout.blocks.some((b) => b.body))
+    return {
+      ...layout,
+      blocks: layout.blocks.map((b) => (b.body ? { ...b, models } : b)),
+    };
+  const { min, max } = partBounds(layout);
+  const whole: Block = {
+    pos: [0, 1, 2].map((i) => (min[i] + max[i]) / 2 - layout.origin[i]) as Vec3,
+    size: [0, 1, 2].map((i) => max[i] - min[i]) as Vec3,
+    tone: layout.blocks[0]?.tone ?? "dark",
+    models,
+    fallback: layout.blocks,
+  };
+  return { ...layout, blocks: [whole] };
 }
 
 /** World-space bounds of a part (mm), for tests and camera framing. */
@@ -603,10 +635,13 @@ export function partClashes(scene: SceneLayout, tolerance = 0.5): string[] {
     .filter((p) => p.category !== "motherboard")
     .map((p) => ({
       category: p.category,
-      blocks: p.blocks.map((b) => ({
-        min: b.pos.map((v, i) => p.origin[i] + v - b.size[i] / 2),
-        max: b.pos.map((v, i) => p.origin[i] + v + b.size[i] / 2),
-      })),
+      // A whole-part model is checked by the procedural blocks it stands in for.
+      blocks: p.blocks
+        .flatMap((b) => b.fallback ?? [b])
+        .map((b) => ({
+          min: b.pos.map((v, i) => p.origin[i] + v - b.size[i] / 2),
+          max: b.pos.map((v, i) => p.origin[i] + v + b.size[i] / 2),
+        })),
     }));
   const out: string[] = [];
   for (let i = 0; i < boxes.length; i++)

@@ -2,7 +2,7 @@
   {
     "id": "cpu",
     "file": "/models/cpu.glb",
-    "source": "models-src/cpu-ipoly3d.glb",
+    "source": "models-src/cpu.glb",
     "usedFor": "CPU",
     "title": "CPU",
     "author": "iPoly3D",
@@ -14,7 +14,7 @@
   {
     "id": "ram",
     "file": "/models/ram.glb",
-    "source": "models-src/ram-ipoly3d.glb",
+    "source": "models-src/ram.glb",
     "usedFor": "Memory (one model per stick)",
     "title": "RAM",
     "author": "iPoly3D",
@@ -26,7 +26,7 @@
   {
     "id": "gpu",
     "file": "/models/gpu.glb",
-    "source": "models-src/gpu-pgonarg.glb",
+    "source": "models-src/gpu.glb",
     "usedFor": "Graphics card (every GPU)",
     "title": "Graphics card",
     "author": "pgonarg",

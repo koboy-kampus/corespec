@@ -46,16 +46,17 @@ Open <http://localhost:3000>. No environment variables or API keys are needed.
 
 ### Scripts
 
-| Command            | What it does                                                   |
-| ------------------ | -------------------------------------------------------------- |
-| `npm run dev`      | Development server with hot reload                             |
-| `npm run build`    | Production build                                               |
-| `npm start`        | Serve the production build                                     |
-| `npm test`         | Unit tests (Vitest)                                            |
-| `npm run test:e2e` | End-to-end, keyboard and axe tests (Playwright, see below)     |
-| `npm run lint`     | ESLint                                                         |
-| `npm run format`   | Format everything with Prettier (`format:check` to only check) |
-| `npm run models`   | Compress `models-src/` into `public/models/` (see 3D models)   |
+| Command                          | What it does                                                   |
+| -------------------------------- | -------------------------------------------------------------- |
+| `npm run dev`                    | Development server with hot reload                             |
+| `npm run build`                  | Production build                                               |
+| `npm start`                      | Serve the production build                                     |
+| `npm test`                       | Unit tests (Vitest)                                            |
+| `npm run test:e2e`               | End-to-end, keyboard and axe tests (Playwright, see below)     |
+| `npm run lint`                   | ESLint                                                         |
+| `npm run format`                 | Format everything with Prettier (`format:check` to only check) |
+| `npm run models`                 | Build `data/models.json` into `public/models/` (see 3D models) |
+| `npm run models:check -- <file>` | Size, triangles, materials and budget of a source model        |
 
 Before committing: `npm run build && npm run lint && npm test`.
 
@@ -103,16 +104,12 @@ Each part needs `dims` (mm) so it can be drawn in 3D.
 ## 3D models
 
 Most parts are drawn procedurally. The CPU, RAM and GPU use small open-licence
-models. To add one:
+models. Models are data, not code: each one is an entry in `data/models.json`
+(with its credit in `data/credits.json`), and an item can pick its own with
+`modelId`. **How to add one, step by step: [`docs/models.md`](docs/models.md).**
 
-1. Put the original `.glb` in `models-src/` named `<id>-<author>.glb`.
-2. Add an entry to `data/credits.json`: title, author, source URL, licence, licence
-   URL and what was changed. Only **CC0 1.0** and **CC BY 3.0** are accepted.
-3. Add its axes and recolour map in `lib/viewer/models.ts`.
-4. Run `npm run models`. It Draco-compresses to `public/models/` and fails if a file
-   is over 1 MB.
-
-The tests fail if a model has no credit, a disallowed licence or a missing source.
+`npm run models` builds them into `public/models/` and refuses a missing credit, a
+licence that isn't allowed, or a file over 400 KB; the tests check the same rules.
 Credits are shown on `/credits`.
 
 ## Environment variables

@@ -63,7 +63,8 @@ export interface ItemBase {
   /** Checked marketplace listings, if any (lowest price wins). */
   listings?: Listing[];
   dims?: { l: number; w: number; h: number }; // mm → sizes placeholder meshes
-  model?: string; // GLTF path, optional (later)
+  /** Its own 3D model: an id in data/models.json (see docs/models.md). */
+  modelId?: string;
 }
 
 export interface PartBase extends ItemBase {

@@ -1,86 +1,99 @@
 import credits from "@/data/credits.json";
+import models from "@/data/models.json";
+import {
+  ALLOWED_LICENCES,
+  ATTRIBUTION_REQUIRED,
+  modelUrl,
+} from "@/scripts/model-rules.mjs";
+import type { Category } from "@/types/parts";
 import type { Tone, Vec3 } from "./layout";
 
 /**
- * 3D models that replace a part's placeholder box. Each one must be listed in
- * data/credits.json with a licence that allows use (tests enforce this).
- * Parts without a model keep their procedural boxes.
+ * 3D models (Phase 14): data, not code. Each entry in data/models.json is one
+ * model file; adding a model never needs a new component. See docs/models.md.
  */
-export type ModelId = "cpu" | "ram" | "gpu";
+
+export type ModelId = string;
+
+/** "stretch" fills the item's box on every axis; "contain" keeps proportions. */
+export type ModelFit = "stretch" | "contain";
 
 export interface ModelSpec {
+  id: ModelId;
+  /** Where the site serves the compressed file. */
   url: string;
   /**
-   * Where the model's own X, Y and Z axes point in the part's local space
-   * (x = depth, y = height, z = out of the board). Used before scaling to the part's dims.
+   * Where the model's own X, Y and Z axes point in the item's local space.
+   * Applied before fitting to the item's dims.
    */
   basis: [Vec3, Vec3, Vec3];
-  /**
-   * Re-materials the model to the CoreSpec palette: source material name → tone.
-   * Anything not listed keeps its original colour.
-   */
+  /** Source material name → palette tone. Anything not listed keeps its colour. */
   recolour: Record<string, Tone>;
+  fit: ModelFit;
+  /** Set (with a reason) when the model keeps its own textures. */
+  keepTextures?: string;
+  /** The category this is the default model for, if any. */
+  defaultFor?: Category;
 }
 
-// iPoly3D's models share the same three material names.
-const IPOLY3D: Record<string, Tone> = {
-  Green: "pcb",
-  black: "black",
-  conduct: "gold",
-};
+interface ModelEntry {
+  id: string;
+  basis: number[][];
+  recolour?: Record<string, string>;
+  fit?: string;
+  keepTextures?: string;
+  defaultFor?: string;
+}
 
-export const MODELS: Record<ModelId, ModelSpec> = {
-  // Lies flat in the model's XY plane, heat spreader facing +Z: same as a CPU on the board.
-  cpu: {
-    url: "/models/cpu.glb",
-    basis: [
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, 1],
-    ],
-    recolour: IPOLY3D,
-  },
-  // Model: X = stick length, Y = stick height, Z = thickness.
-  // Part: length runs along y, height sticks out of the board (z), thickness along x.
-  ram: {
-    url: "/models/ram.glb",
-    basis: [
-      [0, 1, 0],
-      [0, 0, 1],
-      [1, 0, 0],
-    ],
-    recolour: IPOLY3D,
-  },
-  // Model: X = length with the I/O bracket at -X, Y = height with the PCIe fingers
-  // at -Y, Z = thickness with the fans on +Z. Part: bracket at +x (rear), fingers
-  // toward the board (-z), fans facing down (-y). That mapping is a mirror, which
-  // fitModel handles by flipping the triangle winding.
-  gpu: {
-    url: "/models/gpu.glb",
-    basis: [
-      [-1, 0, 0],
-      [0, 0, 1],
-      [0, -1, 0],
-    ],
-    recolour: {
-      "Material.003": "black", // fans
-      "Material.002": "silver", // I/O bracket
-      "Material.001": "pcb", // PCIe edge
-      "Material.005": "gold", // contacts
-      "Material.004": "steel", // shroud frame
-      Material: "dark", // shroud panels
+export const MODELS: Record<ModelId, ModelSpec> = Object.fromEntries(
+  (models as unknown as ModelEntry[]).map((m) => [
+    m.id,
+    {
+      id: m.id,
+      url: modelUrl(m.id),
+      basis: m.basis as ModelSpec["basis"],
+      recolour: (m.recolour ?? {}) as Record<string, Tone>,
+      fit: (m.fit ?? "stretch") as ModelFit,
+      keepTextures: m.keepTextures,
+      defaultFor: m.defaultFor as Category | undefined,
     },
-  },
-};
+  ]),
+);
+
+const DEFAULTS = new Map<string, ModelSpec>(
+  Object.values(MODELS).flatMap((m) =>
+    m.defaultFor ? [[m.defaultFor, m] as const] : [],
+  ),
+);
+
+/**
+ * Every model an item could show, best first: its own `modelId`, then its
+ * category's default. If one fails to load the viewer tries the next, then falls
+ * back to the procedural box. Empty when the item has no model at all.
+ */
+export function modelChain(item: {
+  category: Category;
+  modelId?: string;
+}): ModelSpec[] {
+  const own = item.modelId ? MODELS[item.modelId] : undefined;
+  const fallback = DEFAULTS.get(item.category);
+  return [own, fallback].filter(
+    (m, i, all): m is ModelSpec => !!m && all.indexOf(m) === i,
+  );
+}
+
+/** The model an item shows: product model, else category model, else null (the box). */
+export function resolveModel(item: {
+  category: Category;
+  modelId?: string;
+}): ModelSpec | null {
+  return modelChain(item)[0] ?? null;
+}
 
 /** Self-hosted Draco decoder (copied by `npm run models`), so nothing loads from a CDN. */
 export const DRACO_DECODER_PATH = "/draco/";
 
-/** Licences we accept for bundled models. */
-export const ALLOWED_LICENCES = ["CC0 1.0", "CC BY 3.0"];
-
-/** Licences that need a visible credit (shown on the Credits page in Phase 8). */
-export const ATTRIBUTION_REQUIRED = ["CC BY 3.0"];
+export { ALLOWED_LICENCES, ATTRIBUTION_REQUIRED };
 
 export interface Credit {
   id: string;

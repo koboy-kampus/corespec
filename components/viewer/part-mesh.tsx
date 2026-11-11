@@ -61,8 +61,9 @@ function BoxBlock({ block: b, glow }: { block: Block; glow?: string }) {
 }
 
 /**
- * A part: bundled models where we have one (CPU, RAM), rounded boxes sized from its
- * dims everywhere else. Glows when check() flags it.
+ * A part: its model where it has one (data/models.json, via the layout's model
+ * chain), rounded boxes sized from its dims everywhere else. Glows when check()
+ * flags it.
  */
 export function PartMesh({
   layout,
@@ -75,21 +76,32 @@ export function PartMesh({
   return (
     <>
       {layout.blocks.map((b, i) =>
-        b.model ? (
+        b.models?.length ? (
           <ModelBlock
             key={i}
-            id={b.model}
+            ids={b.models}
             pos={b.pos}
             size={b.size}
             glow={glow}
-            fallback={<BoxBlock block={{ ...b, pos: [0, 0, 0] }} glow={glow} />}
+            fallback={
+              b.fallback ? (
+                // A whole-part model: the procedural blocks, back around the part's origin.
+                <group position={b.pos.map((v) => -v) as Vec3}>
+                  {b.fallback.map((f, j) => (
+                    <BoxBlock key={j} block={f} glow={glow} />
+                  ))}
+                </group>
+              ) : (
+                <BoxBlock block={{ ...b, pos: [0, 0, 0] }} glow={glow} />
+              )
+            }
           />
         ) : (
           <BoxBlock key={i} block={b} glow={glow} />
         ),
       )}
       {/* A model (the GPU) brings its own fans; the rings are for the box look. */}
-      {layout.blocks.some((b) => b.model)
+      {layout.blocks.some((b) => b.models?.length)
         ? null
         : layout.fans.map((f, i) => <FanDisc key={i} {...f} />)}
     </>

@@ -6,10 +6,7 @@ import { cn } from "cn";
 import { CaseDrawing } from "@/components/landing/case-drawing";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
-import {
-  DeskDescription,
-  DeskViewer,
-} from "@/components/viewer/desk-viewer";
+import { DeskDescription, DeskViewer } from "@/components/viewer/desk-viewer";
 import { ExplodeToggle } from "@/components/viewer/explode-toggle";
 import { Viewer } from "@/components/viewer/viewer";
 import { ViewToggle } from "@/components/viewer/view-toggle";
@@ -98,6 +95,7 @@ export function Viewport({ className }: { className?: string }) {
         )}
         inert={desk}
         aria-hidden={desk || undefined}
+        data-testid="pc-view"
       >
         <Viewer
           mode="builder"

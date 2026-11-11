@@ -1,0 +1,56 @@
+[
+  {
+    "id": "cpu",
+    "file": "models-src/cpu.glb",
+    "credit": "cpu",
+    "defaultFor": "cpu",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "recolour": {
+      "Green": "pcb",
+      "black": "black",
+      "conduct": "gold"
+    },
+    "note": "Lies flat in the model's XY plane, heat spreader facing +Z: same as a CPU on the board."
+  },
+  {
+    "id": "ram",
+    "file": "models-src/ram.glb",
+    "credit": "ram",
+    "defaultFor": "ram",
+    "basis": [
+      [0, 1, 0],
+      [0, 0, 1],
+      [1, 0, 0]
+    ],
+    "recolour": {
+      "Green": "pcb",
+      "black": "black",
+      "conduct": "gold"
+    },
+    "note": "Model: X = stick length, Y = stick height, Z = thickness. Part: length along y, height out of the board (z), thickness along x."
+  },
+  {
+    "id": "gpu",
+    "file": "models-src/gpu.glb",
+    "credit": "gpu",
+    "defaultFor": "gpu",
+    "basis": [
+      [-1, 0, 0],
+      [0, 0, 1],
+      [0, -1, 0]
+    ],
+    "recolour": {
+      "Material.003": "black",
+      "Material.002": "silver",
+      "Material.001": "pcb",
+      "Material.005": "gold",
+      "Material.004": "steel",
+      "Material": "dark"
+    },
+    "note": "Model: X = length with the I/O bracket at -X, Y = height with the PCIe fingers at -Y, Z = thickness with the fans on +Z. Part: bracket at +x, fingers toward the board (-z), fans down (-y). A mirror; fitModel flips the winding."
+  }
+]
