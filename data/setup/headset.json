@@ -94,5 +94,53 @@
     "placement": "desk-edge",
     "connection": "2.4GHz",
     "wireless": true
+  },
+  {
+    "id": "headset-jbl-quantum-100",
+    "category": "headset",
+    "brand": "JBL",
+    "name": "Quantum 100",
+    "priceIDR": 400000,
+    "tier": "budget",
+    "dims": {
+      "l": 180,
+      "w": 90,
+      "h": 200
+    },
+    "placement": "desk-edge",
+    "connection": "3.5mm",
+    "wireless": false
+  },
+  {
+    "id": "headset-logitech-g-pro-x-2-lightspeed",
+    "category": "headset",
+    "brand": "Logitech",
+    "name": "G PRO X 2 Lightspeed",
+    "priceIDR": 4000000,
+    "tier": "high",
+    "dims": {
+      "l": 180,
+      "w": 90,
+      "h": 200
+    },
+    "placement": "desk-edge",
+    "connection": "2.4GHz",
+    "wireless": true
+  },
+  {
+    "id": "headset-steelseries-arctis-nova-pro-wireless",
+    "category": "headset",
+    "brand": "SteelSeries",
+    "name": "Arctis Nova Pro Wireless",
+    "priceIDR": 6000000,
+    "tier": "high",
+    "dims": {
+      "l": 185,
+      "w": 95,
+      "h": 205
+    },
+    "placement": "desk-edge",
+    "connection": "2.4GHz",
+    "wireless": true
   }
 ]

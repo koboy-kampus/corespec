@@ -153,7 +153,13 @@ describe("setup item filters (Phase 10)", () => {
       { ...DEFAULT_FILTERS, facets: { resolution: ["1440p", "4K"] } },
       facets,
     );
-    expect(hiRes).toHaveLength(4);
+    expect(hiRes.map((m) => m.id).sort()).toEqual(
+      monitors
+        .filter((m) => m.resolution === "1440p" || m.resolution === "4K")
+        .map((m) => m.id)
+        .sort(),
+    );
+    expect(hiRes.length).toBeGreaterThan(3);
     const va = filterParts(
       monitors,
       { ...DEFAULT_FILTERS, facets: { resolution: ["1440p"], panel: ["VA"] } },

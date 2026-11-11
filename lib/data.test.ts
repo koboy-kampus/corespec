@@ -97,8 +97,8 @@ describe("tiers (Phase 13)", () => {
     for (const item of ALL_ITEMS) expect(TIERS, item.id).toContain(item.tier);
   });
 
-  it("has at least 3 PC parts per tier in every category", () => {
-    for (const [c, parts] of Object.entries(CATALOG))
+  it("has at least 3 items per tier in every category, PC and setup", () => {
+    for (const [c, parts] of Object.entries({ ...CATALOG, ...SETUP_CATALOG }))
       for (const [tier, n] of Object.entries(count(parts)))
         expect(n, `${c} ${tier}`).toBeGreaterThanOrEqual(3);
   });
@@ -141,27 +141,15 @@ describe("presets", () => {
 });
 
 describe("setup catalogue", () => {
-  const expected: Record<string, number> = {
-    monitor: 7,
-    keyboard: 6,
-    mouse: 6,
-    headset: 6,
-    mousepad: 4,
-    speakers: 4,
-    webcam: 4,
-    microphone: 4,
-    chair: 4,
-    desk: 4,
-    arm: 4,
-    lighting: 4,
-  };
+  /** 9 per category since Phase 13: 3 per tier. */
+  const expected = 9;
 
   it("has the 12 setup categories with the planned item counts", () => {
     expect(Object.keys(SETUP_CATALOG).sort()).toEqual(
       [...SETUP_CATEGORIES].sort(),
     );
     for (const [c, items] of Object.entries(SETUP_CATALOG))
-      expect(items.length, c).toBe(expected[c]);
+      expect(items.length, c).toBe(expected);
   });
 
   it("has ids unique across the whole catalogue, prefixed by category", () => {

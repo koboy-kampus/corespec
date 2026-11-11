@@ -58,5 +58,80 @@
     },
     "placement": "desk",
     "connection": "XLR"
+  },
+  {
+    "id": "microphone-fifine-am8",
+    "category": "microphone",
+    "brand": "Fifine",
+    "name": "AM8",
+    "priceIDR": 700000,
+    "tier": "budget",
+    "dims": {
+      "l": 110,
+      "w": 110,
+      "h": 290
+    },
+    "placement": "desk",
+    "connection": "USB"
+  },
+  {
+    "id": "microphone-maono-au-pm421",
+    "category": "microphone",
+    "brand": "Maono",
+    "name": "AU-PM421",
+    "priceIDR": 600000,
+    "tier": "budget",
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 260
+    },
+    "placement": "desk",
+    "connection": "USB"
+  },
+  {
+    "id": "microphone-rode-nt-usb-mini",
+    "category": "microphone",
+    "brand": "RØDE",
+    "name": "NT-USB Mini",
+    "priceIDR": 1500000,
+    "tier": "mid",
+    "dims": {
+      "l": 85,
+      "w": 85,
+      "h": 140
+    },
+    "placement": "desk",
+    "connection": "USB"
+  },
+  {
+    "id": "microphone-shure-mv7-plus",
+    "category": "microphone",
+    "brand": "Shure",
+    "name": "MV7+",
+    "priceIDR": 4000000,
+    "tier": "high",
+    "dims": {
+      "l": 64,
+      "w": 153,
+      "h": 90
+    },
+    "placement": "desk",
+    "connection": "USB"
+  },
+  {
+    "id": "microphone-electro-voice-re20",
+    "category": "microphone",
+    "brand": "Electro-Voice",
+    "name": "RE20",
+    "priceIDR": 8000000,
+    "tier": "high",
+    "dims": {
+      "l": 54,
+      "w": 216,
+      "h": 54
+    },
+    "placement": "desk",
+    "connection": "XLR"
   }
 ]

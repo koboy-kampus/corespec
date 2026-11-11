@@ -66,5 +66,90 @@
     "kind": "Light bar",
     "rgb": false,
     "usbPowered": true
+  },
+  {
+    "id": "lighting-xiaomi-mijia-led-desk-lamp-1s",
+    "category": "lighting",
+    "brand": "Xiaomi",
+    "name": "Mijia LED Desk Lamp 1S",
+    "priceIDR": 500000,
+    "tier": "budget",
+    "dims": {
+      "l": 160,
+      "w": 160,
+      "h": 430
+    },
+    "placement": "desk",
+    "kind": "Lamp",
+    "rgb": false,
+    "usbPowered": false
+  },
+  {
+    "id": "lighting-yeelight-screen-light-bar-pro",
+    "category": "lighting",
+    "brand": "Yeelight",
+    "name": "LED Screen Light Bar Pro",
+    "priceIDR": 1100000,
+    "tier": "mid",
+    "dims": {
+      "l": 500,
+      "w": 95,
+      "h": 95
+    },
+    "placement": "monitor-top",
+    "kind": "Light bar",
+    "rgb": true,
+    "usbPowered": true
+  },
+  {
+    "id": "lighting-philips-hue-lightstrip-plus-2-m",
+    "category": "lighting",
+    "brand": "Philips Hue",
+    "name": "Lightstrip Plus 2 m",
+    "priceIDR": 1300000,
+    "tier": "mid",
+    "dims": {
+      "l": 2000,
+      "w": 16,
+      "h": 4
+    },
+    "placement": "desk-edge",
+    "kind": "LED strip",
+    "rgb": true,
+    "usbPowered": false
+  },
+  {
+    "id": "lighting-benq-screenbar-pro",
+    "category": "lighting",
+    "brand": "BenQ",
+    "name": "ScreenBar Pro",
+    "priceIDR": 2300000,
+    "tier": "high",
+    "dims": {
+      "l": 500,
+      "w": 97,
+      "h": 95
+    },
+    "placement": "monitor-top",
+    "kind": "Light bar",
+    "rgb": false,
+    "usbPowered": true
+  },
+  {
+    "id": "lighting-benq-e-reading-led-desk-lamp",
+    "category": "lighting",
+    "brand": "BenQ",
+    "name": "e-Reading LED Desk Lamp",
+    "priceIDR": 4500000,
+    "tier": "high",
+    "dims": {
+      "l": 200,
+      "w": 200,
+      "h": 500
+    },
+    "placement": "desk",
+    "kind": "Lamp",
+    "rgb": false,
+    "usbPowered": false
   }
 ]

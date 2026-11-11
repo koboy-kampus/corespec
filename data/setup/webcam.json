@@ -62,5 +62,85 @@
     "placement": "monitor-top",
     "resolution": "4K",
     "fps": 30
+  },
+  {
+    "id": "webcam-logitech-c310-hd",
+    "category": "webcam",
+    "brand": "Logitech",
+    "name": "C310 HD",
+    "priceIDR": 400000,
+    "tier": "budget",
+    "dims": {
+      "l": 80,
+      "w": 65,
+      "h": 30
+    },
+    "placement": "monitor-top",
+    "resolution": "720p",
+    "fps": 30
+  },
+  {
+    "id": "webcam-logitech-c505-hd",
+    "category": "webcam",
+    "brand": "Logitech",
+    "name": "C505 HD",
+    "priceIDR": 500000,
+    "tier": "budget",
+    "dims": {
+      "l": 81,
+      "w": 65,
+      "h": 30
+    },
+    "placement": "monitor-top",
+    "resolution": "720p",
+    "fps": 30
+  },
+  {
+    "id": "webcam-logitech-c922-pro-stream",
+    "category": "webcam",
+    "brand": "Logitech",
+    "name": "C922 Pro Stream",
+    "priceIDR": 1200000,
+    "tier": "mid",
+    "dims": {
+      "l": 95,
+      "w": 71,
+      "h": 44
+    },
+    "placement": "monitor-top",
+    "resolution": "1080p",
+    "fps": 30
+  },
+  {
+    "id": "webcam-razer-kiyo",
+    "category": "webcam",
+    "brand": "Razer",
+    "name": "Kiyo",
+    "priceIDR": 1300000,
+    "tier": "mid",
+    "dims": {
+      "l": 68,
+      "w": 56,
+      "h": 68
+    },
+    "placement": "monitor-top",
+    "resolution": "1080p",
+    "fps": 30
+  },
+  {
+    "id": "webcam-insta360-link",
+    "category": "webcam",
+    "brand": "Insta360",
+    "name": "Link",
+    "priceIDR": 4500000,
+    "tier": "high",
+    "dims": {
+      "l": 48,
+      "w": 45,
+      "h": 73
+    },
+    "placement": "monitor-top",
+    "resolution": "4K",
+    "fps": 30
   }
 ]

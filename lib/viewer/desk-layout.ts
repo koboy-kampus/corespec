@@ -528,6 +528,8 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     : undefined;
   /** Depth the front row needs (keyboard and mouse; the pad shrinks to fit). */
   const frontNeed = Math.max(kb?.w ?? 0, ms?.w ?? 0);
+  /** Width of the front row: keyboard, a gap, then the mouse. */
+  const groupW = (kb?.l ?? 0) + (kb && ms ? 60 : 0) + (ms?.l ?? 0);
 
   /** What stands at the back of the desk top: an x range and its front edge. */
   const backRow: { x0: number; x1: number; front: number }[] = [];
@@ -640,12 +642,16 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
     // With an arm but no monitor, they move apart to clear the arm's clamp
     // (the desk-width rule only counts them when there's no monitor, and two
     // speakers either side of a clamp are far narrower than any desk).
-    const cx = Math.max(
+    let cx = Math.max(
       frontageMm(monitor, speakers) / 2 - l / 2,
       arm && !monitor ? 55 + CLEARANCE + l / 2 : 0,
     );
     // In front of the arm's clamp, but only when they'd stand in its way.
     const z0 = arm && cx - l / 2 < 55 + CLEARANCE ? poleZ + 70 : back;
+    // Too deep to leave room for the keyboard and mouse in front of them (big
+    // speakers on a shallow desk): they move out to either side of that row.
+    if (groupW && z0 + w + 30 + frontNeed > zEnd)
+      cx = Math.max(cx, groupW / 2 + CLEARANCE + l / 2);
     const z = z0 + w / 2;
     add(ctx, {
       key: "speakers",
@@ -693,7 +699,6 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
 
   // Front row: mousepad, keyboard and mouse, as close to the front edge as fits,
   // and never past it.
-  const groupW = (kb?.l ?? 0) + (kb && ms ? 60 : 0) + (ms?.l ?? 0);
   const kbX = kb ? -groupW / 2 + kb.l / 2 : 0;
   const mouseX = ms ? (kb ? groupW / 2 - ms.l / 2 : 200) : 0;
   const rowZ = (x: number, l: number, depth: number) =>

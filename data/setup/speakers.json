@@ -58,5 +58,80 @@
     },
     "placement": "desk",
     "kind": "2.0"
+  },
+  {
+    "id": "speakers-edifier-r19u",
+    "category": "speakers",
+    "brand": "Edifier",
+    "name": "R19U",
+    "priceIDR": 300000,
+    "tier": "budget",
+    "dims": {
+      "l": 72,
+      "w": 85,
+      "h": 118
+    },
+    "placement": "desk",
+    "kind": "2.0"
+  },
+  {
+    "id": "speakers-edifier-mr4",
+    "category": "speakers",
+    "brand": "Edifier",
+    "name": "MR4",
+    "priceIDR": 1300000,
+    "tier": "mid",
+    "dims": {
+      "l": 147,
+      "w": 176,
+      "h": 233
+    },
+    "placement": "desk",
+    "kind": "2.0"
+  },
+  {
+    "id": "speakers-audioengine-a2-plus-wireless",
+    "category": "speakers",
+    "brand": "Audioengine",
+    "name": "A2+ Wireless",
+    "priceIDR": 5000000,
+    "tier": "high",
+    "dims": {
+      "l": 102,
+      "w": 133,
+      "h": 152
+    },
+    "placement": "desk",
+    "kind": "2.0"
+  },
+  {
+    "id": "speakers-edifier-s2000mkiii",
+    "category": "speakers",
+    "brand": "Edifier",
+    "name": "S2000MKIII",
+    "priceIDR": 8500000,
+    "tier": "high",
+    "dims": {
+      "l": 175,
+      "w": 238,
+      "h": 305
+    },
+    "placement": "desk",
+    "kind": "2.0"
+  },
+  {
+    "id": "speakers-audioengine-a5-plus-wireless",
+    "category": "speakers",
+    "brand": "Audioengine",
+    "name": "A5+ Wireless",
+    "priceIDR": 9000000,
+    "tier": "high",
+    "dims": {
+      "l": 178,
+      "w": 229,
+      "h": 273
+    },
+    "placement": "desk",
+    "kind": "2.0"
   }
 ]

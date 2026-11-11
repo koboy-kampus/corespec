@@ -58,5 +58,80 @@
     },
     "placement": "floor",
     "type": "Ergonomic"
+  },
+  {
+    "id": "chair-ikea-flintan",
+    "category": "chair",
+    "brand": "IKEA",
+    "name": "FLINTAN",
+    "priceIDR": 1300000,
+    "tier": "budget",
+    "dims": {
+      "l": 670,
+      "w": 670,
+      "h": 1020
+    },
+    "placement": "floor",
+    "type": "Ergonomic"
+  },
+  {
+    "id": "chair-ikea-millberget",
+    "category": "chair",
+    "brand": "IKEA",
+    "name": "MILLBERGET",
+    "priceIDR": 1500000,
+    "tier": "budget",
+    "dims": {
+      "l": 680,
+      "w": 680,
+      "h": 1150
+    },
+    "placement": "floor",
+    "type": "Ergonomic"
+  },
+  {
+    "id": "chair-fantech-alpha-gc-283",
+    "category": "chair",
+    "brand": "Fantech",
+    "name": "Alpha GC-283",
+    "priceIDR": 1500000,
+    "tier": "budget",
+    "dims": {
+      "l": 700,
+      "w": 700,
+      "h": 1340
+    },
+    "placement": "floor",
+    "type": "Gaming"
+  },
+  {
+    "id": "chair-secretlab-titan-evo",
+    "category": "chair",
+    "brand": "Secretlab",
+    "name": "TITAN Evo",
+    "priceIDR": 9500000,
+    "tier": "high",
+    "dims": {
+      "l": 700,
+      "w": 700,
+      "h": 1350
+    },
+    "placement": "floor",
+    "type": "Gaming"
+  },
+  {
+    "id": "chair-steelcase-series-1",
+    "category": "chair",
+    "brand": "Steelcase",
+    "name": "Series 1",
+    "priceIDR": 9000000,
+    "tier": "high",
+    "dims": {
+      "l": 680,
+      "w": 630,
+      "h": 1050
+    },
+    "placement": "floor",
+    "type": "Ergonomic"
   }
 ]

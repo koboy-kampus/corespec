@@ -100,5 +100,56 @@
     "layout": "TKL",
     "switches": "OmniPoint 2.0",
     "wireless": false
+  },
+  {
+    "id": "keyboard-redragon-kumara-k552",
+    "category": "keyboard",
+    "brand": "Redragon",
+    "name": "Kumara K552",
+    "priceIDR": 450000,
+    "tier": "budget",
+    "dims": {
+      "l": 354,
+      "w": 123,
+      "h": 37
+    },
+    "placement": "desk",
+    "layout": "TKL",
+    "switches": "Outemu Blue",
+    "wireless": false
+  },
+  {
+    "id": "keyboard-logitech-g915-x-tkl-lightspeed",
+    "category": "keyboard",
+    "brand": "Logitech",
+    "name": "G915 X TKL Lightspeed",
+    "priceIDR": 3500000,
+    "tier": "high",
+    "dims": {
+      "l": 368,
+      "w": 150,
+      "h": 23
+    },
+    "placement": "desk",
+    "layout": "TKL",
+    "switches": "GL Tactile",
+    "wireless": true
+  },
+  {
+    "id": "keyboard-razer-huntsman-v3-pro-tkl",
+    "category": "keyboard",
+    "brand": "Razer",
+    "name": "Huntsman V3 Pro TKL",
+    "priceIDR": 3800000,
+    "tier": "high",
+    "dims": {
+      "l": 366,
+      "w": 140,
+      "h": 40
+    },
+    "placement": "desk",
+    "layout": "TKL",
+    "switches": "Razer Analog Optical",
+    "wireless": false
   }
 ]

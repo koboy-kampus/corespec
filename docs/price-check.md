@@ -124,3 +124,75 @@ Everything else on these 9 parts matched the maker's page or at least two retail
 - **DeepCool AK620 — LGA1851 support and height.** Listed for LGA1851 because it uses the LGA1700 mounting, which I couldn't confirm in DeepCool's own list. Height 160 mm per retailers; one review measured 162 mm.
 - **Arctic Liquid Freezer III Pro 360 — pump height and LGA1851.** Radiator 398 × 120 × 38 mm is confirmed; the 53 mm pump height is copied from the Liquid Freezer III 240, and LGA1851 support wasn't checked.
 - **Arc B580 — "1080p" class.** My call for the setup rules (reviews put it between 1080p and entry 1440p), not a spec.
+
+## New in Phase 13a: setup items (batch 2)
+
+51 setup items, so every setup category has exactly 3 Budget, 3 Mid and 3 High-end items. Prices are estimates from 2026-11-11; nothing here was checked on a marketplace yet.
+
+| Type          | Item                                 | ID                                             | Tier     | CoreSpec price | Tokopedia | Shopee | Checked |
+| ------------- | ------------------------------------ | ---------------------------------------------- | -------- | -------------- | --------- | ------ | ------- |
+| Monitor       | MSI G244F E2                         | `monitor-msi-g244f-e2`                         | Budget   | Rp 1.700.000   |           |        |         |
+| Monitor       | MSI MAG 274QRF QD E2                 | `monitor-msi-mag-274qrf-qd-e2`                 | Mid      | Rp 4.200.000   |           |        |         |
+| Monitor arm   | Kaloc DS110                          | `arm-kaloc-ds110`                              | Budget   | Rp 280.000     |           |        |         |
+| Monitor arm   | AOC AM400B                           | `arm-aoc-am400b`                               | Mid      | Rp 1.000.000   |           |        |         |
+| Monitor arm   | Loctek D7A                           | `arm-loctek-d7a`                               | Mid      | Rp 1.200.000   |           |        |         |
+| Monitor arm   | Loctek D7D Dual                      | `arm-loctek-d7d-dual`                          | Mid      | Rp 2.000.000   |           |        |         |
+| Monitor arm   | Ergotron HX Desk Mount               | `arm-ergotron-hx-desk-mount`                   | High-end | Rp 7.500.000   |           |        |         |
+| Keyboard      | Redragon Kumara K552                 | `keyboard-redragon-kumara-k552`                | Budget   | Rp 450.000     |           |        |         |
+| Keyboard      | Logitech G915 X TKL Lightspeed       | `keyboard-logitech-g915-x-tkl-lightspeed`      | High-end | Rp 3.500.000   |           |        |         |
+| Keyboard      | Razer Huntsman V3 Pro TKL            | `keyboard-razer-huntsman-v3-pro-tkl`           | High-end | Rp 3.800.000   |           |        |         |
+| Mouse         | Razer Basilisk V3                    | `mouse-razer-basilisk-v3`                      | Mid      | Rp 900.000     |           |        |         |
+| Mouse         | Razer DeathAdder V3 Pro              | `mouse-razer-deathadder-v3-pro`                | High-end | Rp 2.400.000   |           |        |         |
+| Mouse         | Logitech G502 X PLUS                 | `mouse-logitech-g502-x-plus`                   | High-end | Rp 2.500.000   |           |        |         |
+| Mousepad      | Logitech G240                        | `mousepad-logitech-g240`                       | Budget   | Rp 200.000     |           |        |         |
+| Mousepad      | SteelSeries QcK Heavy XXL            | `mousepad-steelseries-qck-heavy-xxl`           | Mid      | Rp 650.000     |           |        |         |
+| Mousepad      | Artisan Hien FX XSoft L              | `mousepad-artisan-hien-fx-xsoft-l`             | High-end | Rp 1.300.000   |           |        |         |
+| Mousepad      | Logitech G POWERPLAY                 | `mousepad-logitech-g-powerplay`                | High-end | Rp 2.000.000   |           |        |         |
+| Mousepad      | Corsair MM700 RGB 3XL                | `mousepad-corsair-mm700-rgb-3xl`               | High-end | Rp 1.200.000   |           |        |         |
+| Headset       | JBL Quantum 100                      | `headset-jbl-quantum-100`                      | Budget   | Rp 400.000     |           |        |         |
+| Headset       | Logitech G PRO X 2 Lightspeed        | `headset-logitech-g-pro-x-2-lightspeed`        | High-end | Rp 4.000.000   |           |        |         |
+| Headset       | SteelSeries Arctis Nova Pro Wireless | `headset-steelseries-arctis-nova-pro-wireless` | High-end | Rp 6.000.000   |           |        |         |
+| Speakers      | Edifier R19U                         | `speakers-edifier-r19u`                        | Budget   | Rp 300.000     |           |        |         |
+| Speakers      | Edifier MR4                          | `speakers-edifier-mr4`                         | Mid      | Rp 1.300.000   |           |        |         |
+| Speakers      | Audioengine A2+ Wireless             | `speakers-audioengine-a2-plus-wireless`        | High-end | Rp 5.000.000   |           |        |         |
+| Speakers      | Edifier S2000MKIII                   | `speakers-edifier-s2000mkiii`                  | High-end | Rp 8.500.000   |           |        |         |
+| Speakers      | Audioengine A5+ Wireless             | `speakers-audioengine-a5-plus-wireless`        | High-end | Rp 9.000.000   |           |        |         |
+| Webcam        | Logitech C310 HD                     | `webcam-logitech-c310-hd`                      | Budget   | Rp 400.000     |           |        |         |
+| Webcam        | Logitech C505 HD                     | `webcam-logitech-c505-hd`                      | Budget   | Rp 500.000     |           |        |         |
+| Webcam        | Logitech C922 Pro Stream             | `webcam-logitech-c922-pro-stream`              | Mid      | Rp 1.200.000   |           |        |         |
+| Webcam        | Razer Kiyo                           | `webcam-razer-kiyo`                            | Mid      | Rp 1.300.000   |           |        |         |
+| Webcam        | Insta360 Link                        | `webcam-insta360-link`                         | High-end | Rp 4.500.000   |           |        |         |
+| Microphone    | Fifine AM8                           | `microphone-fifine-am8`                        | Budget   | Rp 700.000     |           |        |         |
+| Microphone    | Maono AU-PM421                       | `microphone-maono-au-pm421`                    | Budget   | Rp 600.000     |           |        |         |
+| Microphone    | RØDE NT-USB Mini                     | `microphone-rode-nt-usb-mini`                  | Mid      | Rp 1.500.000   |           |        |         |
+| Microphone    | Shure MV7+                           | `microphone-shure-mv7-plus`                    | High-end | Rp 4.000.000   |           |        |         |
+| Microphone    | Electro-Voice RE20                   | `microphone-electro-voice-re20`                | High-end | Rp 8.000.000   |           |        |         |
+| Desk lighting | Xiaomi Mijia LED Desk Lamp 1S        | `lighting-xiaomi-mijia-led-desk-lamp-1s`       | Budget   | Rp 500.000     |           |        |         |
+| Desk lighting | Yeelight LED Screen Light Bar Pro    | `lighting-yeelight-screen-light-bar-pro`       | Mid      | Rp 1.100.000   |           |        |         |
+| Desk lighting | Philips Hue Lightstrip Plus 2 m      | `lighting-philips-hue-lightstrip-plus-2-m`     | Mid      | Rp 1.300.000   |           |        |         |
+| Desk lighting | BenQ ScreenBar Pro                   | `lighting-benq-screenbar-pro`                  | High-end | Rp 2.300.000   |           |        |         |
+| Desk lighting | BenQ e-Reading LED Desk Lamp         | `lighting-benq-e-reading-led-desk-lamp`        | High-end | Rp 4.500.000   |           |        |         |
+| Desk          | IKEA LINNMON / ADILS 100×60          | `desk-ikea-linnmon-adils-100-60`               | Budget   | Rp 600.000     |           |        |         |
+| Desk          | IKEA LAGKAPTEN / ALEX 140×60         | `desk-ikea-lagkapten-alex-140-60`              | Mid      | Rp 2.300.000   |           |        |         |
+| Desk          | IKEA TROTTEN sit/stand 160×80        | `desk-ikea-trotten-sit-stand-160-80`           | Mid      | Rp 4.500.000   |           |        |         |
+| Desk          | IKEA IDÅSEN sit/stand 160×80         | `desk-ikea-idasen-sit-stand-160-80`            | High-end | Rp 11.000.000  |           |        |         |
+| Desk          | FlexiSpot E7 Pro sit/stand 140×70    | `desk-flexispot-e7-pro-sit-stand-140-70`       | High-end | Rp 9.000.000   |           |        |         |
+| Chair         | IKEA FLINTAN                         | `chair-ikea-flintan`                           | Budget   | Rp 1.300.000   |           |        |         |
+| Chair         | IKEA MILLBERGET                      | `chair-ikea-millberget`                        | Budget   | Rp 1.500.000   |           |        |         |
+| Chair         | Fantech Alpha GC-283                 | `chair-fantech-alpha-gc-283`                   | Budget   | Rp 1.500.000   |           |        |         |
+| Chair         | Secretlab TITAN Evo                  | `chair-secretlab-titan-evo`                    | High-end | Rp 9.500.000   |           |        |         |
+| Chair         | Steelcase Series 1                   | `chair-steelcase-series-1`                     | High-end | Rp 9.000.000   |           |        |         |
+
+### Specs to double-check
+
+**Confirmed online** (maker's page or two retailer spec sheets): desk sizes and height ranges for LINNMON/ADILS (74 cm), IDÅSEN 160×80 (62–127 cm) and the FlexiSpot E7 Pro frame (63.5–128.5 cm); both MSI monitors (size, resolution, refresh, panel, weight without stand); arm limits for the Loctek D7A and D7D (27", 9 kg per arm), AOC AM400B (17–34", 9 kg), Ergotron HX (42", 19.1 kg) and Kaloc DS110 (the 9 kg / 32" "Classic" version).
+
+**Not confirmed — from memory, please check on the product page:**
+
+- **Desks:** LAGKAPTEN / ALEX 140×60 height (73 cm); TROTTEN 160×80 range (copied from the 120×70: 72–122 cm); FlexiSpot E7 Pro sold with a 140×70 top in Indonesia, and its height with the top (frame + 25 mm).
+- **Chairs:** all 5 sizes (width, depth, height) are approximate; FLINTAN and MILLBERGET prices at IKEA Indonesia.
+- **Arms:** the AM400B's mount options (clamp and grommet), and the D7D's per-arm limit (US listings say 9 kg; one review says less).
+- **Speakers:** all 5 sizes (one speaker, W × D × H); the S2000MKIII and A5+ are big enough to trigger the desk-width warning on narrow desks, which is intended.
+- **Small items:** sizes and weights of the headsets, keyboards, mice, mousepads, webcams, microphones and lamps; the G POWERPLAY's pad size; the Razer Kiyo, Insta360 Link and Shure MV7+ sizes; switch names (K552 "Outemu Blue", G915 X "GL Tactile").
+- **Light bars:** whether the Yeelight Screen Light Bar Pro and BenQ ScreenBar Pro are USB-powered (I listed both as USB).
+- **Microphones:** the Fifine AM8 and Shure MV7+ have both USB and XLR; they're listed as USB because the data has one connection.

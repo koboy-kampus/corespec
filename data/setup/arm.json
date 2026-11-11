@@ -70,5 +70,95 @@
     "maxSizeIn": 27,
     "maxLoadKg": 9.1,
     "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-kaloc-ds110",
+    "category": "arm",
+    "brand": "Kaloc",
+    "name": "DS110",
+    "priceIDR": 280000,
+    "tier": "budget",
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 450
+    },
+    "placement": "desk-edge",
+    "monitors": 1,
+    "maxSizeIn": 32,
+    "maxLoadKg": 9,
+    "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-aoc-am400b",
+    "category": "arm",
+    "brand": "AOC",
+    "name": "AM400B",
+    "priceIDR": 1000000,
+    "tier": "mid",
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 450
+    },
+    "placement": "desk-edge",
+    "monitors": 1,
+    "maxSizeIn": 34,
+    "maxLoadKg": 9,
+    "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-loctek-d7a",
+    "category": "arm",
+    "brand": "Loctek",
+    "name": "D7A",
+    "priceIDR": 1200000,
+    "tier": "mid",
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 450
+    },
+    "placement": "desk-edge",
+    "monitors": 1,
+    "maxSizeIn": 27,
+    "maxLoadKg": 9,
+    "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-loctek-d7d-dual",
+    "category": "arm",
+    "brand": "Loctek",
+    "name": "D7D Dual",
+    "priceIDR": 2000000,
+    "tier": "mid",
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 450
+    },
+    "placement": "desk-edge",
+    "monitors": 2,
+    "maxSizeIn": 27,
+    "maxLoadKg": 9,
+    "mounts": ["Clamp", "Grommet"]
+  },
+  {
+    "id": "arm-ergotron-hx-desk-mount",
+    "category": "arm",
+    "brand": "Ergotron",
+    "name": "HX Desk Mount",
+    "priceIDR": 7500000,
+    "tier": "high",
+    "dims": {
+      "l": 120,
+      "w": 120,
+      "h": 520
+    },
+    "placement": "desk-edge",
+    "monitors": 1,
+    "maxSizeIn": 42,
+    "maxLoadKg": 19.1,
+    "mounts": ["Clamp", "Grommet"]
   }
 ]

@@ -100,5 +100,56 @@
     "weightG": 60,
     "wireless": true,
     "maxDpi": 32000
+  },
+  {
+    "id": "mouse-razer-basilisk-v3",
+    "category": "mouse",
+    "brand": "Razer",
+    "name": "Basilisk V3",
+    "priceIDR": 900000,
+    "tier": "mid",
+    "dims": {
+      "l": 130,
+      "w": 75,
+      "h": 42
+    },
+    "placement": "desk",
+    "weightG": 101,
+    "wireless": false,
+    "maxDpi": 26000
+  },
+  {
+    "id": "mouse-razer-deathadder-v3-pro",
+    "category": "mouse",
+    "brand": "Razer",
+    "name": "DeathAdder V3 Pro",
+    "priceIDR": 2400000,
+    "tier": "high",
+    "dims": {
+      "l": 128,
+      "w": 68,
+      "h": 44
+    },
+    "placement": "desk",
+    "weightG": 63,
+    "wireless": true,
+    "maxDpi": 30000
+  },
+  {
+    "id": "mouse-logitech-g502-x-plus",
+    "category": "mouse",
+    "brand": "Logitech",
+    "name": "G502 X PLUS",
+    "priceIDR": 2500000,
+    "tier": "high",
+    "dims": {
+      "l": 131,
+      "w": 79,
+      "h": 41
+    },
+    "placement": "desk",
+    "weightG": 106,
+    "wireless": true,
+    "maxDpi": 25600
   }
 ]

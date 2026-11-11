@@ -74,5 +74,100 @@
     "heightMinMm": 650,
     "heightMaxMm": 1250,
     "adjustable": true
+  },
+  {
+    "id": "desk-ikea-linnmon-adils-100-60",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "LINNMON / ADILS 100×60",
+    "priceIDR": 600000,
+    "tier": "budget",
+    "dims": {
+      "l": 1000,
+      "w": 600,
+      "h": 740
+    },
+    "placement": "floor",
+    "widthMm": 1000,
+    "depthMm": 600,
+    "heightMinMm": 740,
+    "heightMaxMm": 740,
+    "adjustable": false
+  },
+  {
+    "id": "desk-ikea-lagkapten-alex-140-60",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "LAGKAPTEN / ALEX 140×60",
+    "priceIDR": 2300000,
+    "tier": "mid",
+    "dims": {
+      "l": 1400,
+      "w": 600,
+      "h": 730
+    },
+    "placement": "floor",
+    "widthMm": 1400,
+    "depthMm": 600,
+    "heightMinMm": 730,
+    "heightMaxMm": 730,
+    "adjustable": false
+  },
+  {
+    "id": "desk-ikea-trotten-sit-stand-160-80",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "TROTTEN sit/stand 160×80",
+    "priceIDR": 4500000,
+    "tier": "mid",
+    "dims": {
+      "l": 1600,
+      "w": 800,
+      "h": 720
+    },
+    "placement": "floor",
+    "widthMm": 1600,
+    "depthMm": 800,
+    "heightMinMm": 720,
+    "heightMaxMm": 1220,
+    "adjustable": true
+  },
+  {
+    "id": "desk-ikea-idasen-sit-stand-160-80",
+    "category": "desk",
+    "brand": "IKEA",
+    "name": "IDÅSEN sit/stand 160×80",
+    "priceIDR": 11000000,
+    "tier": "high",
+    "dims": {
+      "l": 1600,
+      "w": 800,
+      "h": 620
+    },
+    "placement": "floor",
+    "widthMm": 1600,
+    "depthMm": 800,
+    "heightMinMm": 620,
+    "heightMaxMm": 1270,
+    "adjustable": true
+  },
+  {
+    "id": "desk-flexispot-e7-pro-sit-stand-140-70",
+    "category": "desk",
+    "brand": "FlexiSpot",
+    "name": "E7 Pro sit/stand 140×70",
+    "priceIDR": 9000000,
+    "tier": "high",
+    "dims": {
+      "l": 1400,
+      "w": 700,
+      "h": 660
+    },
+    "placement": "floor",
+    "widthMm": 1400,
+    "depthMm": 700,
+    "heightMinMm": 660,
+    "heightMaxMm": 1310,
+    "adjustable": true
   }
 ]

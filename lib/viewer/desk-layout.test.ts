@@ -308,62 +308,67 @@ describe("items on and around the desk", () => {
 describe("no overlaps", () => {
   it("never overlaps two items, across thousands of catalogue combinations", () => {
     const cases: (Case | undefined)[] = [undefined, nr200, terra, lancool];
+    const speakers = [undefined, ...S.speakers];
+    const lighting = [undefined, ...S.lighting];
     let n = 0;
+    // Every desk × monitor × arm × speaker pair; the rest cycle (with different
+    // strides, so they meet in different combinations), so each item shows up
+    // many times without multiplying the run time.
     for (const d of S.desk)
       for (const m of S.monitor)
         for (const arm of [undefined, ...S.arm])
-          for (const sp of [undefined, S.speakers[0], S.speakers.at(-1)])
-            for (const lighting of [undefined, ...S.lighting])
-              for (const c of cases) {
-                // Cycle the small items so each one shows up in some layout.
-                const pick = <T>(list: T[]) => list[n % list.length];
-                const setup: ResolvedSetup = {
-                  desk: d,
-                  monitor: m,
-                  arm,
-                  speakers: sp,
-                  lighting,
-                  keyboard: pick(S.keyboard),
-                  mouse: pick(S.mouse),
-                  mousepad: pick(S.mousepad),
-                  headset: pick(S.headset),
-                  webcam: pick(S.webcam),
-                  microphone: pick(S.microphone),
-                  chair: pick(S.chair),
-                };
-                const l = layoutDesk(setup, c);
-                expect(
-                  overlaps(l),
-                  `${JSON.stringify(setup)} ${c?.id}`,
-                ).toEqual([]);
-                expect(pastFront(l), `${d.id} ${c?.id}`).toEqual([]);
-                n++;
-              }
-    expect(n).toBe(4 * S.monitor.length * 5 * 3 * 5 * 4);
-  }, 30_000);
+          for (const sp of speakers) {
+            const pick = <T>(list: T[], stride = 1) =>
+              list[Math.floor(n / stride) % list.length];
+            const setup: ResolvedSetup = {
+              desk: d,
+              monitor: m,
+              arm,
+              speakers: sp,
+              lighting: pick(lighting, 3),
+              keyboard: pick(S.keyboard),
+              mouse: pick(S.mouse, 2),
+              mousepad: pick(S.mousepad, 5),
+              headset: pick(S.headset),
+              webcam: pick(S.webcam, 7),
+              microphone: pick(S.microphone, 11),
+              chair: pick(S.chair),
+            };
+            const c = pick(cases, 13);
+            const l = layoutDesk(setup, c);
+            expect(overlaps(l), `${JSON.stringify(setup)} ${c?.id}`).toEqual(
+              [],
+            );
+            expect(pastFront(l), `${d.id} ${c?.id}`).toEqual([]);
+            n++;
+          }
+    expect(n).toBe(
+      S.desk.length * S.monitor.length * (S.arm.length + 1) * speakers.length,
+    );
+  }, 60_000);
 
   it("never puts the keyboard, mouse or pad past the front edge", () => {
     let n = 0;
     for (const d of S.desk)
       for (const m of [undefined, ...S.monitor])
-        for (const arm of [undefined, ...S.arm])
-          for (const sp of [undefined, ...S.speakers])
-            for (const kb of S.keyboard) {
-              const l = layoutDesk({
-                desk: d,
-                monitor: m,
-                arm,
-                speakers: sp,
-                keyboard: kb,
-                mouse: S.mouse[n % S.mouse.length],
-                mousepad: S.mousepad[n % S.mousepad.length],
-              });
-              n++;
-              const why = `${d.id} ${m?.id} ${arm?.id} ${sp?.id} ${kb.id}`;
-              expect(pastFront(l), why).toEqual([]);
-              expect(overlaps(l), why).toEqual([]);
-            }
-  }, 30_000);
+        for (const sp of [undefined, ...S.speakers])
+          for (const kb of S.keyboard) {
+            const arm = [undefined, ...S.arm][n % (S.arm.length + 1)];
+            const l = layoutDesk({
+              desk: d,
+              monitor: m,
+              arm,
+              speakers: sp,
+              keyboard: kb,
+              mouse: S.mouse[n % S.mouse.length],
+              mousepad: S.mousepad[n % S.mousepad.length],
+            });
+            n++;
+            const why = `${d.id} ${m?.id} ${arm?.id} ${sp?.id} ${kb.id}`;
+            expect(pastFront(l), why).toEqual([]);
+            expect(overlaps(l), why).toEqual([]);
+          }
+  }, 60_000);
 
   it("stays clear with every item but no desk, monitor or keyboard", () => {
     const l = layoutDesk(

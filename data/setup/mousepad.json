@@ -58,5 +58,80 @@
     },
     "placement": "desk",
     "size": "Desk"
+  },
+  {
+    "id": "mousepad-logitech-g240",
+    "category": "mousepad",
+    "brand": "Logitech",
+    "name": "G240",
+    "priceIDR": 200000,
+    "tier": "budget",
+    "dims": {
+      "l": 340,
+      "w": 280,
+      "h": 1
+    },
+    "placement": "desk",
+    "size": "M"
+  },
+  {
+    "id": "mousepad-steelseries-qck-heavy-xxl",
+    "category": "mousepad",
+    "brand": "SteelSeries",
+    "name": "QcK Heavy XXL",
+    "priceIDR": 650000,
+    "tier": "mid",
+    "dims": {
+      "l": 900,
+      "w": 400,
+      "h": 6
+    },
+    "placement": "desk",
+    "size": "XL"
+  },
+  {
+    "id": "mousepad-artisan-hien-fx-xsoft-l",
+    "category": "mousepad",
+    "brand": "Artisan",
+    "name": "Hien FX XSoft L",
+    "priceIDR": 1300000,
+    "tier": "high",
+    "dims": {
+      "l": 490,
+      "w": 420,
+      "h": 4
+    },
+    "placement": "desk",
+    "size": "L"
+  },
+  {
+    "id": "mousepad-logitech-g-powerplay",
+    "category": "mousepad",
+    "brand": "Logitech",
+    "name": "G POWERPLAY",
+    "priceIDR": 2000000,
+    "tier": "high",
+    "dims": {
+      "l": 344,
+      "w": 321,
+      "h": 3
+    },
+    "placement": "desk",
+    "size": "M"
+  },
+  {
+    "id": "mousepad-corsair-mm700-rgb-3xl",
+    "category": "mousepad",
+    "brand": "Corsair",
+    "name": "MM700 RGB 3XL",
+    "priceIDR": 1200000,
+    "tier": "high",
+    "dims": {
+      "l": 1220,
+      "w": 610,
+      "h": 4
+    },
+    "placement": "desk",
+    "size": "Desk"
   }
 ]
