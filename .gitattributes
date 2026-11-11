@@ -1,0 +1,12 @@
+# Line endings: LF in the repo and in the working copy, on every OS.
+# Stops the CRLF/LF noise in git status on Windows (Phase 15).
+* text=auto eol=lf
+
+# Binary files: never touch their bytes.
+*.png binary
+*.jpg binary
+*.ico binary
+*.webp binary
+*.glb binary
+*.wasm binary
+*.woff2 binary
