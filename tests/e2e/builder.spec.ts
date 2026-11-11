@@ -25,6 +25,10 @@ test("pick parts, catch an incompatibility, filter the picker", async ({
   await expect(
     page.getByText(/The CPU uses AM4, but the motherboard has an AM5 socket/),
   ).toBeVisible();
+  // The PC tab counts the problem next to its slot count.
+  await expect(
+    page.getByRole("tab", { name: /^PC 2\/8.*1 incompatible$/ }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: /^Graphics Choose/ }).click();
   await page.getByLabel("Max price").fill("1000");

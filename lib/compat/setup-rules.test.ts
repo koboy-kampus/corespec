@@ -115,25 +115,41 @@ describe("monitor resolution vs GPU (warning)", () => {
 });
 
 describe("refresh rate vs GPU (info)", () => {
-  it("stays quiet for a high refresh rate within the GPU's class", () => {
+  it("stays quiet below 240 Hz at the GPU's class", () => {
     expect(
       run(
         monitorRefresh,
         { gpu: gpu() },
-        { monitor: monitor({ refreshHz: 240 }) },
+        { monitor: monitor({ refreshHz: 165 }) },
       ),
     ).toBeNull();
   });
-  it("notes 165 Hz and up above the GPU's class", () => {
+  it("notes 240 Hz and up at exactly the GPU's class", () => {
     const r = run(
       monitorRefresh,
-      { gpu: gpu({ targetRes: "1080p" }) },
-      { monitor: monitor({ refreshHz: 165 }) },
+      { gpu: gpu() },
+      { monitor: monitor({ refreshHz: 240 }) },
     );
     expect(r?.severity).toBe("info");
     expect(r?.message).toBe(
-      "High refresh rates (165 Hz) at 1440p are hard to reach with this GPU.",
+      "High refresh rates (240 Hz) at 1440p are hard to reach with this GPU.",
     );
+    expect(r?.partIds).toEqual(["monitor-x", "gpu-x"]);
+  });
+  it("stays quiet below the GPU's class", () => {
+    expect(
+      run(
+        monitorRefresh,
+        { gpu: gpu({ targetRes: "4K" }) },
+        { monitor: monitor({ refreshHz: 360 }) },
+      ),
+    ).toBeNull();
+  });
+  it("leaves a monitor above the GPU's class to the resolution warning", () => {
+    const pc = { gpu: gpu({ targetRes: "1080p" }) };
+    const setup = { monitor: monitor({ refreshHz: 240 }) };
+    expect(run(monitorRefresh, pc, setup)).toBeNull();
+    expect(run(monitorResolution, pc, setup)?.severity).toBe("warning");
   });
 });
 
@@ -241,11 +257,11 @@ describe("checkSetup() on real catalogue items", () => {
       ...parts,
       gpu: "gpu-sapphire-pulse-radeon-rx-6600-8gb",
     });
+    // Above the GPU's class: only the resolution warning, no refresh note.
     expect(withAmd.map((r) => r.id)).toEqual([
       "monitor-resolution",
       "desk-width",
       "arm-fit",
-      "monitor-refresh",
       "sync-vendor",
     ]);
     for (const r of withAmd) expect(["warning", "info"]).toContain(r.severity);

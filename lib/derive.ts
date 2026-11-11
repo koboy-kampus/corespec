@@ -54,6 +54,8 @@ export function deriveBuild(parts: Build["parts"]) {
     setupFilled: Object.keys(setup).length,
     errors: results.filter((r) => r.severity === "error").length,
     warnings: results.filter((r) => r.severity === "warning").length,
+    /** Setup warnings (setup rules never error), for the Setup tab count. */
+    setupWarnings: setupResults.filter((r) => r.severity === "warning").length,
   };
 }
 

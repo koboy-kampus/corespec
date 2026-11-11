@@ -25,7 +25,7 @@ async function openSaved(page: Page, parts: Record<string, string>) {
   await expect(page.getByLabel("Build name")).toHaveValue("Rules test");
 }
 
-test("every setup rule shows under Setup, and none makes the build incompatible", async ({
+test("the setup rules the catalogue can trigger show under Setup, and none makes the build incompatible", async ({
   page,
 }) => {
   const errors = watchErrors(page);
@@ -41,16 +41,22 @@ test("every setup rule shows under Setup, and none makes the build incompatible"
   await expect(setup).toBeVisible();
   for (const text of [
     "This GPU is aimed at 1080p; an ultrawide 1440p monitor will need lower settings.",
-    "High refresh rates (175 Hz) at ultrawide 1440p are hard to reach with this GPU.",
     "This monitor's G-Sync module needs an NVIDIA GPU for variable refresh; it still works as a normal monitor.",
     "The monitor and speakers need about 120.7 cm of desk, but this desk is 105 cm wide.",
     "This monitor arm can't safely hold the monitor: 34″ is above its 27″ limit.",
   ])
     await expect(setup.getByText(text)).toBeVisible();
   await expect(setup.getByText("Warnings · 3")).toBeVisible();
-  await expect(setup.getByText("Notes · 2")).toBeVisible();
+  await expect(setup.getByText("Notes · 1")).toBeVisible();
+  // Above the GPU's class, the resolution warning replaces the refresh note.
+  await expect(setup.getByText(/High refresh rates/)).toHaveCount(0);
   // Setup warnings never mark the build incompatible.
   await expect(summary.getByText("Incompatible")).toHaveCount(0);
+  // The Setup tab counts its warnings; the PC tab has none to count.
+  await expect(
+    page.getByRole("tab", { name: /^Setup 4\/12.*3 warnings$/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^PC 1\/8$/ })).toBeVisible();
 
   // Clicking a setup warning opens the picker for that item.
   await setup.getByRole("button", { name: /Change F160 Dual/ }).click();
@@ -88,6 +94,7 @@ test("picking items in the UI raises and clears a setup warning", async ({
     .getByRole("button", { name: /MITTZON/ })
     .click();
   await expect(page.getByText(/need about 120\.7 cm of desk/)).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: /^Setup 3\/12$/ })).toBeVisible();
 });
 
 test("GPU rules stay silent until a GPU is picked; the picker warns for a weak GPU", async ({

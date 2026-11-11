@@ -152,6 +152,46 @@ function SuggestedSetup() {
   );
 }
 
+/** "✕ 1 ⚠ 2" after a tab label; shows nothing when there's nothing to flag. */
+function IssueCount({
+  errors = 0,
+  warnings,
+}: {
+  errors?: number;
+  warnings: number;
+}) {
+  if (!errors && !warnings) return null;
+  const said = [
+    errors ? `${errors} incompatible` : "",
+    warnings ? `${warnings} ${warnings === 1 ? "warning" : "warnings"}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return (
+    <>
+      {errors ? (
+        <span
+          className="inline-flex items-center gap-0.5 spec text-spec-sm text-accent"
+          aria-hidden
+        >
+          <XCircle className="size-3!" />
+          {errors}
+        </span>
+      ) : null}
+      {warnings ? (
+        <span
+          className="inline-flex items-center gap-0.5 spec text-spec-sm text-warn"
+          aria-hidden
+        >
+          <AlertTriangle className="size-3!" />
+          {warnings}
+        </span>
+      ) : null}
+      <span className="sr-only">, {said}</span>
+    </>
+  );
+}
+
 export function SlotList({ className }: { className?: string }) {
   const {
     filled,
@@ -160,6 +200,9 @@ export function SlotList({ className }: { className?: string }) {
     setup,
     severityByCategory,
     setupSeverity,
+    errors,
+    warnings,
+    setupWarnings,
   } = useBuildDerived();
   const group = useUiStore((s) => s.slotGroup);
   const setGroup = useUiStore((s) => s.setSlotGroup);
@@ -181,12 +224,14 @@ export function SlotList({ className }: { className?: string }) {
             <span className="spec text-spec-sm text-fg-3">
               {filled}/{CATEGORIES.length}
             </span>
+            <IssueCount errors={errors} warnings={warnings} />
           </TabsTrigger>
           <TabsTrigger value="setup">
             Setup{" "}
             <span className="spec text-spec-sm text-fg-3">
               {setupFilled}/{SETUP_CATEGORIES.length}
             </span>
+            <IssueCount warnings={setupWarnings} />
           </TabsTrigger>
         </TabsList>
         <TabsContent value="pc" className="flex flex-col gap-3">

@@ -30,8 +30,11 @@ const RES_NAME: Record<Monitor["resolution"], string> = {
   UW1440p: "ultrawide 1440p",
   "4K": "4K",
 };
-/** From this refresh rate up, a monitor counts as "high refresh". */
-export const HIGH_REFRESH_HZ = 165;
+/**
+ * From this refresh rate up, even a GPU's own resolution class struggles to
+ * keep up in current games (240 Hz and more).
+ */
+export const HIGH_REFRESH_HZ = 240;
 
 /** 1015 → "101.5 cm": desk sizes read better in cm, like the desk specs. */
 const cm = (mm: number) => `${+(mm / 10).toFixed(1)} cm`;
@@ -57,7 +60,10 @@ export const monitorResolution: SetupRule = ({
   };
 };
 
-/** A high-refresh monitor at a resolution above the GPU's class. */
+/**
+ * A very high refresh monitor at exactly the GPU's class. Above the class the
+ * resolution warning already says enough, so this stays silent there.
+ */
 export const monitorRefresh: SetupRule = ({
   pc: { gpu },
   setup: { monitor },
@@ -66,7 +72,7 @@ export const monitorRefresh: SetupRule = ({
     !gpu ||
     !monitor ||
     monitor.refreshHz < HIGH_REFRESH_HZ ||
-    !aboveGpuClass(monitor, gpu.targetRes)
+    RES_RANK[monitor.resolution] !== RES_RANK[gpu.targetRes]
   )
     return null;
   return {
