@@ -25,7 +25,7 @@ describe("filterParts", () => {
     const byName = filterParts(gpus, { ...DEFAULT_FILTERS, sort: "name" }).map(
       (g) => g.brand,
     );
-    expect(byName[0]).toBe("ASUS");
+    expect(byName[0]).toBe("ASRock");
   });
 
   it("searches across brand, name and specs with every term required", () => {
@@ -55,13 +55,33 @@ describe("filterParts", () => {
     expect(mid.length).toBe(3);
   });
 
+  it("filters by tier (any of the chosen tiers) and keeps the default sort", () => {
+    const mid = filterParts(gpus, { ...DEFAULT_FILTERS, tiers: ["mid"] });
+    expect(mid.length).toBeGreaterThanOrEqual(3);
+    expect(mid.every((g) => g.tier === "mid")).toBe(true);
+    const prices = mid.map((g) => g.priceIDR);
+    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+    const two = filterParts(gpus, {
+      ...DEFAULT_FILTERS,
+      tiers: ["budget", "high"],
+    });
+    expect(two.length).toBe(gpus.filter((g) => g.tier !== "mid").length);
+  });
+
   it("knows when filters are active", () => {
     expect(isFiltered(DEFAULT_FILTERS)).toBe(false);
     expect(isFiltered({ ...DEFAULT_FILTERS, maxPrice: 1 })).toBe(true);
+    expect(isFiltered({ ...DEFAULT_FILTERS, tiers: ["high"] })).toBe(true);
   });
 
   it("lists brands alphabetically without duplicates", () => {
-    expect(brandsOf(gpus)).toEqual(["ASUS", "Gigabyte", "MSI", "Sapphire"]);
+    expect(brandsOf(gpus)).toEqual([
+      "ASRock",
+      "ASUS",
+      "Gigabyte",
+      "MSI",
+      "Sapphire",
+    ]);
   });
 });
 

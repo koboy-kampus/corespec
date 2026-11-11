@@ -5,6 +5,7 @@
     "brand": "Logitech",
     "name": "G213 Prodigy",
     "priceIDR": 750000,
+    "tier": "budget",
     "dims": {
       "l": 452,
       "w": 218,
@@ -21,6 +22,7 @@
     "brand": "Royal Kludge",
     "name": "RK84",
     "priceIDR": 650000,
+    "tier": "budget",
     "dims": {
       "l": 316,
       "w": 115,
@@ -37,6 +39,7 @@
     "brand": "Keychron",
     "name": "K2",
     "priceIDR": 1400000,
+    "tier": "mid",
     "dims": {
       "l": 313,
       "w": 123,
@@ -53,6 +56,7 @@
     "brand": "Keychron",
     "name": "V2",
     "priceIDR": 1300000,
+    "tier": "mid",
     "dims": {
       "l": 327,
       "w": 104,
@@ -69,6 +73,7 @@
     "brand": "Razer",
     "name": "BlackWidow V4 X",
     "priceIDR": 2300000,
+    "tier": "mid",
     "dims": {
       "l": 448,
       "w": 154,
@@ -85,6 +90,7 @@
     "brand": "SteelSeries",
     "name": "Apex Pro TKL (2023)",
     "priceIDR": 3800000,
+    "tier": "high",
     "dims": {
       "l": 355,
       "w": 140,

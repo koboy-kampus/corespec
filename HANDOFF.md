@@ -89,7 +89,7 @@ _Written 9 November 2026, just before the first deploy. Every number below comes
 
 - **Built:**
   - `types/parts.ts` exactly as in §4.
-  - 64 parts (8 per category) across AM5, AM4, LGA1700 and LGA1851; DDR4 and DDR5; ATX, mATX and ITX.
+  - 73 parts (9–10 per category, at least 3 per tier since Phase 13) across AM5, AM4, LGA1700 and LGA1851; DDR4 and DDR5; ATX, mATX and ITX.
   - Small-ITX traps: the Fractal Terra rejects long GPUs and tall coolers, and the NR200P takes SFX PSUs.
   - `meta.json`, 3 presets, all 10 compatibility rules in §4, the power estimate and IDR formatting.
   - Unit tests: one pass and one fail case per rule.

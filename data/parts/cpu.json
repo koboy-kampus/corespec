@@ -5,6 +5,7 @@
     "brand": "AMD",
     "name": "Ryzen 5 5600",
     "priceIDR": 1650000,
+    "tier": "budget",
     "dims": {
       "l": 40,
       "w": 40,
@@ -22,6 +23,7 @@
     "brand": "AMD",
     "name": "Ryzen 7 5700X3D",
     "priceIDR": 3300000,
+    "tier": "mid",
     "dims": {
       "l": 40,
       "w": 40,
@@ -39,6 +41,7 @@
     "brand": "AMD",
     "name": "Ryzen 5 7600",
     "priceIDR": 2900000,
+    "tier": "mid",
     "dims": {
       "l": 40,
       "w": 40,
@@ -56,6 +59,7 @@
     "brand": "AMD",
     "name": "Ryzen 5 9600X",
     "priceIDR": 3500000,
+    "tier": "mid",
     "dims": {
       "l": 40,
       "w": 40,
@@ -73,6 +77,7 @@
     "brand": "AMD",
     "name": "Ryzen 7 9800X3D",
     "priceIDR": 8199000,
+    "tier": "high",
     "dims": {
       "l": 40,
       "w": 40,
@@ -90,6 +95,7 @@
     "brand": "AMD",
     "name": "Ryzen 9 9950X",
     "priceIDR": 9800000,
+    "tier": "high",
     "dims": {
       "l": 40,
       "w": 40,
@@ -107,6 +113,7 @@
     "brand": "Intel",
     "name": "Core i5-14400F",
     "priceIDR": 2750000,
+    "tier": "budget",
     "dims": {
       "l": 45,
       "w": 38,
@@ -124,6 +131,7 @@
     "brand": "Intel",
     "name": "Core Ultra 7 265K",
     "priceIDR": 5900000,
+    "tier": "high",
     "dims": {
       "l": 45,
       "w": 38,
@@ -134,5 +142,23 @@
     "cores": 20,
     "threads": 20,
     "tdpW": 125
+  },
+  {
+    "id": "cpu-intel-core-i3-14100f",
+    "category": "cpu",
+    "brand": "Intel",
+    "name": "Core i3-14100F",
+    "priceIDR": 1550000,
+    "tier": "budget",
+    "dims": {
+      "l": 45,
+      "w": 38,
+      "h": 7
+    },
+    "anchor": "cpu",
+    "socket": "LGA1700",
+    "cores": 4,
+    "threads": 8,
+    "tdpW": 58
   }
 ]

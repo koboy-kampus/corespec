@@ -5,6 +5,7 @@
     "brand": "Cooler Master",
     "name": "MWE 550 Bronze V2",
     "priceIDR": 750000,
+    "tier": "budget",
     "dims": {
       "l": 150,
       "w": 140,
@@ -21,6 +22,7 @@
     "brand": "MSI",
     "name": "MAG A650BN",
     "priceIDR": 850000,
+    "tier": "budget",
     "dims": {
       "l": 150,
       "w": 140,
@@ -37,6 +39,7 @@
     "brand": "Corsair",
     "name": "RM750e",
     "priceIDR": 1599000,
+    "tier": "mid",
     "dims": {
       "l": 140,
       "w": 150,
@@ -53,6 +56,7 @@
     "brand": "Seasonic",
     "name": "Focus GX-850",
     "priceIDR": 2050000,
+    "tier": "mid",
     "dims": {
       "l": 140,
       "w": 150,
@@ -69,6 +73,7 @@
     "brand": "be quiet!",
     "name": "Pure Power 12 M 1000W",
     "priceIDR": 2700000,
+    "tier": "high",
     "dims": {
       "l": 160,
       "w": 150,
@@ -85,6 +90,7 @@
     "brand": "Corsair",
     "name": "RM1200x Shift",
     "priceIDR": 3900000,
+    "tier": "high",
     "dims": {
       "l": 180,
       "w": 150,
@@ -101,6 +107,7 @@
     "brand": "Corsair",
     "name": "SF750",
     "priceIDR": 2800000,
+    "tier": "high",
     "dims": {
       "l": 125,
       "w": 100,
@@ -117,6 +124,7 @@
     "brand": "Cooler Master",
     "name": "V650 SFX Gold",
     "priceIDR": 1900000,
+    "tier": "mid",
     "dims": {
       "l": 125,
       "w": 100,
@@ -126,5 +134,22 @@
     "watts": 650,
     "formFactor": "SFX",
     "rating": "80+ Gold"
+  },
+  {
+    "id": "psu-deepcool-pk650d",
+    "category": "psu",
+    "brand": "DeepCool",
+    "name": "PK650D",
+    "priceIDR": 750000,
+    "tier": "budget",
+    "dims": {
+      "l": 150,
+      "w": 140,
+      "h": 86
+    },
+    "anchor": "psu",
+    "watts": 650,
+    "formFactor": "ATX",
+    "rating": "80+ Bronze"
   }
 ]

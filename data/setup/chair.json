@@ -5,6 +5,7 @@
     "brand": "IKEA",
     "name": "MARKUS",
     "priceIDR": 2500000,
+    "tier": "mid",
     "dims": {
       "l": 620,
       "w": 600,
@@ -19,6 +20,7 @@
     "brand": "Cougar",
     "name": "Armor One",
     "priceIDR": 2600000,
+    "tier": "mid",
     "dims": {
       "l": 700,
       "w": 650,
@@ -33,6 +35,7 @@
     "brand": "DXRacer",
     "name": "Formula Series",
     "priceIDR": 4200000,
+    "tier": "mid",
     "dims": {
       "l": 700,
       "w": 690,
@@ -47,6 +50,7 @@
     "brand": "Herman Miller",
     "name": "Aeron",
     "priceIDR": 25000000,
+    "tier": "high",
     "dims": {
       "l": 690,
       "w": 660,

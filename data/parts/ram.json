@@ -5,6 +5,7 @@
     "brand": "Team",
     "name": "T-Force Vulcan Z 16GB (2×8GB) DDR4-3200",
     "priceIDR": 750000,
+    "tier": "budget",
     "dims": {
       "l": 133,
       "w": 7,
@@ -22,6 +23,7 @@
     "brand": "Corsair",
     "name": "Vengeance LPX 32GB (2×16GB) DDR4-3200",
     "priceIDR": 1450000,
+    "tier": "budget",
     "dims": {
       "l": 133,
       "w": 7,
@@ -39,6 +41,7 @@
     "brand": "Kingston",
     "name": "Fury Beast 64GB (4×16GB) DDR4-3200",
     "priceIDR": 2700000,
+    "tier": "mid",
     "dims": {
       "l": 133,
       "w": 7,
@@ -56,6 +59,7 @@
     "brand": "Kingston",
     "name": "Fury Beast 16GB (2×8GB) DDR5-5600",
     "priceIDR": 1150000,
+    "tier": "budget",
     "dims": {
       "l": 133,
       "w": 7,
@@ -73,6 +77,7 @@
     "brand": "Kingston",
     "name": "Fury Beast 32GB (2×16GB) DDR5-6000",
     "priceIDR": 2349000,
+    "tier": "mid",
     "dims": {
       "l": 133,
       "w": 7,
@@ -90,6 +95,7 @@
     "brand": "G.Skill",
     "name": "Trident Z5 RGB 32GB (2×16GB) DDR5-6400",
     "priceIDR": 2900000,
+    "tier": "high",
     "dims": {
       "l": 133,
       "w": 7,
@@ -107,6 +113,7 @@
     "brand": "Corsair",
     "name": "Vengeance 64GB (2×32GB) DDR5-6000",
     "priceIDR": 4600000,
+    "tier": "high",
     "dims": {
       "l": 133,
       "w": 7,
@@ -124,6 +131,7 @@
     "brand": "Corsair",
     "name": "Vengeance 64GB (4×16GB) DDR5-5600",
     "priceIDR": 4400000,
+    "tier": "high",
     "dims": {
       "l": 133,
       "w": 7,
@@ -134,5 +142,23 @@
     "capacityGb": 64,
     "sticks": 4,
     "speedMts": 5600
+  },
+  {
+    "id": "ram-team-t-force-delta-rgb-32gb-2-16gb-ddr5-6000",
+    "category": "ram",
+    "brand": "Team",
+    "name": "T-Force Delta RGB 32GB (2×16GB) DDR5-6000",
+    "priceIDR": 2450000,
+    "tier": "mid",
+    "dims": {
+      "l": 133,
+      "w": 7,
+      "h": 46
+    },
+    "anchor": "ram",
+    "ddr": "DDR5",
+    "capacityGb": 32,
+    "sticks": 2,
+    "speedMts": 6000
   }
 ]

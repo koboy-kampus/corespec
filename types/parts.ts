@@ -27,6 +27,14 @@ export type BoardFF = "ATX" | "mATX" | "ITX";
 export type AnchorId =
   "cpu" | "cooler" | "ram" | "gpu" | "m2" | "psu" | "board" | "case";
 
+/**
+ * Who an item is aimed at (Phase 13). An approximate judgement made by hand from
+ * what the product is built and marketed for, not a strict price band: a cheap
+ * low-profile cooler for small builds can still be "budget", and prices overlap
+ * between tiers. Every category has at least 3 items in each tier.
+ */
+export type Tier = "budget" | "mid" | "high";
+
 /** Fields every catalogue item has, PC part or setup item. */
 export interface ItemBase {
   id: string; // 'cpu-amd-ryzen-7-7800x3d', 'monitor-aoc-24g4'
@@ -34,6 +42,7 @@ export interface ItemBase {
   brand: string;
   name: string;
   priceIDR: number; // integer rupiah
+  tier: Tier;
   dims?: { l: number; w: number; h: number }; // mm → sizes placeholder meshes
   model?: string; // GLTF path, optional (later)
 }

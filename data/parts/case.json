@@ -5,6 +5,7 @@
     "brand": "NZXT",
     "name": "H5 Flow",
     "priceIDR": 1450000,
+    "tier": "mid",
     "dims": {
       "l": 428,
       "w": 227,
@@ -22,6 +23,7 @@
     "brand": "Lian Li",
     "name": "Lancool 216",
     "priceIDR": 1600000,
+    "tier": "mid",
     "dims": {
       "l": 480,
       "w": 235,
@@ -39,6 +41,7 @@
     "brand": "Fractal Design",
     "name": "North",
     "priceIDR": 2400000,
+    "tier": "high",
     "dims": {
       "l": 447,
       "w": 215,
@@ -56,6 +59,7 @@
     "brand": "Lian Li",
     "name": "O11 Dynamic EVO",
     "priceIDR": 2600000,
+    "tier": "high",
     "dims": {
       "l": 465,
       "w": 285,
@@ -73,6 +77,7 @@
     "brand": "Montech",
     "name": "AIR 100 ARGB",
     "priceIDR": 750000,
+    "tier": "budget",
     "dims": {
       "l": 405,
       "w": 210,
@@ -90,6 +95,7 @@
     "brand": "Cooler Master",
     "name": "MasterBox Q300L",
     "priceIDR": 650000,
+    "tier": "budget",
     "dims": {
       "l": 387,
       "w": 230,
@@ -107,6 +113,7 @@
     "brand": "Cooler Master",
     "name": "MasterBox NR200P V2",
     "priceIDR": 1500000,
+    "tier": "mid",
     "dims": {
       "l": 376,
       "w": 185,
@@ -124,6 +131,7 @@
     "brand": "Fractal Design",
     "name": "Terra",
     "priceIDR": 2900000,
+    "tier": "high",
     "dims": {
       "l": 352,
       "w": 155,
@@ -134,5 +142,23 @@
     "maxGpuMm": 322,
     "maxCoolerMm": 77,
     "psuFF": "SFX"
+  },
+  {
+    "id": "case-deepcool-cc560-v2",
+    "category": "case",
+    "brand": "DeepCool",
+    "name": "CC560 V2",
+    "priceIDR": 750000,
+    "tier": "budget",
+    "dims": {
+      "l": 432,
+      "w": 215,
+      "h": 483
+    },
+    "anchor": "case",
+    "formFactors": ["ATX", "mATX", "ITX"],
+    "maxGpuMm": 370,
+    "maxCoolerMm": 165,
+    "psuFF": "ATX"
   }
 ]

@@ -40,6 +40,34 @@ test("pick parts, catch an incompatibility, filter the picker", async ({
   expect(errors).toEqual([]);
 });
 
+test("tier chips filter the picker and each row names its tier", async ({
+  page,
+}) => {
+  await page.goto("/builder");
+  await page.getByRole("button", { name: /^Graphics Choose/ }).click();
+  const picker = page.getByRole("dialog");
+  const rows = picker.locator("ul > li > button");
+  const all = await rows.count();
+  const tiers = picker.getByRole("group", { name: "Filter by tier" });
+
+  await tiers.getByRole("button", { name: "High-end" }).click();
+  await expect(tiers.getByRole("button", { name: "High-end" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const high = await rows.count();
+  expect(high).toBeGreaterThanOrEqual(3);
+  expect(high).toBeLessThan(all);
+  for (const row of await rows.all())
+    await expect(row).toContainText("High-end");
+
+  // Two tiers: any of them. Clearing brings every row back.
+  await tiers.getByRole("button", { name: "Budget" }).click();
+  await expect(rows).toHaveCount(high + 3);
+  await picker.getByRole("button", { name: "Clear filters" }).click();
+  await expect(rows).toHaveCount(all);
+});
+
 test("a preset link loads, saves and keeps its name", async ({ page }) => {
   await openPreset(page, "creator-workstation");
   await expect(page).toHaveURL(/\/builder$/);

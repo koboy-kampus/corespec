@@ -5,6 +5,7 @@
     "brand": "Crucial",
     "name": "P3 Plus 500GB",
     "priceIDR": 700000,
+    "tier": "budget",
     "dims": {
       "l": 80,
       "w": 22,
@@ -20,6 +21,7 @@
     "brand": "Crucial",
     "name": "P3 Plus 1TB",
     "priceIDR": 1050000,
+    "tier": "budget",
     "dims": {
       "l": 80,
       "w": 22,
@@ -35,6 +37,7 @@
     "brand": "Samsung",
     "name": "990 Pro 1TB",
     "priceIDR": 1899000,
+    "tier": "mid",
     "dims": {
       "l": 80,
       "w": 22,
@@ -50,6 +53,7 @@
     "brand": "WD",
     "name": "Black SN850X 2TB",
     "priceIDR": 2950000,
+    "tier": "high",
     "dims": {
       "l": 80,
       "w": 22,
@@ -65,6 +69,7 @@
     "brand": "Samsung",
     "name": "990 Pro 2TB",
     "priceIDR": 3300000,
+    "tier": "high",
     "dims": {
       "l": 80,
       "w": 22,
@@ -80,6 +85,7 @@
     "brand": "Samsung",
     "name": "990 EVO Plus 4TB",
     "priceIDR": 5200000,
+    "tier": "high",
     "dims": {
       "l": 80,
       "w": 22,
@@ -95,6 +101,7 @@
     "brand": "Samsung",
     "name": "870 EVO 1TB",
     "priceIDR": 1500000,
+    "tier": "budget",
     "dims": {
       "l": 100,
       "w": 70,
@@ -110,6 +117,7 @@
     "brand": "Crucial",
     "name": "MX500 2TB",
     "priceIDR": 2300000,
+    "tier": "mid",
     "dims": {
       "l": 100,
       "w": 70,
@@ -117,6 +125,22 @@
     },
     "anchor": "case",
     "kind": "SATA",
+    "capacityGb": 2000
+  },
+  {
+    "id": "storage-lexar-nm790-2tb",
+    "category": "storage",
+    "brand": "Lexar",
+    "name": "NM790 2TB",
+    "priceIDR": 2500000,
+    "tier": "mid",
+    "dims": {
+      "l": 80,
+      "w": 22,
+      "h": 3
+    },
+    "anchor": "m2",
+    "kind": "M.2",
     "capacityGb": 2000
   }
 ]

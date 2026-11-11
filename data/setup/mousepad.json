@@ -5,6 +5,7 @@
     "brand": "SteelSeries",
     "name": "QcK Medium",
     "priceIDR": 180000,
+    "tier": "budget",
     "dims": {
       "l": 320,
       "w": 270,
@@ -19,6 +20,7 @@
     "brand": "Razer",
     "name": "Gigantus V2 Large",
     "priceIDR": 280000,
+    "tier": "budget",
     "dims": {
       "l": 450,
       "w": 400,
@@ -33,6 +35,7 @@
     "brand": "Logitech",
     "name": "G840 XL",
     "priceIDR": 650000,
+    "tier": "mid",
     "dims": {
       "l": 900,
       "w": 400,
@@ -47,6 +50,7 @@
     "brand": "Glorious",
     "name": "3XL Extended",
     "priceIDR": 750000,
+    "tier": "mid",
     "dims": {
       "l": 1219,
       "w": 610,

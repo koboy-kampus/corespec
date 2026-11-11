@@ -97,3 +97,30 @@ Every setup item in the catalogue, not only the ones in suggested setups. Update
 | Chair         | Herman Miller Aeron                  | `chair-herman-miller-aeron`                     | —                   | Rp 25.000.000  |           |        |         |
 
 57 setup items. Prices copied from the data on 2026-11-11.
+
+## New in Phase 13a: PC parts (batch 1)
+
+Added so every PC category has at least 3 Budget, 3 Mid and 3 High-end parts. Prices are estimates from 2026-11-11; nothing here was checked on a marketplace yet.
+
+| Type        | Part                                      | ID                                                 | Tier     | CoreSpec price | Tokopedia | Shopee | Checked |
+| ----------- | ----------------------------------------- | -------------------------------------------------- | -------- | -------------- | --------- | ------ | ------- |
+| CPU         | Intel Core i3-14100F                      | `cpu-intel-core-i3-14100f`                         | Budget   | Rp 1.550.000   |           |        |         |
+| Motherboard | ASRock B650M-HDV/M.2                      | `motherboard-asrock-b650m-hdv-m2`                  | Budget   | Rp 1.750.000   |           |        |         |
+| RAM         | Team T-Force Delta RGB 32GB (2×16GB) 6000 | `ram-team-t-force-delta-rgb-32gb-2-16gb-ddr5-6000` | Mid      | Rp 2.450.000   |           |        |         |
+| GPU         | ASRock Intel Arc B580 Challenger OC 12GB  | `gpu-asrock-intel-arc-b580-challenger-oc-12gb`     | Budget   | Rp 5.000.000   |           |        |         |
+| Storage     | Lexar NM790 2TB                           | `storage-lexar-nm790-2tb`                          | Mid      | Rp 2.500.000   |           |        |         |
+| PSU         | DeepCool PK650D                           | `psu-deepcool-pk650d`                              | Budget   | Rp 750.000     |           |        |         |
+| Case        | DeepCool CC560 V2                         | `case-deepcool-cc560-v2`                           | Budget   | Rp 750.000     |           |        |         |
+| Cooler      | DeepCool AK620                            | `cooler-deepcool-ak620`                            | Mid      | Rp 950.000     |           |        |         |
+| Cooler      | Arctic Liquid Freezer III Pro 360         | `cooler-arctic-liquid-freezer-iii-pro-360`         | High-end | Rp 2.100.000   |           |        |         |
+
+### Specs to double-check
+
+Everything else on these 9 parts matched the maker's page or at least two retailer spec sheets. These didn't:
+
+- **ASRock B650M-HDV/M.2 — size.** 244 × 226 mm comes from one retailer listing; ASRock's spec page didn't load. (2 DDR5 slots and 2 M.2 slots are confirmed.)
+- **Team T-Force Delta RGB — module size.** Height 46 mm is from retailers (no Team datasheet found). Length is the standard 133 mm DIMM; some listings say 144.2 mm.
+- **Lexar NM790 2TB — thickness.** Not found; drawn 3 mm thick like the other M.2 drives.
+- **DeepCool AK620 — LGA1851 support and height.** Listed for LGA1851 because it uses the LGA1700 mounting, which I couldn't confirm in DeepCool's own list. Height 160 mm per retailers; one review measured 162 mm.
+- **Arctic Liquid Freezer III Pro 360 — pump height and LGA1851.** Radiator 398 × 120 × 38 mm is confirmed; the 53 mm pump height is copied from the Liquid Freezer III 240, and LGA1851 support wasn't checked.
+- **Arc B580 — "1080p" class.** My call for the setup rules (reviews put it between 1080p and entry 1440p), not a spec.

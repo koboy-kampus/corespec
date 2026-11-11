@@ -5,6 +5,7 @@
     "brand": "IKEA",
     "name": "MICKE 105×50",
     "priceIDR": 1300000,
+    "tier": "budget",
     "dims": {
       "l": 1050,
       "w": 500,
@@ -23,6 +24,7 @@
     "brand": "IKEA",
     "name": "LAGKAPTEN / ADILS 120×60",
     "priceIDR": 900000,
+    "tier": "budget",
     "dims": {
       "l": 1200,
       "w": 600,
@@ -41,6 +43,7 @@
     "brand": "IKEA",
     "name": "TROTTEN sit/stand 120×70",
     "priceIDR": 3500000,
+    "tier": "mid",
     "dims": {
       "l": 1200,
       "w": 700,
@@ -59,6 +62,7 @@
     "brand": "IKEA",
     "name": "MITTZON sit/stand 140×80",
     "priceIDR": 6000000,
+    "tier": "high",
     "dims": {
       "l": 1400,
       "w": 800,

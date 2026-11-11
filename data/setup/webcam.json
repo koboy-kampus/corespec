@@ -5,6 +5,7 @@
     "brand": "Logitech",
     "name": "C270 HD",
     "priceIDR": 250000,
+    "tier": "budget",
     "dims": {
       "l": 73,
       "w": 66,
@@ -20,6 +21,7 @@
     "brand": "Logitech",
     "name": "C920 HD Pro",
     "priceIDR": 900000,
+    "tier": "mid",
     "dims": {
       "l": 94,
       "w": 71,
@@ -35,6 +37,7 @@
     "brand": "Elgato",
     "name": "Facecam",
     "priceIDR": 2300000,
+    "tier": "high",
     "dims": {
       "l": 80,
       "w": 55,
@@ -50,6 +53,7 @@
     "brand": "Logitech",
     "name": "Brio 4K",
     "priceIDR": 2700000,
+    "tier": "high",
     "dims": {
       "l": 102,
       "w": 27,

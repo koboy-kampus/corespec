@@ -5,6 +5,7 @@ import { cn } from "cn";
 import { PriceTag } from "@/components/ui/price-tag";
 import type { CompatResult } from "@/lib/compat/check";
 import { partLabel } from "@/lib/parts";
+import { TIER_LABEL } from "@/lib/picker";
 import { partSpecs } from "@/lib/specs";
 import type { Item } from "@/types/parts";
 
@@ -60,6 +61,10 @@ export function PartRow({ part, issues, selected, onSelect }: PartRowProps) {
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             <PriceTag value={part.priceIDR} />
+            <span className="label-micro text-micro-sm text-fg-3">
+              <span className="sr-only">Tier: </span>
+              {TIER_LABEL[part.tier]}
+            </span>
             {selected ? (
               <span className="inline-flex items-center gap-1 label-micro text-micro-sm text-accent">
                 <Check className="size-3" aria-hidden />

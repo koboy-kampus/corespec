@@ -23,6 +23,8 @@ import {
   filterParts,
   isFiltered,
   parseRupiah,
+  TIER_LABEL,
+  TIERS,
   type PickerFilters,
   type SortKey,
 } from "@/lib/picker";
@@ -30,7 +32,7 @@ import { facetsFor } from "@/lib/specs";
 import { useBuildStore } from "@/store/build";
 import { useReturnFocus } from "@/hooks/use-return-focus";
 import { useUiStore } from "@/store/ui";
-import type { Category } from "@/types/parts";
+import type { Category, Tier } from "@/types/parts";
 import { PartRow } from "./part-row";
 
 const inputClass =
@@ -69,17 +71,19 @@ const chipClass = (on: boolean) =>
       : "border-line bg-surface text-fg-2 hover:border-line-hover hover:text-fg",
   );
 
-/** A row of toggle chips (any of), e.g. brands or a setup spec like Layout. */
-function ChipGroup({
+/** A row of toggle chips (any of), e.g. tiers, brands or a setup spec like Layout. */
+function ChipGroup<V extends string>({
   label,
   values,
   chosen,
   onChange,
+  display = (v) => v,
 }: {
   label: string;
-  values: string[];
-  chosen: string[];
-  onChange: (next: string[]) => void;
+  values: V[];
+  chosen: V[];
+  onChange: (next: V[]) => void;
+  display?: (v: V) => string;
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -101,7 +105,7 @@ function ChipGroup({
               }
               className={chipClass(on)}
             >
-              {v}
+              {display(v)}
             </button>
           );
         })}
@@ -171,6 +175,14 @@ function PickerBody({ category }: { category: Category }) {
             </select>
           </label>
         </div>
+
+        <ChipGroup<Tier>
+          label="Tier"
+          values={TIERS}
+          chosen={filters.tiers}
+          display={(t) => TIER_LABEL[t]}
+          onChange={(next) => update({ tiers: next })}
+        />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <ChipGroup

@@ -5,6 +5,7 @@
     "brand": "HyperX",
     "name": "Cloud Stinger 2",
     "priceIDR": 550000,
+    "tier": "budget",
     "dims": {
       "l": 180,
       "w": 90,
@@ -20,6 +21,7 @@
     "brand": "SteelSeries",
     "name": "Arctis Nova 1",
     "priceIDR": 800000,
+    "tier": "budget",
     "dims": {
       "l": 180,
       "w": 85,
@@ -35,6 +37,7 @@
     "brand": "Logitech",
     "name": "G435 Lightspeed",
     "priceIDR": 900000,
+    "tier": "mid",
     "dims": {
       "l": 170,
       "w": 80,
@@ -50,6 +53,7 @@
     "brand": "HyperX",
     "name": "Cloud II",
     "priceIDR": 1100000,
+    "tier": "mid",
     "dims": {
       "l": 180,
       "w": 95,
@@ -65,6 +69,7 @@
     "brand": "Soundcore",
     "name": "Life Q30",
     "priceIDR": 1200000,
+    "tier": "mid",
     "dims": {
       "l": 175,
       "w": 85,
@@ -80,6 +85,7 @@
     "brand": "Razer",
     "name": "BlackShark V2 Pro (2023)",
     "priceIDR": 2700000,
+    "tier": "high",
     "dims": {
       "l": 180,
       "w": 90,

@@ -5,6 +5,7 @@
     "brand": "ASRock",
     "name": "B550M-HDV",
     "priceIDR": 1200000,
+    "tier": "budget",
     "dims": {
       "l": 237,
       "w": 203,
@@ -23,6 +24,7 @@
     "brand": "MSI",
     "name": "MAG B550 Tomahawk",
     "priceIDR": 2400000,
+    "tier": "mid",
     "dims": {
       "l": 305,
       "w": 244,
@@ -41,6 +43,7 @@
     "brand": "MSI",
     "name": "B650M Gaming Plus WiFi",
     "priceIDR": 2899000,
+    "tier": "mid",
     "dims": {
       "l": 244,
       "w": 244,
@@ -59,6 +62,7 @@
     "brand": "Gigabyte",
     "name": "B650 Aorus Elite AX",
     "priceIDR": 3700000,
+    "tier": "mid",
     "dims": {
       "l": 305,
       "w": 244,
@@ -77,6 +81,7 @@
     "brand": "ASUS",
     "name": "ROG Strix B650E-I Gaming WiFi",
     "priceIDR": 5500000,
+    "tier": "high",
     "dims": {
       "l": 170,
       "w": 170,
@@ -95,6 +100,7 @@
     "brand": "ASUS",
     "name": "TUF Gaming X870-Plus WiFi",
     "priceIDR": 4700000,
+    "tier": "high",
     "dims": {
       "l": 305,
       "w": 244,
@@ -113,6 +119,7 @@
     "brand": "MSI",
     "name": "PRO B760M-A DDR4 II",
     "priceIDR": 2100000,
+    "tier": "budget",
     "dims": {
       "l": 244,
       "w": 244,
@@ -131,6 +138,7 @@
     "brand": "Gigabyte",
     "name": "Z890 Aorus Elite WiFi7",
     "priceIDR": 5600000,
+    "tier": "high",
     "dims": {
       "l": 305,
       "w": 244,
@@ -142,5 +150,24 @@
     "ddr": "DDR5",
     "ramSlots": 4,
     "m2Slots": 4
+  },
+  {
+    "id": "motherboard-asrock-b650m-hdv-m2",
+    "category": "motherboard",
+    "brand": "ASRock",
+    "name": "B650M-HDV/M.2",
+    "priceIDR": 1750000,
+    "tier": "budget",
+    "dims": {
+      "l": 244,
+      "w": 226,
+      "h": 20
+    },
+    "anchor": "board",
+    "socket": "AM5",
+    "formFactor": "mATX",
+    "ddr": "DDR5",
+    "ramSlots": 2,
+    "m2Slots": 2
   }
 ]

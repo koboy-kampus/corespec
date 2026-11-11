@@ -12,13 +12,15 @@ import {
   buildTotalIDR,
 } from "@/lib/parts";
 import { presets, presetSummary } from "@/lib/presets";
+import idsBeforePhase13 from "@/lib/__fixtures__/ids-before-phase-13.json";
+import type { Tier } from "@/types/parts";
 
 /** Runtime checks on the seeded JSON, since TypeScript can't verify JSON imports. */
 describe("parts catalogue", () => {
-  it("has ~8 parts in each of the 8 categories", () => {
+  it("has 9 or 10 parts in each of the 8 categories", () => {
     expect(Object.keys(CATALOG).sort()).toEqual([...CATEGORIES].sort());
     for (const parts of Object.values(CATALOG)) {
-      expect(parts.length).toBeGreaterThanOrEqual(6);
+      expect(parts.length).toBeGreaterThanOrEqual(9);
       expect(parts.length).toBeLessThanOrEqual(10);
     }
     expect(CATALOG_STATS).toEqual({
@@ -84,11 +86,40 @@ describe("parts catalogue", () => {
   });
 });
 
+describe("tiers (Phase 13)", () => {
+  const TIERS: Tier[] = ["budget", "mid", "high"];
+  const count = (items: { tier: Tier }[]) =>
+    Object.fromEntries(
+      TIERS.map((t) => [t, items.filter((i) => i.tier === t).length]),
+    );
+
+  it("gives every item one of the 3 tiers", () => {
+    for (const item of ALL_ITEMS) expect(TIERS, item.id).toContain(item.tier);
+  });
+
+  it("has at least 3 PC parts per tier in every category", () => {
+    for (const [c, parts] of Object.entries(CATALOG))
+      for (const [tier, n] of Object.entries(count(parts)))
+        expect(n, `${c} ${tier}`).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps every id that existed before Phase 13 (old links and saved builds)", () => {
+    const now = new Set(ALL_ITEMS.map((i) => i.id));
+    expect(idsBeforePhase13.filter((id) => !now.has(id))).toEqual([]);
+  });
+});
+
 describe("presets", () => {
   const targets: Record<string, number> = {
     "budget-1080p": 9_000_000,
     "sweet-spot-1440p": 18_000_000,
     "creator-workstation": 35_000_000,
+  };
+  /** PC and setup totals as they were before Phase 13: new items never change them. */
+  const fixedTotals: Record<string, [number, number]> = {
+    "budget-1080p": [9_080_000, 4_530_000],
+    "sweet-spot-1440p": [17_618_000, 15_330_000],
+    "creator-workstation": [35_268_000, 27_650_000],
   };
 
   it.each(presets.map((p) => [p.id, p] as const))(
@@ -102,6 +133,8 @@ describe("presets", () => {
         ).toContain(id);
       const { totalIDR } = presetSummary(preset);
       expect(totalIDR).toBe(buildTotalIDR(preset.parts));
+      expect(totalIDR).toBe(fixedTotals[id][0]);
+      expect(presetSummary(preset).setupIDR).toBe(fixedTotals[id][1]);
       expect(Math.abs(totalIDR - targets[id]) / targets[id]).toBeLessThan(0.1);
     },
   );

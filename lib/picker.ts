@@ -2,7 +2,7 @@ import { check, checkSetup, type CompatResult } from "@/lib/compat/check";
 import { partLabel } from "@/lib/parts";
 import { isPcCategory } from "@/lib/categories";
 import { partSpecs, type Facet } from "@/lib/specs";
-import type { Build, Item } from "@/types/parts";
+import type { Build, Item, Tier } from "@/types/parts";
 
 export type SortKey = "price-asc" | "price-desc" | "name";
 
@@ -12,8 +12,19 @@ export const SORT_LABEL: Record<SortKey, string> = {
   name: "Name: A–Z",
 };
 
+/** Tiers in chip order. */
+export const TIERS: Tier[] = ["budget", "mid", "high"];
+
+export const TIER_LABEL: Record<Tier, string> = {
+  budget: "Budget",
+  mid: "Mid",
+  high: "High-end",
+};
+
 export interface PickerFilters {
   query: string;
+  /** Tier chips (any of); empty shows every tier. */
+  tiers: Tier[];
   brands: string[];
   minPrice?: number;
   maxPrice?: number;
@@ -24,6 +35,7 @@ export interface PickerFilters {
 
 export const DEFAULT_FILTERS: PickerFilters = {
   query: "",
+  tiers: [],
   brands: [],
   facets: {},
   sort: "price-asc",
@@ -32,6 +44,7 @@ export const DEFAULT_FILTERS: PickerFilters = {
 export function isFiltered(f: PickerFilters): boolean {
   return (
     !!f.query.trim() ||
+    f.tiers.length > 0 ||
     f.brands.length > 0 ||
     f.minPrice != null ||
     f.maxPrice != null ||
@@ -57,7 +70,7 @@ export function facetValues<T extends Item>(
 }
 
 /**
- * Search (name, brand and specs), brand, price and spec filters, then sort.
+ * Search (name, brand and specs), tier, brand, price and spec filters, then sort.
  * Within one facet any chosen value matches; different facets must all match.
  */
 export function filterParts<T extends Item>(
@@ -67,6 +80,7 @@ export function filterParts<T extends Item>(
 ): T[] {
   const terms = f.query.toLowerCase().split(/\s+/).filter(Boolean);
   const result = parts.filter((p) => {
+    if (f.tiers.length && !f.tiers.includes(p.tier)) return false;
     if (f.brands.length && !f.brands.includes(p.brand)) return false;
     if (f.minPrice != null && p.priceIDR < f.minPrice) return false;
     if (f.maxPrice != null && p.priceIDR > f.maxPrice) return false;

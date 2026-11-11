@@ -5,6 +5,7 @@
     "brand": "Logitech",
     "name": "Z120",
     "priceIDR": 150000,
+    "tier": "budget",
     "dims": {
       "l": 88,
       "w": 90,
@@ -19,6 +20,7 @@
     "brand": "Creative",
     "name": "Pebble Plus",
     "priceIDR": 650000,
+    "tier": "budget",
     "dims": {
       "l": 116,
       "w": 115,
@@ -33,6 +35,7 @@
     "brand": "Logitech",
     "name": "Z333",
     "priceIDR": 900000,
+    "tier": "mid",
     "dims": {
       "l": 100,
       "w": 100,
@@ -47,6 +50,7 @@
     "brand": "Edifier",
     "name": "R1080BT",
     "priceIDR": 1200000,
+    "tier": "mid",
     "dims": {
       "l": 146,
       "w": 180,

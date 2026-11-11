@@ -5,6 +5,7 @@
     "brand": "North Bayou",
     "name": "F80",
     "priceIDR": 300000,
+    "tier": "budget",
     "dims": {
       "l": 120,
       "w": 120,
@@ -22,6 +23,7 @@
     "brand": "North Bayou",
     "name": "F160 Dual",
     "priceIDR": 550000,
+    "tier": "budget",
     "dims": {
       "l": 120,
       "w": 120,
@@ -39,6 +41,7 @@
     "brand": "Ergotron",
     "name": "LX Desk Mount",
     "priceIDR": 3500000,
+    "tier": "high",
     "dims": {
       "l": 120,
       "w": 120,
@@ -56,6 +59,7 @@
     "brand": "Ergotron",
     "name": "LX Dual Side-by-Side",
     "priceIDR": 6500000,
+    "tier": "high",
     "dims": {
       "l": 120,
       "w": 120,

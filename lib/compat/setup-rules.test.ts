@@ -21,7 +21,12 @@ import {
 } from "./setup-rules";
 
 // --- tiny fixtures: only the fields a rule reads matter -------------------
-const base = { brand: "Test", name: "X", priceIDR: 1_000_000 };
+const base = {
+  brand: "Test",
+  name: "X",
+  priceIDR: 1_000_000,
+  tier: "mid" as const,
+};
 const gpu = (o: Partial<Gpu> = {}): Gpu => ({
   ...base,
   id: "gpu-x",

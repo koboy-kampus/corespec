@@ -78,7 +78,7 @@ components/
   landing/ layout/    Landing sections, navbar, footer, command palette
   ui/                 Design-system components (Button, Card, Badge, Dialog…)
 data/
-  parts/*.json        The parts catalogue (64 parts across 8 categories)
+  parts/*.json        The parts catalogue (73 parts across 8 categories, each tiered)
   presets.json        Starter builds
   meta.json           pricesAsOf date
   credits.json        3D model credits (required for every model)

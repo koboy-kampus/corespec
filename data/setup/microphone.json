@@ -5,6 +5,7 @@
     "brand": "Fifine",
     "name": "K669B",
     "priceIDR": 300000,
+    "tier": "budget",
     "dims": {
       "l": 85,
       "w": 85,
@@ -19,6 +20,7 @@
     "brand": "Rode",
     "name": "PodMic",
     "priceIDR": 1600000,
+    "tier": "mid",
     "dims": {
       "l": 111,
       "w": 111,
@@ -33,6 +35,7 @@
     "brand": "HyperX",
     "name": "QuadCast S",
     "priceIDR": 1900000,
+    "tier": "mid",
     "dims": {
       "l": 130,
       "w": 130,
@@ -47,6 +50,7 @@
     "brand": "Shure",
     "name": "SM7B",
     "priceIDR": 6500000,
+    "tier": "high",
     "dims": {
       "l": 96,
       "w": 190,

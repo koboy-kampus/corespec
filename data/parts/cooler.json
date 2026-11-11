@@ -5,6 +5,7 @@
     "brand": "Thermalright",
     "name": "Assassin X 120 Refined SE",
     "priceIDR": 280000,
+    "tier": "budget",
     "dims": {
       "l": 124,
       "w": 71,
@@ -21,6 +22,7 @@
     "brand": "DeepCool",
     "name": "AK400",
     "priceIDR": 450000,
+    "tier": "budget",
     "dims": {
       "l": 127,
       "w": 97,
@@ -37,6 +39,7 @@
     "brand": "Thermalright",
     "name": "Peerless Assassin 120 SE",
     "priceIDR": 520000,
+    "tier": "budget",
     "dims": {
       "l": 125,
       "w": 135,
@@ -53,6 +56,7 @@
     "brand": "ID-Cooling",
     "name": "IS-55",
     "priceIDR": 480000,
+    "tier": "budget",
     "dims": {
       "l": 120,
       "w": 120,
@@ -69,6 +73,7 @@
     "brand": "Noctua",
     "name": "NH-L9a-AM5",
     "priceIDR": 850000,
+    "tier": "mid",
     "dims": {
       "l": 114,
       "w": 92,
@@ -85,6 +90,7 @@
     "brand": "Noctua",
     "name": "NH-D15 G2",
     "priceIDR": 2350000,
+    "tier": "high",
     "dims": {
       "l": 150,
       "w": 152,
@@ -101,6 +107,7 @@
     "brand": "Arctic",
     "name": "Liquid Freezer III 240",
     "priceIDR": 1550000,
+    "tier": "mid",
     "dims": {
       "l": 277,
       "w": 120,
@@ -117,10 +124,45 @@
     "brand": "NZXT",
     "name": "Kraken 360",
     "priceIDR": 3300000,
+    "tier": "high",
     "dims": {
       "l": 394,
       "w": 121,
       "h": 27
+    },
+    "anchor": "cooler",
+    "type": "AIO",
+    "heightMm": 53,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-deepcool-ak620",
+    "category": "cooler",
+    "brand": "DeepCool",
+    "name": "AK620",
+    "priceIDR": 950000,
+    "tier": "mid",
+    "dims": {
+      "l": 129,
+      "w": 138,
+      "h": 160
+    },
+    "anchor": "cooler",
+    "type": "Air",
+    "heightMm": 160,
+    "sockets": ["AM4", "AM5", "LGA1700", "LGA1851"]
+  },
+  {
+    "id": "cooler-arctic-liquid-freezer-iii-pro-360",
+    "category": "cooler",
+    "brand": "Arctic",
+    "name": "Liquid Freezer III Pro 360",
+    "priceIDR": 2100000,
+    "tier": "high",
+    "dims": {
+      "l": 398,
+      "w": 120,
+      "h": 38
     },
     "anchor": "cooler",
     "type": "AIO",
