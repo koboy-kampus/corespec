@@ -18,7 +18,9 @@
     "models": "node scripts/build-models.mjs",
     "models:check": "node scripts/models-check.mjs",
     "hero:poster": "node scripts/hero-poster.mjs",
-    "prices:apply": "node scripts/prices-apply.mjs"
+    "prices:apply": "node scripts/prices-apply.mjs",
+    "db:seed-sql": "vitest run supabase/seed.test.ts -u",
+    "db:export": "node scripts/db-export.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

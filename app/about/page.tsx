@@ -1,3 +1,4 @@
+import { loadCatalogue } from "@/lib/catalogue/load";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DocPage, DocSection } from "@/components/legal/doc-page";
@@ -10,7 +11,8 @@ export const metadata: Metadata = {
     "What CoreSpec is, how prices and compatibility checks work, and who made it.",
 };
 
-export default function Page() {
+export default async function Page() {
+  await loadCatalogue();
   return (
     <DocPage
       eyebrow="About"

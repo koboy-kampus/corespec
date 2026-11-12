@@ -1,7 +1,9 @@
 # Phase 16 plan: login and backend
 
 Status (2026-11-12): **approved by Rei** (A: split into 16a/16b/16c; B: email
-confirmation off, both paths built), with the changes below. **16a is built.**
+confirmation off, both paths built), with the changes below. **16a is built and
+running on the real project. 16b is built** (catalogue, listings, settings and
+audit log in the database; see `docs/accounts.md`).
 
 ### Rei's changes to the draft
 
@@ -180,7 +182,7 @@ fallback + warning; `npm run db:export` refreshes the JSON/CSV from the DB.
 ## 10. Migrations, seed, tests
 
 - `supabase/migrations/20261112000100_profiles.sql`, `…0200_builds.sql`,
-  `…0300_items_listings.sql` (16b), `…0400_audit.sql` (16b). Rerunnable
+  `…0300_account_admin.sql`, `…0400_catalogue.sql` (16b), `…0500_audit.sql` (16b). Rerunnable
   (`if not exists`, `create or replace`, `drop policy if exists`); SQL editor or
   `supabase link` + `supabase db push`.
 - `npm run db:seed-sql` → committed `supabase/seed.sql` (idempotent upserts).

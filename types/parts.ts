@@ -65,6 +65,12 @@ export interface ItemBase {
   dims?: { l: number; w: number; h: number }; // mm → sizes placeholder meshes
   /** Its own 3D model: an id in data/models.json (see docs/models.md). */
   modelId?: string;
+  /**
+   * Phase 16b: false when an admin took it out of the picker. It still resolves
+   * everywhere else, so saved builds and share links that use it keep working.
+   * Missing means active (no JSON item has it).
+   */
+  active?: false;
 }
 
 export interface PartBase extends ItemBase {

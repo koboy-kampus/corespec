@@ -28,6 +28,10 @@ vi.mock("next/headers", () => ({
     delete: (name: string) => jar.delete(name),
   }),
 }));
+// The catalogue is the JSON here ('use cache' needs a running Next server).
+vi.mock("@/lib/catalogue/load", () => ({
+  loadCatalogue: async () => ({ overlay: null, source: "json" }),
+}));
 
 const b64url = (s: string) => Buffer.from(s).toString("base64url");
 /** An HS256-shaped token: the client checks it with the server (GET /user), not by signature. */
@@ -164,7 +168,9 @@ async function syncBuilds(input: unknown) {
   return mod.syncBuilds(input);
 }
 
-describe("syncBuilds (Server Action)", () => {
+// The first test loads Supabase and Next cold, which can pass 5 s when every
+// test file runs at once.
+describe("syncBuilds (Server Action)", { timeout: 20_000 }, () => {
   it("renews an expired access token inside the action, writes the new cookies, then syncs", async () => {
     storeSession(session(now() - 60, "refresh-1"));
 

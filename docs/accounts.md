@@ -5,8 +5,10 @@ the Supabase settings the site has no login at all and works exactly as before.
 
 - **Status:** 16a is built and set up on the real Supabase project (all checks
   in `rls.sql` pass there): accounts, builds in the account, guest import, roles
-  and the admin users page. 16b moves the catalogue and listings into the
-  database. 16c adds the diagrams and finishes these docs.
+  and the admin users page. 16b (built, not yet run on the real project) moves
+  the catalogue and listings into the database, with admin editing and an audit
+  log; see "The catalogue in the database" below. 16c adds the diagrams and
+  finishes these docs.
 - **The plan:** [`phase-16-plan.md`](phase-16-plan.md).
 
 ## How it fits together
@@ -120,6 +122,80 @@ Never add a service-role or secret key: nothing uses one.
 9. **Check it.** Log out and log in again. The account menu now has **Admin**,
    and `/admin` opens. From now on, promote others in **Admin → Users**.
 
+## The catalogue in the database (16b)
+
+### How it works
+
+- **The JSON in `data/` stays the base.** It's bundled into the site, so the
+  builder works with no database at all. The database holds the same catalogue
+  (`items`, `listings`, `site_settings`), and admins edit it there.
+- **Pages get only the differences.** `lib/catalogue/load.ts` reads the
+  database (cached, tag `catalogue`) and compares it with the JSON
+  (`lib/catalogue/rows.ts`). Only the items that differ go to the page, so a
+  database that matches the JSON adds nothing at all to any page.
+  `lib/parts.ts` applies those differences in place, on the server and in the
+  browser (handed over by `components/catalogue/catalogue-overlay.tsx` in the
+  root layout).
+- **Pages stay static.** The landing page, builder and shared builds are built
+  with the cached catalogue. An admin save calls `updateTag("catalogue")`, so
+  they're rebuilt in the background within seconds; otherwise at the latest
+  every hour.
+- **The fallback.** With no Supabase settings, or settings but a database that
+  can't be reached within 4 seconds, or one where `seed.sql` hasn't run yet, the
+  site shows the JSON exactly as before and tries again within a minute. The
+  admin overview says so. Tested in `lib/catalogue/catalogue.test.ts` (off,
+  connection refused, no answer, empty, seeded, one edit) and by running the
+  whole e2e suite with an unreachable database (below).
+- **Deactivated items** (`active = false`) leave the builder's picker only.
+  Everyone can still read them, so saved builds and share links that use them
+  keep working. Items a preset uses can't be deactivated.
+- **Listing rules** are the same as `npm run prices:apply`, checked in the admin
+  form and again by the database (`listings` checks): https, on the
+  marketplace's own domain, a whole number of rupiah above 0, a check date not
+  in the future (Indonesian time). The "more than 40% from the estimate" check
+  stays a question in the admin form: tick "The price is right" to save anyway.
+- **The audit log** (`audit_log`) records every change to items, listings,
+  settings and roles: who, when, and which fields changed. Only admins can read
+  it; nobody can edit it.
+
+### Setting it up (after the 16a steps)
+
+In **SQL Editor → New query**, paste each file and **Run**, in this order:
+
+1. `supabase/migrations/20261112000400_catalogue.sql`
+2. `supabase/migrations/20261112000500_audit.sql`
+3. `supabase/seed.sql`: the catalogue from the JSON. The result says **Seeded
+   181 items and 4 listings**.
+4. `supabase/tests/rls.sql` again: it now checks items, listings, settings and
+   the audit log too. The result says **All RLS tests passed**.
+
+All four are safe to run again. **Careful:** running `seed.sql` again puts the
+seeded items back as the JSON has them, undoing admin edits to them. Run
+`npm run db:export` first if those edits should be kept.
+
+### Admin pages
+
+- **`/admin/items`:** every item, with search and filters (category, tier,
+  active or not, no checked listing). **Add item** creates a new one.
+- **`/admin/items/<id>`:** the item's fields (the spec inputs come from
+  `lib/catalogue/schema.ts`) and its checked listings: add, edit, delete, and
+  **Mark checked today**.
+- **`/admin/settings`:** "Estimates as of".
+- **`/admin`:** catalogue totals, listings over 14 days old, and the 12 most
+  recent changes from the audit log.
+
+### Keeping the JSON in step
+
+`npm run db:export` copies the database's catalogue back into `data/` (the JSON
+files, `meta.json` and `price-check.csv`), using the publishable key from
+`.env.local`. Look at `git diff`, run `npm test`, commit. `-- --check` only
+reports what would change. A database seeded from the JSON exports back to the
+same files byte for byte (`scripts/db-export.test.ts`).
+
+After changing the JSON by hand (or with `prices:apply`), run
+`npm run db:seed-sql` to regenerate `supabase/seed.sql`; the unit tests fail
+while it's out of date.
+
 ## Email confirmation
 
 **Off for now.**
@@ -158,6 +234,14 @@ To turn it on later:
       **Admin → Users** lists everyone. You can't change your own role.
 - [ ] **Delete account:** in My account, **Delete account** removes the
       account. Logging in with it then fails.
+- [ ] **Catalogue (16b):** in **Admin → Catalogue**, change an item's
+      estimate and save. Within a few seconds a fresh load of the builder shows
+      the new price for it. Change it back.
+- [ ] **Listing:** add a listing with a price far from the estimate. The form
+      asks you to confirm. **Mark checked today** sets today's date.
+- [ ] **Deactivate:** untick "In the picker" on an item. The builder's picker
+      no longer offers it; a share link that uses it still opens. Tick it again.
+- [ ] **Audit:** `/admin` lists those changes under "Recent changes".
 
 ## Files
 
@@ -174,3 +258,10 @@ To turn it on later:
   `store/build.ts` (`account`, `tombstones`, `owner`).
 - **UI:** `components/account/`, `app/login`, `app/register`, `app/account`,
   `app/admin`, `app/auth/confirm`, `app/forgot-password`.
+- **Catalogue (16b):**
+  - `lib/catalogue/` (fields per category, listing rules, rows ↔ items, the
+    loader and its fallback, the seed generator);
+  - `lib/admin/` (catalogue Server Actions and form reading),
+    `components/admin/`, `app/admin/items`, `app/admin/settings`;
+  - `supabase/seed.sql` (generated) and `supabase/seed.test.ts`;
+  - `scripts/db-export.mjs`.

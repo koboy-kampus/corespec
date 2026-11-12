@@ -1,3 +1,4 @@
+import { loadCatalogue } from "@/lib/catalogue/load";
 import { ImageResponse } from "next/og";
 import { CATEGORIES } from "@/lib/categories";
 import { deriveBuild } from "@/lib/derive";
@@ -41,6 +42,7 @@ export default async function Image({
 }: {
   params: Promise<{ code: string }>;
 }) {
+  await loadCatalogue();
   const { code } = await params;
   const shared = decodeBuild(code);
   const d = deriveBuild(shared?.parts ?? {});

@@ -21,6 +21,10 @@ import armJson from "@/data/setup/arm.json";
 import lightingJson from "@/data/setup/lighting.json";
 import { isPcCategory } from "@/lib/categories";
 import { newestCheck, shownPrice } from "@/lib/prices";
+import {
+  subscribeOverlay,
+  type CatalogueOverlay,
+} from "@/lib/catalogue/overlay-channel";
 import type {
   Build,
   Category,
@@ -76,15 +80,20 @@ export const ALL_ITEMS: Item[] = [...ALL_PARTS, ...ALL_SETUP];
 
 const byId = new Map<string, Item>(ALL_ITEMS.map((p) => [p.id, p]));
 
-/** When the estimates (`priceIDR`) were last updated: data/meta.json. */
-export const ESTIMATES_AS_OF: string = metaJson.pricesAsOf;
+// The `let` exports below are live bindings: applying a database overlay
+// (applyCatalogueOverlay, Phase 16b) updates them for every importer.
+
+/** When the estimates (`priceIDR`) were last updated: data/meta.json, or the database's setting. */
+export let ESTIMATES_AS_OF: string = metaJson.pricesAsOf;
 /** The newest marketplace check, when any listing has been checked. */
-export const NEWEST_CHECK: string | undefined = newestCheck(ALL_ITEMS);
+export let NEWEST_CHECK: string | undefined = newestCheck(ALL_ITEMS);
 /**
  * The date prices are "as of": the newest checked listing when there is one,
  * otherwise the estimates' date.
  */
-export const PRICES_AS_OF: string = NEWEST_CHECK ?? ESTIMATES_AS_OF;
+export let PRICES_AS_OF: string = NEWEST_CHECK ?? ESTIMATES_AS_OF;
+/** Goes up by one every time an overlay changes the catalogue (for caches keyed on it). */
+export let catalogueVersion = 0;
 
 /** Live catalogue size, e.g. for "64 parts across 8 categories". */
 export const CATALOG_STATS = {
@@ -93,6 +102,71 @@ export const CATALOG_STATS = {
   setupItems: ALL_SETUP.length,
   setupCategories: Object.keys(SETUP_CATALOG).length,
 };
+
+/**
+ * Phase 16b: puts the database's differences (lib/catalogue/rows.ts
+ * diffCatalogue) over the JSON. Items are updated in place, so everything
+ * holding one (presets, resolved builds) sees the change. An item no longer in
+ * the overlay goes back to its JSON version; null restores the JSON exactly.
+ * Applying the same overlay again does nothing.
+ */
+let appliedKey: string | null = null;
+let pristine: Map<string, Item> | null = null;
+const PRISTINE_AS_OF = metaJson.pricesAsOf;
+
+function replaceInPlace(target: Item, source: Item) {
+  const t = target as unknown as Record<string, unknown>;
+  for (const k of Object.keys(t)) if (!(k in source)) delete t[k];
+  Object.assign(t, structuredClone(source));
+}
+
+export function applyCatalogueOverlay(overlay: CatalogueOverlay | null): void {
+  const key = overlay?.key ?? null;
+  if (key === appliedKey) return;
+  pristine ??= new Map(ALL_ITEMS.map((i) => [i.id, structuredClone(i)]));
+
+  const next = new Map(overlay?.items.map((i) => [i.id, i]));
+  for (const item of ALL_ITEMS) {
+    const source = next.get(item.id) ?? pristine.get(item.id);
+    next.delete(item.id);
+    if (source && source.category === item.category)
+      replaceInPlace(item, source);
+    // An item an earlier overlay added that's gone from this one: out of the picker.
+    else if (!source) (item as { active?: false }).active = false;
+  }
+  for (const source of next.values()) {
+    const item = structuredClone(source);
+    const list = (
+      isPcCategory(item.category)
+        ? CATALOG[item.category]
+        : SETUP_CATALOG[item.category]
+    ) as Item[];
+    list.push(item);
+    (isPcCategory(item.category)
+      ? (ALL_PARTS as Item[])
+      : (ALL_SETUP as Item[])
+    ).push(item);
+    ALL_ITEMS.push(item);
+    byId.set(item.id, item);
+  }
+
+  ESTIMATES_AS_OF = overlay?.estimatesAsOf ?? PRISTINE_AS_OF;
+  NEWEST_CHECK = newestCheck(ALL_ITEMS);
+  PRICES_AS_OF = NEWEST_CHECK ?? ESTIMATES_AS_OF;
+  CATALOG_STATS.parts = ALL_PARTS.length;
+  CATALOG_STATS.setupItems = ALL_SETUP.length;
+  appliedKey = key;
+  catalogueVersion++;
+}
+
+subscribeOverlay(applyCatalogueOverlay);
+
+/** The catalogue exactly as data/ has it, whatever overlay is applied. */
+export function jsonCatalogue(): Item[] {
+  return pristine ? [...pristine.values()] : ALL_ITEMS.slice();
+}
+/** data/meta.json's "estimates as of", whatever overlay is applied. */
+export const JSON_ESTIMATES_AS_OF: string = PRISTINE_AS_OF;
 
 /** Any catalogue item, PC part or setup item. */
 export function getItem(id: string | undefined): Item | undefined {
@@ -105,6 +179,7 @@ export function getPart(id: string | undefined): Part | undefined {
   return item && isPcCategory(item.category) ? (item as Part) : undefined;
 }
 
+/** Everything in one category, including items taken out of the picker. */
 export function getPartsByCategory<K extends Category>(
   category: K,
 ): ItemByCategory[K][] {
@@ -113,6 +188,13 @@ export function getPartsByCategory<K extends Category>(
     ...SETUP_CATALOG,
   };
   return all[category];
+}
+
+/** What the picker offers: the category without the items an admin took out. */
+export function getPickableByCategory<K extends Category>(
+  category: K,
+): ItemByCategory[K][] {
+  return getPartsByCategory(category).filter((i) => i.active !== false);
 }
 
 /** Items for the given slots, skipping unknown ids or ids filed under the wrong slot. */

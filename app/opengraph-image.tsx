@@ -1,3 +1,4 @@
+import { loadCatalogue } from "@/lib/catalogue/load";
 import { ImageResponse } from "next/og";
 import { CATALOG_STATS } from "@/lib/parts";
 
@@ -6,7 +7,8 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /** Default share image for every page that doesn't have its own. */
-export default function Image() {
+export default async function Image() {
+  await loadCatalogue();
   return new ImageResponse(
     <div
       style={{

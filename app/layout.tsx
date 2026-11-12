@@ -6,6 +6,8 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { AccountSync } from "@/components/account/account-sync";
+import { CatalogueOverlay } from "@/components/catalogue/catalogue-overlay";
+import { loadCatalogue } from "@/lib/catalogue/load";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -50,7 +52,10 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Cached (lib/catalogue/load.ts), so every page stays static. Null unless the
+  // database has catalogue changes; then the browser gets only those.
+  const { overlay } = await loadCatalogue();
   return (
     <html
       lang="en"
@@ -63,19 +68,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <TooltipProvider>
-          <Navbar />
-          <main
-            id="main"
-            tabIndex={-1}
-            className="flex flex-1 flex-col outline-none"
-          >
-            {children}
-          </main>
-          <Footer />
-          <CommandPalette />
-          <AccountSync />
-        </TooltipProvider>
+        <CatalogueOverlay overlay={overlay}>
+          <TooltipProvider>
+            <Navbar />
+            <main
+              id="main"
+              tabIndex={-1}
+              className="flex flex-1 flex-col outline-none"
+            >
+              {children}
+            </main>
+            <Footer />
+            <CommandPalette />
+            <AccountSync />
+          </TooltipProvider>
+        </CatalogueOverlay>
         {/* Cookieless page-view counts. Vercel serves the script, so only render it there. */}
         {process.env.VERCEL ? <Analytics /> : null}
       </body>

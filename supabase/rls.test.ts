@@ -78,6 +78,66 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     await db.close();
   });
 
+  // Phase 16b: each of these loosens one rule and rls.sql must notice.
+  it("catch a policy that lets a user write items", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      drop policy "items: admins update" on public.items;
+      create policy "items: anyone updates" on public.items for update to authenticated using (true);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /non-admin writes an item or listing \(user updates an item\)/,
+    );
+    await db.close();
+  });
+
+  it("catch listings being writable by anon", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      grant insert on public.listings to anon;
+      create policy "listings: anon inserts" on public.listings for insert to anon with check (true);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /non-admin writes an item or listing \(anon inserts a listing/,
+    );
+    await db.close();
+  });
+
+  it("catch a policy that hides inactive items", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      drop policy "items: everyone reads all" on public.items;
+      create policy "items: active only" on public.items for select to anon, authenticated using (active);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /anon reads all items, active and inactive/,
+    );
+    await db.close();
+  });
+
+  it("catch the audit log being readable by users", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      drop policy "audit_log: admins read" on public.audit_log;
+      create policy "audit_log: all read" on public.audit_log for select to authenticated using (true);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /only admins read the audit log/,
+    );
+    await db.close();
+  });
+
+  it("catch a listing rule being dropped", async () => {
+    const db = await freshDb();
+    await db.exec(
+      "alter table public.listings drop constraint listings_checked_at_check;",
+    );
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /can't be checked in the future/,
+    );
+    await db.close();
+  });
+
   it("set search_path on every security definer function", async () => {
     const db = await freshDb();
     const { rows } = await db.query<{ name: string; config: string[] | null }>(`
@@ -88,6 +148,7 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     expect(rows.map((r) => r.name).sort()).toEqual([
       "admin_list_users",
       "admin_stats",
+      "audit_row",
       "delete_my_account",
       "handle_new_user",
       "is_admin",
@@ -104,7 +165,12 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
         and has_function_privilege(r.oid, p.oid, 'execute')
     `);
     expect(grants.filter((g) => g.who === "anon")).toEqual([]);
-    expect(grants.find((g) => g.name === "handle_new_user")).toBeUndefined();
+    // The trigger functions can't be called by anyone.
+    for (const name of ["handle_new_user", "audit_row"])
+      expect(
+        grants.find((g) => g.name === name),
+        name,
+      ).toBeUndefined();
     await db.close();
   });
 });

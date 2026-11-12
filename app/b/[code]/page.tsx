@@ -5,11 +5,13 @@ import { SharedBuildView } from "@/components/shared/shared-build";
 import { deriveBuild } from "@/lib/derive";
 import { formatIDR } from "@/lib/format";
 import { decodeBuild } from "@/lib/share";
+import { loadCatalogue } from "@/lib/catalogue/load";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/b/[code]">): Promise<Metadata> {
   const { code } = await params;
+  await loadCatalogue();
   const shared = decodeBuild(code);
   if (!shared) return { title: "Build not found" };
   const d = deriveBuild(shared.parts);
@@ -26,6 +28,7 @@ export async function generateMetadata({
 
 async function SharedBuild({ params }: Pick<PageProps<"/b/[code]">, "params">) {
   const { code } = await params;
+  await loadCatalogue();
   const shared = decodeBuild(code);
   if (!shared) notFound();
   return <SharedBuildView shared={shared} />;

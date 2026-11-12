@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { openPreset, watchErrors } from "./helpers";
 
+// Not in the "accounts on, database unreachable" run (catalogue-fallback.spec.ts).
+test.skip(!!process.env.E2E_SUPABASE_URL, "accounts are on in this run");
+
 /**
  * Accounts (Phase 16) are off unless the Supabase settings are set, and the
  * e2e build has none. Then the site must behave exactly as before: no login UI,
@@ -15,7 +18,7 @@ test("without Supabase settings there's no account UI, no cookies and no outside
   const outside: string[] = [];
   page.on("request", (r) => {
     const host = new URL(r.url()).hostname;
-    if (host !== "localhost" && !r.url().startsWith("data:"))
+    if (host !== "localhost" && !/^(data|blob):/.test(r.url()))
       outside.push(r.url());
   });
 

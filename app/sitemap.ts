@@ -1,8 +1,10 @@
+import { loadCatalogue } from "@/lib/catalogue/load";
 import type { MetadataRoute } from "next";
 import { PRICES_AS_OF } from "@/lib/parts";
 import { INDEXED_PATHS, SITE_URL } from "@/lib/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await loadCatalogue();
   return INDEXED_PATHS.map((path) => ({
     url: `${SITE_URL}${path}`,
     // Content changes when prices are refreshed.

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { BuildSummaryCard } from "./build-summary-card";
 import { HeroViewer } from "./hero-viewer";
 import { CATALOG_STATS } from "@/lib/parts";
-import { showcase } from "@/lib/showcase";
+import { getShowcase } from "@/lib/showcase";
 
-const features = [
-  // Computed from the seeded catalogue, so it stays true as parts are added.
+// Computed from the catalogue, so it stays true as parts are added.
+const features = () => [
   {
     icon: Boxes,
     label: `${CATALOG_STATS.parts} PC parts + ${CATALOG_STATS.setupItems} setup items`,
@@ -19,6 +19,7 @@ const features = [
 ];
 
 export function Hero() {
+  const showcase = getShowcase();
   return (
     <section className="relative overflow-hidden border-b border-line">
       <div className="container-page grid items-center gap-12 pt-10 pb-16 md:pt-14 lg:grid-cols-[2fr_3fr] lg:gap-10 lg:pt-16 lg:pb-24">
@@ -40,7 +41,7 @@ export function Hero() {
           </div>
 
           <ul className="grid grid-cols-2 gap-x-4 gap-y-3">
-            {features.map(({ icon: Icon, label }) => (
+            {features().map(({ icon: Icon, label }) => (
               <li
                 key={label}
                 className="flex items-center gap-2.5 text-ui text-fg"

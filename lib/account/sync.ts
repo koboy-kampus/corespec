@@ -1,5 +1,6 @@
 "use server";
 
+import { loadCatalogue } from "@/lib/catalogue/load";
 import { createSupabase, setHint } from "@/lib/supabase/server";
 import { runSync, type SyncResponse } from "./sync-core";
 
@@ -12,6 +13,9 @@ import { runSync, type SyncResponse } from "./sync-core";
  * their builds stay in this browser meanwhile.
  */
 export async function syncBuilds(input: unknown): Promise<SyncResponse> {
+  // Builds are checked against the catalogue, including items only the
+  // database has (Phase 16b).
+  await loadCatalogue();
   const result = await runSync(await createSupabase(), input);
   // Only ever set here, never cleared: a "signed-out" answer can also come from
   // two tabs renewing the same token at once, and the browser retries first.
