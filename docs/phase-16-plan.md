@@ -1,8 +1,39 @@
 # Phase 16 plan: login and backend
 
-Status (2026-11-12): **draft, waiting for Rei's OK.** Nothing implemented yet.
-Branch: `feat/phase-16-auth` (never merged to main until Rei says so; main stays
-the demo version, tag `demo-stable-2026-11-11`).
+Status (2026-11-12): **approved by Rei** (A: split into 16a/16b/16c; B: email
+confirmation off, both paths built), with the changes below. **16a is built.**
+
+### Rei's changes to the draft
+
+1. `items` RLS: everyone reads **all** items, active and inactive, so share
+   links with deactivated items keep working. `active` only hides an item from
+   the picker; the admin can filter on it.
+2. Deletes sync through a **tombstone** (`builds.deleted_at`), never by deleting
+   rows, so a deleted build can't be re-uploaded from another browser's stale
+   copy. The merge function and its tests cover it (`lib/account/merge.ts`).
+3. Every `security definer` function (`is_admin`, `set_role`,
+   `delete_my_account`, `admin_stats`, `admin_list_users`, the sign-up trigger
+   function):
+   - sets `search_path = ''`;
+   - checks permissions inside itself;
+   - has execute revoked from `public` and `anon`;
+   - is granted only what it needs.
+4. **`profiles` column lock:** revoke update on the whole table from
+   anon/authenticated first, then grant `update (display_name)` only. `rls.sql`
+   includes these checks:
+   - a user setting their own role to admin fails;
+   - a user reading another user's build gets 0 rows;
+   - anon calling `set_role` / `delete_my_account` fails;
+   - a non-admin writing an item or listing fails (added with the 16b tables).
+5. **Sign-up trigger:** trims `display_name` and caps it at 50 characters, with
+   a fallback. It always sets `role = 'user'`.
+6. **The build sync Server Action** runs from `/builder`, where `proxy.ts`
+   doesn't refresh the session. It refreshes inside the action and, failing
+   that, answers "please log in again", with a test.
+7. HANDOFF "Later": email confirmation with a custom SMTP sender, CAPTCHA on
+   register, rate limits. REI.md: the catalogue table is `items`.
+   Branch: `feat/phase-16-auth` (never merged to main until Rei says so; main stays
+   the demo version, tag `demo-stable-2026-11-11`).
 
 ## 0. Two decisions for Rei (recommendations first)
 
@@ -30,14 +61,14 @@ sign-up. Turning it on later = dashboard switch + custom SMTP (e.g. Resend).
 REI.md calls the catalogue table `parts`; proposed name **`items`** (matches the
 code's `Item`, and it holds setup items too).
 
-| Table | Columns | Notes |
-|---|---|---|
-| `profiles` | `id uuid` PK → `auth.users(id)` on delete cascade; `display_name text` (1–50); `role text` (`user` / `admin`, default `user`); `created_at`, `updated_at` | Created by a trigger on sign-up |
-| `builds` | `owner uuid` → `profiles(id)` cascade; `id text` (the browser's build id); `name text` (1–60); `parts jsonb` (`{category: itemId}`, same shape as `Build["parts"]`); `created_at`, `updated_at` | PK `(owner, id)`. Checks: `parts` is an object with ≤ 20 keys; ≤ 200 builds per user (trigger) |
-| `items` (16b) | `id text` PK; `category text` (one of 20); `brand`, `name text`; `tier text` (`budget`/`mid`/`high`); `price_idr int > 0`; `dims jsonb`; `specs jsonb`; `model_id text null`; `active bool` default true; `created_at`, `updated_at`, `updated_by uuid` | Deactivate, don't delete (old share links still resolve). Items used by a preset can't be deactivated |
-| `listings` (16b) | `id uuid` PK; `item_id text` → `items` cascade; `marketplace text` (`tokopedia`/`shopee`/`blibli`); `url text` (https, that marketplace's domain); `price_idr int > 0`; `checked_at date` (not in the future); `created_by`, `updated_at` | Unique `(item_id, url)`. Same rules as `prices:apply`, as DB checks |
-| `site_settings` (16b) | `key text` PK; `value jsonb` | `estimatesAsOf` (today `data/meta.json`) |
-| `audit_log` (16b) | `id bigint`; `actor uuid`; `action text`; `table_name`, `row_id text`; `at timestamptz`; `diff jsonb` | Written by triggers on `items`, `listings`, `profiles.role` |
+| Table                 | Columns                                                                                                                                                                                                                                                 | Notes                                                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `profiles`            | `id uuid` PK → `auth.users(id)` on delete cascade; `display_name text` (1–50); `role text` (`user` / `admin`, default `user`); `created_at`, `updated_at`                                                                                               | Created by a trigger on sign-up                                                                                                                                          |
+| `builds`              | `owner uuid` → `profiles(id)` cascade; `id text` (the browser's build id); `name text` (1–60); `parts jsonb` (`{category: itemId}`, same shape as `Build["parts"]`); `created_at`, `updated_at`; `deleted_at` (tombstone)                               | PK `(owner, id)`. Checks: `parts` is an object with ≤ 20 string values; ≤ 200 live builds per user; a tombstone is final and wiped; `updated_at` ≤ now + 5 min (trigger) |
+| `items` (16b)         | `id text` PK; `category text` (one of 20); `brand`, `name text`; `tier text` (`budget`/`mid`/`high`); `price_idr int > 0`; `dims jsonb`; `specs jsonb`; `model_id text null`; `active bool` default true; `created_at`, `updated_at`, `updated_by uuid` | Deactivate, don't delete (old share links still resolve). Items used by a preset can't be deactivated                                                                    |
+| `listings` (16b)      | `id uuid` PK; `item_id text` → `items` cascade; `marketplace text` (`tokopedia`/`shopee`/`blibli`); `url text` (https, that marketplace's domain); `price_idr int > 0`; `checked_at date` (not in the future); `created_by`, `updated_at`               | Unique `(item_id, url)`. Same rules as `prices:apply`, as DB checks                                                                                                      |
+| `site_settings` (16b) | `key text` PK; `value jsonb`                                                                                                                                                                                                                            | `estimatesAsOf` (today `data/meta.json`)                                                                                                                                 |
+| `audit_log` (16b)     | `id bigint`; `actor uuid`; `action text`; `table_name`, `row_id text`; `at timestamptz`; `diff jsonb`                                                                                                                                                   | Written by triggers on `items`, `listings`, `profiles.role`                                                                                                              |
 
 Stays in the repo: presets, `models.json`, model files, compatibility rules.
 
@@ -46,14 +77,14 @@ Stays in the repo: presets, `models.json`, model files, compatibility rules.
 RLS on for every table. Helper `is_admin()`: `security definer` function checking
 `profiles.role` for `auth.uid()`.
 
-| Table | Read | Insert | Update | Delete |
-|---|---|---|---|---|
-| `profiles` | own; admins all | none (trigger) | own `display_name` only (column grants; `role` via `set_role()`, admin-only, refuses to demote the last admin) | none (cascade) |
-| `builds` | own only | own | own | own |
-| `items` | everyone (active); admins all | admin | admin | admin (UI deactivates) |
-| `listings` | everyone | admin | admin | admin |
-| `site_settings` | everyone | admin | admin | admin |
-| `audit_log` | admin | none (triggers) | none | none |
+| Table           | Read                                          | Insert          | Update                                                                                                         | Delete                             |
+| --------------- | --------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `profiles`      | own; admins all                               | none (trigger)  | own `display_name` only (column grants; `role` via `set_role()`, admin-only, refuses to demote the last admin) | none (cascade)                     |
+| `builds`        | own only                                      | own             | own                                                                                                            | nobody: deleting sets `deleted_at` |
+| `items`         | everyone, **all items** (active and inactive) | admin           | admin                                                                                                          | admin (UI deactivates)             |
+| `listings`      | everyone                                      | admin           | admin                                                                                                          | admin                              |
+| `site_settings` | everyone                                      | admin           | admin                                                                                                          | admin                              |
+| `audit_log`     | admin                                         | none (triggers) | none                                                                                                           | none                               |
 
 - Admins can't read other people's builds (privacy); `/admin` shows counts via a
   `security definer` stats function.
@@ -76,11 +107,11 @@ RLS on for every table. Helper `is_admin()`: `security definer` function checkin
 
 ## 4. Env vars (names only; Rei sets values)
 
-| Name | Where | Public? |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | `.env.local`, Vercel **Preview** | yes |
+| Name                                                                                   | Where                            | Public?             |
+| -------------------------------------------------------------------------------------- | -------------------------------- | ------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                                                             | `.env.local`, Vercel **Preview** | yes                 |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_…`; legacy anon key works too) | `.env.local`, Vercel **Preview** | yes (safe with RLS) |
-| `NEXT_PUBLIC_AUTH_EMAIL` (`on`/`off`, default `off`) | optional | yes |
+| `NEXT_PUBLIC_AUTH_EMAIL` (`on`/`off`, default `off`)                                   | optional                         | yes                 |
 
 No service-role key anywhere. Preview-only on Vercel keeps production (the demo)
 unchanged even after a merge. `.env.example` gets the names with empty values.
@@ -126,7 +157,7 @@ From `node_modules/next/dist/docs` (auth, Proxy, Cache Components) + `@supabase/
 
 - Guests unchanged (localStorage).
 - Logged in: store stays the working copy; changes upload via a Server Action
-  ~1 s after editing stops. Merge by id, newest `updatedAt` wins; deletes delete.
+  ~1 s after editing stops. Merge by id, newest `updatedAt` wins; a delete always wins and leaves a tombstone.
 - Guest import dialog: "Import N builds from this browser into your account?"
   Import / Not now ("Not now" remembered per account per browser). Pure,
   unit-tested merge function.

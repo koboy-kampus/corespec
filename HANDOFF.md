@@ -244,10 +244,15 @@ Session 1's table of known false positives (`mask-image`, design tokens, `SENTRY
   - Re-run `npm run hero:poster` whenever the showcase build or the 3D look changes; the e2e test will say so.
 - **Builder PageSpeed (mobile) is about 84 live** after Phases 13–15, down from 97 (Rei's measurement): there's more catalogue data. Look at loading catalogue data per category (the picker only needs the open category; the slot list and checks need only the chosen items).
 - **`/b/[code]` TBT** sits at the 600 ms target (560–615 ms). The same deferral as the hero (mount the 3D after the first interaction) would help, but there the 3D view is the point of the page, so it's a judgement call.
+- **Email confirmation with a real sender (Phase 16):** accounts start with confirmation off, because Supabase's built-in email only reaches the project's own team. To turn it on, set up a custom SMTP sender (e.g. Resend) in Supabase → Authentication → Emails → SMTP, switch "Confirm email" on, update the email templates (`docs/accounts.md`) and set `NEXT_PUBLIC_AUTH_EMAIL=on` (which also enables "Forgot password?"). The code for both paths is already there.
+- **CAPTCHA on register:** Supabase Auth supports hCaptcha and Cloudflare Turnstile (Authentication → Attack Protection). It needs a widget on `/register` (and `/login`) and the token passed to `signUp` / `signInWithPassword` as `options.captchaToken`.
+- **Rate limits:** Supabase Auth's built-in limits apply to sign-up, login and emails (Authentication → Rate Limits); review them before a public launch. The build sync Server Action has no rate limit of its own beyond the 200-builds-per-account cap in the database.
 
 ---
 
 ## 11. What Phase 16 (login and backend) needs
+
+_Status (12 Nov 2026): 16a (accounts, account builds, roles, admin users) is built on the `feat/phase-16-auth` branch; see `docs/phase-16-plan.md` and `docs/accounts.md`. The notes below are the original brief; one change since: no service-role key is used anywhere (every query runs as the visitor, under RLS)._
 
 From REI.md §8, plus what the code needs:
 

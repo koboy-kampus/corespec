@@ -10,6 +10,7 @@ import { useUiStore } from "@/store/ui";
 import { Logo } from "./logo";
 import { NavLinks } from "./nav-links";
 import { MobileMenu } from "./mobile-menu";
+import { AccountMenu } from "@/components/account/account-menu";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -52,6 +53,8 @@ export function Navbar() {
               <Kbd>K</Kbd>
             </KbdGroup>
           </Button>
+
+          <AccountMenu className="hidden md:inline-flex" />
 
           <Button
             asChild

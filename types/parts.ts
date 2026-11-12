@@ -292,4 +292,9 @@ export interface Build {
    */
   parts: Partial<Record<Category, string>>;
   updatedAt: string;
+  /**
+   * Phase 16: the account (user id) this build is kept in, when it syncs to an
+   * account. Missing for a build that lives only in this browser (a guest build).
+   */
+  owner?: string;
 }

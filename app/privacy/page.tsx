@@ -7,11 +7,17 @@ import {
   ERROR_REPORTING_ENABLED,
   LEGAL_UPDATED,
 } from "@/lib/site";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+
+// Accounts (Phase 16) exist only when Supabase is configured; without it this
+// page reads exactly as before.
+const accounts = isSupabaseConfigured();
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description:
-    "What CoreSpec stores and sends: no accounts, no cookies, builds kept in your browser.",
+  description: accounts
+    ? "What CoreSpec stores and sends: optional accounts, builds kept in your browser unless you log in."
+    : "What CoreSpec stores and sends: no accounts, no cookies, builds kept in your browser.",
 };
 
 export default function Page() {
@@ -19,18 +25,47 @@ export default function Page() {
     <DocPage
       eyebrow="Legal"
       title="Privacy"
-      lead="CoreSpec has no accounts, sets no cookies and never sells data. Here is exactly what is stored and what leaves your browser."
+      lead={
+        accounts
+          ? "CoreSpec works without an account and never sells data. Cookies are only set if you log in. Here is exactly what is stored and what leaves your browser."
+          : "CoreSpec has no accounts, sets no cookies and never sells data. Here is exactly what is stored and what leaves your browser."
+      }
       updated={`Updated ${formatDate(LEGAL_UPDATED)}`}
     >
       <DocSection title="Your builds stay in your browser">
         <p>
           Builds are saved automatically in your browser&apos;s local storage
-          (under the name <code className="spec">corespec-build</code>). They
-          are never uploaded to us. Clearing this site&apos;s data in your
-          browser deletes them, and they don&apos;t follow you to other browsers
-          or devices.
+          (under the name <code className="spec">corespec-build</code>).{" "}
+          {accounts
+            ? "Unless you log in, they are never uploaded to us. Clearing this site's data in your browser deletes them, and they don't follow you to other browsers or devices."
+            : "They are never uploaded to us. Clearing this site's data in your browser deletes them, and they don't follow you to other browsers or devices."}
         </p>
       </DocSection>
+
+      {accounts ? (
+        <DocSection title="If you create an account">
+          <p>
+            An account is optional. If you make one, we store your email
+            address, the display name you choose, a securely hashed password and
+            the builds you keep in your account (their names and part lists).
+            This is held by our database provider, Supabase, in Singapore.
+            Builds you made before logging in stay only in your browser unless
+            you choose to import them.
+          </p>
+          <p>
+            Logging in sets cookies that keep you logged in: the session itself
+            (which scripts on the page can&apos;t read) and a small{" "}
+            <code className="spec">cs-auth</code> cookie that only says you are
+            logged in, so the menu can show your account. They are removed when
+            you log out. Admins can see each account&apos;s display name, email,
+            sign-up date and number of builds, but not the builds themselves.
+          </p>
+          <p>
+            You can delete your account at any time from My account. That
+            deletes your profile and every build in it straight away.
+          </p>
+        </DocSection>
+      ) : null}
 
       <DocSection title="Share links">
         <p>

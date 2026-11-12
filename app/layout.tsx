@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { AccountSync } from "@/components/account/account-sync";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </main>
           <Footer />
           <CommandPalette />
+          <AccountSync />
         </TooltipProvider>
         {/* Cookieless page-view counts. Vercel serves the script, so only render it there. */}
         {process.env.VERCEL ? <Analytics /> : null}

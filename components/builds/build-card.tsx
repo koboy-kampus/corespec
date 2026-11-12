@@ -47,9 +47,12 @@ type Modal = "rename" | "share" | "delete" | null;
 export function BuildCard({
   build,
   isOpen,
+  where,
 }: {
   build: Build;
   isOpen: boolean;
+  /** Logged in: whether it syncs to the account or stays in this browser. */
+  where?: "account" | "browser";
 }) {
   const router = useRouter();
   const openBuild = useBuildStore((s) => s.openBuild);
@@ -82,6 +85,8 @@ export function BuildCard({
             </div>
             <p className="mt-0.5 text-[12px] leading-4 text-fg-3">
               Edited {formatShortDate(build.updatedAt)}
+              {where === "account" ? " · In your account" : null}
+              {where === "browser" ? " · This browser only" : null}
             </p>
           </div>
           <DropdownMenu>
@@ -227,8 +232,11 @@ export function BuildCard({
           <DialogHeader>
             <DialogTitle>Delete “{build.name}”?</DialogTitle>
             <DialogDescription>
-              It&apos;s removed from this browser. Share links you already sent
-              keep working, because they hold their own copy.
+              {where === "account"
+                ? "It's deleted from your account and every device."
+                : "It's removed from this browser."}{" "}
+              Share links you already sent keep working, because they hold their
+              own copy.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

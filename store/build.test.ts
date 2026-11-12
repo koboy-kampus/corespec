@@ -151,3 +151,94 @@ describe("setup items in the build (Phase 10)", () => {
     expect(await options.migrate?.(saved, 2)).toEqual(saved);
   });
 });
+
+describe("account builds (Phase 16)", () => {
+  const ME = "user-1";
+  beforeEach(() =>
+    useBuildStore.setState({
+      build: emptyBuild(),
+      saved: [],
+      account: null,
+      tombstones: [],
+    }),
+  );
+  const fill = () => get().setPart("cpu", "cpu-amd-ryzen-5-7600");
+
+  it("makes guest builds while logged out, account builds while logged in", () => {
+    fill();
+    get().newBuild();
+    expect(get().saved[0].owner).toBeUndefined();
+    get().setAccount(ME);
+    fill();
+    get().newBuild();
+    expect(get().build.owner).toBe(ME);
+    expect(get().importBuild({ name: "Shared", parts: {} })).toBe(
+      get().build.id,
+    );
+    expect(get().build.owner).toBe(ME);
+  });
+
+  it("leaves a tombstone when an account build is deleted, not for a guest build", () => {
+    fill();
+    const guestId = get().build.id;
+    get().setAccount(ME);
+    get().newBuild();
+    fill();
+    const mineId = get().build.id;
+    get().deleteBuild(mineId);
+    get().deleteBuild(guestId);
+    expect(get().tombstones.map((t) => t.id)).toEqual([mineId]);
+  });
+
+  it("imports guest builds into the account (blank ones stay out)", () => {
+    fill();
+    get().newBuild();
+    get().setAccount(ME);
+    expect(get().importGuestBuilds()).toBe(1);
+    expect(get().saved[0].owner).toBe(ME);
+    expect(get().build.owner).toBeUndefined(); // the blank open build
+    expect(get().importGuestBuilds()).toBe(0);
+  });
+
+  it("forgets the account's builds on logout and keeps guest builds", () => {
+    fill();
+    get().newBuild(); // guest build saved
+    get().setAccount(ME);
+    fill();
+    get().newBuild();
+    fill(); // the open build is the account's
+    get().forgetAccount();
+    expect(get().account).toBeNull();
+    expect(get().build.owner).toBeUndefined();
+    expect([get().build, ...get().saved].every((b) => !b.owner)).toBe(true);
+    expect(get().tombstones).toEqual([]);
+  });
+
+  it("forgets an earlier account's builds when another account logs in", () => {
+    get().setAccount("someone-else");
+    fill();
+    get().newBuild();
+    get().setAccount(ME);
+    expect([get().build, ...get().saved].some((b) => b.owner)).toBe(false);
+    expect(get().account).toBe(ME);
+  });
+
+  it("applies a sync: account builds come down marked as the account's", () => {
+    get().setAccount(ME);
+    get().applyAccountSync(
+      { builds: [], tombstones: [] },
+      {
+        builds: [
+          {
+            id: "r",
+            name: "From phone",
+            parts: {},
+            updatedAt: "2026-11-12T08:00:00.000Z",
+          },
+        ],
+        deleted: [],
+      },
+    );
+    expect(get().saved.map((b) => [b.id, b.owner])).toEqual([["r", ME]]);
+  });
+});
