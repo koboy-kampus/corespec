@@ -58,15 +58,15 @@ Also fixed in Phase 16: the navbar scrolled sideways at exactly 768 px with acco
 | Lint                                          | `npm run lint`                                         | ✅ no problems                                                                                          |
 | TypeScript                                    | `npx tsc --noEmit`                                     | ✅ 0 errors                                                                                             |
 | Formatting                                    | `npx prettier --check .`                               | ✅ clean                                                                                                |
-| Unit tests                                    | `npx vitest run`                                       | ✅ **317 passed** (25 files)                                                                            |
+| Unit tests                                    | `npx vitest run`                                       | ✅ **319 passed** (25 files)                                                                            |
 | End-to-end, accounts off                      | `npm run test:e2e`                                     | ✅ **75 passed**, axe **0 violations**                                                                  |
 | End-to-end, accounts on, database unreachable | `E2E_SUPABASE_URL=http://127.0.0.1:9 npm run test:e2e` | ✅ **71 passed**, 4 skipped (accounts-off only)                                                         |
 | Build                                         | `npm run build`                                        | ✅ passes (run by the e2e suite); `/`, `/builder`, `/about`, `/prices` static, `/b/[code]` static shell |
 
 Session 2 ended at 238 unit and 70 e2e tests.
 
-- **The database** is tested without a real project: `supabase/rls.test.ts` runs every migration (twice), `supabase/tests/rls.sql` (84 checks for anon, user and admin) and 8 "mutation" tests (each loosens one rule and expects `rls.sql` to fail) in PGlite, a local Postgres. `supabase/seed.test.ts` checks the seed against the JSON item by item, and `scripts/db-export.test.ts` checks the export round trip byte for byte.
-- **On the real project:** Rei ran the 16a migrations and `rls.sql` (all passed). 🔍 The 16b SQL hasn't been run there yet (§11).
+- **The database** is tested without a real project: `supabase/rls.test.ts` runs every migration (twice), `supabase/tests/rls.sql` (84 checks for anon, user and admin) on an empty database and on one already in use (an admin, a user with builds, the seeded catalogue; left exactly as it was), and 9 "mutation" tests (each loosens one rule and expects `rls.sql` to fail) in PGlite, a local Postgres. `supabase/seed.test.ts` checks the seed against the JSON item by item, and `scripts/db-export.test.ts` checks the export round trip byte for byte.
+- **On the real project:** the 16a migrations and `rls.sql` passed. The 16b migrations and the seed ran on 12 Nov 2026 (181 items in 20 categories, 4 listings). `rls.sql` then stopped at "an admin reads every profile": it assumed an empty database, and the project now has Rei's admin account. Fixed: every total is now relative to what the project already has, or counts only the test's own accounts. 🔍 It needs one more run there (§11).
 
 ### What the e2e suite covers (`tests/e2e/`)
 
@@ -258,11 +258,7 @@ Sessions 1 and 2's known false positives (`mask-image`, design tokens, `SENTRY_A
 
 ## 11. Finishing Phase 16
 
-1. **Run the 16b SQL on the real project**, in the Supabase SQL editor, in this order (all safe to run again):
-   1. `supabase/migrations/20261112000400_catalogue.sql`
-   2. `supabase/migrations/20261112000500_audit.sql`
-   3. `supabase/seed.sql` → "Seeded 181 items and 4 listings"
-   4. `supabase/tests/rls.sql` → "All RLS tests passed"
+1. **Run `supabase/tests/rls.sql` again on the real project** (SQL editor) → "All RLS tests passed". The 16b SQL is already there: `…0400_catalogue.sql` and `…0500_audit.sql` ran, and `seed.sql` gave 181 items in 20 categories and 4 listings (12 Nov 2026). With Rei's admin account present, the "last admin can't delete their account" check is skipped with a notice (it would otherwise really delete the test admin until the rollback); the unit tests run it on an empty database.
 2. **Walk the preview checklist** in `docs/accounts.md` (accounts, sync, delete, admin, catalogue, listing, deactivate, audit).
 3. **Merge** `feat/phase-16-auth` into `main` only when Rei says so. Production stays guest-only until the env vars are added for Production.
 4. **For the PI:** the pictures and numbers are in `docs/pi/`; English versions of the ERD and use case diagram are in `docs/diagrams/`.

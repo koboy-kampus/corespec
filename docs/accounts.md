@@ -187,7 +187,10 @@ In **SQL Editor → New query**, paste each file and **Run**, in this order:
 3. `supabase/seed.sql`: the catalogue from the JSON. The result says **Seeded
    181 items and 4 listings**.
 4. `supabase/tests/rls.sql` again: it now checks items, listings, settings and
-   the audit log too. The result says **All RLS tests passed**.
+   the audit log too. The result says **All RLS tests passed**. It works on a
+   project in use: it only counts its own test accounts or compares with what
+   was there before, and rolls everything back. With other admins present, the
+   "last admin can't delete their account" check is skipped with a notice.
 
 All four are safe to run again. **Careful:** running `seed.sql` again puts the
 seeded items back as the JSON has them, undoing admin edits to them. Run

@@ -12,9 +12,24 @@
 -- "assertion failed" message).
 --
 -- The same file also runs in the unit tests (supabase/rls.test.ts) against a
--- local Postgres with a stand-in for Supabase's auth schema.
+-- local Postgres with a stand-in for Supabase's auth schema: once on an empty
+-- database and once on one that already has accounts, an admin and builds.
+--
+-- Safe on a project in use: it only counts its own throwaway accounts
+-- (rls-*@example.test), or compares totals with what the project had before
+-- it started. One check needs this to be the only admin; on a project with
+-- other admins it is skipped with a notice (the unit tests still run it).
 
 begin;
+
+-- What the project already has, so the totals below can be checked as
+-- differences. Kept as settings for this transaction (any role can read them).
+select
+  set_config('rls.base_users', (select count(*) from public.profiles)::text, true),
+  set_config('rls.base_admins',
+    (select count(*) from public.profiles where role = 'admin')::text, true),
+  set_config('rls.base_builds',
+    (select count(*) from public.builds where deleted_at is null)::text, true);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, as the database owner: alice and bob are users, carol is the admin.
@@ -290,7 +305,9 @@ begin
   begin
     insert into public.builds (id, name) values ('bulk-201', 'One too many');
     raise exception 'FAIL: an account keeps more than 200 builds';
-  exception when raise_exception then null;
+  exception when raise_exception then
+    -- Our own FAIL is a raise_exception too: let it through.
+    if sqlerrm like 'FAIL:%' then raise; end if;
   end;
 end;
 $$;
@@ -310,11 +327,21 @@ declare
   s record;
 begin
   assert public.is_admin(), 'FAIL: is_admin() is true for an admin';
-  assert (select count(*) from public.profiles) = 3,
+  -- Every profile: the 3 test accounts, and every account the project had.
+  assert (select count(*) from public.profiles
+          where id in ('00000000-0000-4000-8000-00000000000a',
+                       '00000000-0000-4000-8000-00000000000b',
+                       '00000000-0000-4000-8000-00000000000c')) = 3
+    and (select count(*) from public.profiles)
+        = current_setting('rls.base_users')::int + 3,
     'FAIL: an admin reads every profile';
 
+  -- The test added 3 accounts, 1 admin (carol) and 201 live builds (bob's 1,
+  -- alice's 200; her deleted one doesn't count).
   select * into s from public.admin_stats();
-  assert s.user_count = 3 and s.admin_count = 1 and s.build_count = 201,
+  assert s.user_count = current_setting('rls.base_users')::int + 3
+    and s.admin_count = current_setting('rls.base_admins')::int + 1
+    and s.build_count = current_setting('rls.base_builds')::int + 201,
     'FAIL: admin_stats counts users, admins and live builds';
   assert (select count(*) from public.admin_list_users()
           where email like 'rls-%@example.test') = 3,
@@ -344,11 +371,18 @@ begin
   exception when invalid_parameter_value then null;
   end;
 
-  begin
-    perform public.delete_my_account();
-    raise exception 'FAIL: the last admin deletes their account';
-  exception when raise_exception then null;
-  end;
+  -- Only meaningful when carol is the only admin. With other admins she isn't
+  -- the last one, and the call would really delete her (until the rollback).
+  if current_setting('rls.base_admins')::int = 0 then
+    begin
+      perform public.delete_my_account();
+      raise exception 'FAIL: the last admin deletes their account';
+    exception when raise_exception then
+      if sqlerrm like 'FAIL:%' then raise; end if;
+    end;
+  else
+    raise notice 'Skipped "the last admin can''t delete their account": this project has other admins. The unit tests check it.';
+  end if;
 
   perform public.set_role('00000000-0000-4000-8000-00000000000b', 'admin');
   assert (select role from public.profiles

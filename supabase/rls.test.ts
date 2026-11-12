@@ -46,6 +46,64 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     await db.close();
   });
 
+  it("pass on a project in use (an admin, a user with builds, the seeded catalogue) and leave it as it was", async () => {
+    const db = await freshDb();
+    await db.exec(read("seed.sql"));
+    // Like the real project: its own admin, and a user with builds (one deleted).
+    await db.exec(`
+      insert into auth.users (id, email, raw_user_meta_data) values
+        ('11111111-1111-4111-8111-111111111111', 'owner@example.com', '{"display_name": "Owner"}'),
+        ('22222222-2222-4222-8222-222222222222', 'someone@example.com', '{}');
+      update public.profiles set role = 'admin'
+      where id = '11111111-1111-4111-8111-111111111111';
+      insert into public.builds (owner, id, name, parts) values
+        ('11111111-1111-4111-8111-111111111111', 'o-1', 'Owner build', '{}'),
+        ('22222222-2222-4222-8222-222222222222', 's-1', 'One', '{}'),
+        ('22222222-2222-4222-8222-222222222222', 's-2', 'Two', '{}'),
+        ('22222222-2222-4222-8222-222222222222', 's-3', 'Three', '{}');
+      update public.builds set deleted_at = now() where id = 's-3';
+    `);
+    const snapshot = async () =>
+      (
+        await db.query(`
+          select
+            (select json_agg(p order by id) from (select id, display_name, role from public.profiles) p) as profiles,
+            (select json_agg(b order by owner, id) from (select owner, id, name, deleted_at is not null as gone from public.builds) b) as builds,
+            (select count(*)::int from public.items) as items,
+            (select count(*)::int from public.listings) as listings,
+            (select count(*)::int from public.audit_log) as audit
+        `)
+      ).rows[0];
+    const before = await snapshot();
+
+    const results = await db.exec(read("tests/rls.sql"));
+    expect(results.findLast((r) => r.fields.length > 0)?.rows).toEqual([
+      { result: "All RLS tests passed" },
+    ]);
+    expect(await snapshot()).toEqual(before);
+    await db.close();
+  });
+
+  it("catch the last admin being able to delete their account", async () => {
+    const db = await freshDb();
+    // delete_my_account() without its "last admin" check.
+    await db.exec(`
+      create or replace function public.delete_my_account()
+      returns void language plpgsql security definer set search_path = '' as $$
+      begin
+        if (select auth.uid()) is null then
+          raise exception 'Not signed in' using errcode = '42501';
+        end if;
+        delete from auth.users where id = (select auth.uid());
+      end;
+      $$;
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /the last admin deletes their account/,
+    );
+    await db.close();
+  });
+
   it("catch a user being allowed to change their own role", async () => {
     const db = await freshDb();
     await db.exec("grant update (role) on public.profiles to authenticated;");

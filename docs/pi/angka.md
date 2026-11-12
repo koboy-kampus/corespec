@@ -85,9 +85,15 @@ warning, 3 aturan info.
 - **Row Level Security** aktif di semua tabel. `supabase/tests/rls.sql` berisi
   **84 pemeriksaan** (tamu, pengguna, admin): misalnya pengguna tidak bisa
   menjadikan dirinya admin, tidak bisa membaca build orang lain, dan bukan admin
-  tidak bisa mengubah item atau listing. Semuanya lolos di Postgres lokal pada
-  pengujian unit; bagian Fase 16a juga sudah lolos di proyek Supabase asli,
-  bagian Fase 16b menyusul setelah migrasinya dijalankan di sana.
+  tidak bisa mengubah item atau listing. Pemeriksaan ini hanya menghitung akun
+  ujinya sendiri (`rls-*@example.test`) atau selisih dari isi basis data
+  sebelumnya, jadi aman dijalankan di proyek yang sudah dipakai; semuanya
+  dibatalkan (rollback) di akhir. Lolos di Postgres lokal, baik pada basis data
+  kosong maupun yang sudah berisi akun admin, pengguna dan build.
+- **Di proyek Supabase asli** (12 November 2026): kelima migrasi dan
+  `seed.sql` sudah dijalankan (181 item dalam 20 kategori, 4 listing).
+  `rls.sql` versi Fase 16a lolos di sana; versi terbaru menunggu dijalankan
+  ulang.
 - **7 fungsi `security definer`**, semuanya dengan `search_path` kosong dan
   tidak bisa dipanggil tamu.
 
@@ -95,13 +101,13 @@ warning, 3 aturan info.
 
 | Jenis                                                     | Jumlah                                            | Hasil         |
 | --------------------------------------------------------- | ------------------------------------------------- | ------------- |
-| Unit (Vitest)                                             | 317 tes dalam 25 berkas                           | lolos         |
+| Unit (Vitest)                                             | 319 tes dalam 25 berkas                           | lolos         |
 | End-to-end (Playwright), akun nonaktif                    | 75 tes                                            | lolos         |
 | End-to-end, akun aktif tetapi basis data tidak terjangkau | 71 tes (4 dilewati karena khusus mode tanpa akun) | lolos         |
 | Aksesibilitas (axe, di dalam e2e)                         | semua halaman dan dialog utama                    | 0 pelanggaran |
 
 Pengujian unit juga menjalankan semua migrasi, `rls.sql` dan `seed.sql` di
-Postgres lokal (PGlite), termasuk 8 uji "mutasi" yang sengaja melonggarkan satu
+Postgres lokal (PGlite), termasuk 9 uji "mutasi" yang sengaja melonggarkan satu
 aturan keamanan dan memastikan `rls.sql` mendeteksinya.
 
 ## Kinerja (Lighthouse)
