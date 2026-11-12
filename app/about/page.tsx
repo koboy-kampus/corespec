@@ -68,6 +68,10 @@ export default function Page() {
           University in Indonesia. It isn&apos;t affiliated with any shop or
           manufacturer.
         </p>
+        <p lang="id">
+          Syah Reihan Pratama Nandi · NPM 51421454 · Informatika, Universitas
+          Gunadarma · Penulisan Ilmiah 2026
+        </p>
       </DocSection>
 
       <DocSection title="How it's built">
