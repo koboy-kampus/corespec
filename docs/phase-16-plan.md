@@ -2,8 +2,9 @@
 
 Status (2026-11-12): **approved by Rei** (A: split into 16a/16b/16c; B: email
 confirmation off, both paths built), with the changes below. **16a is built and
-running on the real project. 16b is built** (catalogue, listings, settings and
-audit log in the database; see `docs/accounts.md`).
+running on the real project. 16b and 16c are built** (catalogue, listings,
+settings and audit log in the database; diagrams in `docs/diagrams/` and
+`docs/pi/`; see `docs/accounts.md`).
 
 ### Rei's changes to the draft
 

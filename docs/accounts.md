@@ -7,9 +7,29 @@ the Supabase settings the site has no login at all and works exactly as before.
   in `rls.sql` pass there): accounts, builds in the account, guest import, roles
   and the admin users page. 16b (built, not yet run on the real project) moves
   the catalogue and listings into the database, with admin editing and an audit
-  log; see "The catalogue in the database" below. 16c adds the diagrams and
-  finishes these docs.
+  log; see "The catalogue in the database" below. 16c added the diagrams and
+  finished these docs.
 - **The plan:** [`phase-16-plan.md`](phase-16-plan.md).
+- **Diagrams:** [ERD](diagrams/erd.svg) and [use cases](diagrams/use-cases.svg)
+  (English); the PI versions in Indonesian, with two activity diagrams and the
+  numbers, are in [`pi/`](pi/angka.md). Redraw them all with
+  `npm run diagrams` (`scripts/diagrams.mjs`).
+
+## Who can do what (Row Level Security)
+
+| Table           | Read                                | Write                                                                                                         |
+| --------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `profiles`      | your own; admins read all           | your own `display_name` only. `role` only through `set_role()` (admins, never your own, never the last admin) |
+| `builds`        | your own only (admins can't either) | your own; no deletes: deleting sets `deleted_at` (a tombstone)                                                |
+| `items`         | everyone, active and inactive       | admins                                                                                                        |
+| `listings`      | everyone                            | admins, within the listing rules (database checks)                                                            |
+| `site_settings` | everyone                            | admins                                                                                                        |
+| `audit_log`     | admins                              | nobody: only the trigger writes                                                                               |
+
+`supabase/tests/rls.sql` checks every row of this table as anon, as a user and
+as an admin.
+
+![ERD](diagrams/erd.png)
 
 ## How it fits together
 
