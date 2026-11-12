@@ -3,7 +3,8 @@
 Optional logins on top of CoreSpec, using Supabase (Auth and Postgres). Without
 the Supabase settings the site has no login at all and works exactly as before.
 
-- **Status:** 16a is built: accounts, builds in the account, guest import, roles
+- **Status:** 16a is built and set up on the real Supabase project (all checks
+  in `rls.sql` pass there): accounts, builds in the account, guest import, roles
   and the admin users page. 16b moves the catalogue and listings into the
   database. 16c adds the diagrams and finishes these docs.
 - **The plan:** [`phase-16-plan.md`](phase-16-plan.md).
@@ -58,13 +59,28 @@ Never add a service-role or secret key: nothing uses one.
 
 1. **New project.** Region: **Southeast Asia (Singapore)**, the closest to
    Indonesia.
-2. **Turn off email confirmation.** Go to **Authentication → Sign In / Providers
-   → Email** and turn off **Confirm email**. Save. (See "Email confirmation"
-   below for why.)
+2. **Turn on email logins.** Go to **Authentication → Sign In / Providers →
+   Email**:
+   - **Enable email provider:** on. A new project can have it **off** by
+     default, and then nobody can register or log in.
+   - **Confirm email:** off. (See "Email confirmation" below for why.)
+   - **Minimum password length:** 8, the same as the app's own check
+     (`lib/auth/validate.ts`).
+
+   Save.
+
 3. **Set the URLs.** In **Authentication → URL Configuration**:
    - **Site URL:** your preview URL.
    - **Redirect URLs:** add `http://localhost:3000/**` and
-     `https://*-koboy-kampus.vercel.app/**`.
+     `https://*-YOUR-SCOPE.vercel.app/**`.
+
+   **Finding YOUR-SCOPE:** it's your Vercel account or team slug, and every
+   preview URL ends with it, just before `.vercel.app`. For example, in
+   `corespec-git-feat-phase-16-auth-rc-d1d8.vercel.app` the scope is `rc-d1d8`,
+   so the redirect URL is `https://*-rc-d1d8.vercel.app/**`. It's also the
+   first part of the dashboard address, `vercel.com/YOUR-SCOPE/…`. It isn't the
+   GitHub account name.
+
 4. **Create the tables.** Open **SQL Editor → New query**. Paste each file in
    `supabase/migrations/`, in name order, and **Run** each one:
    1. `20261112000100_profiles.sql`
@@ -79,8 +95,16 @@ Never add a service-role or secret key: nothing uses one.
      so it leaves no test users behind.
    - **Fail:** it stops at the first problem and names it.
 6. **Put the two env vars** in `.env.local` and in Vercel → Settings →
-   Environment Variables (**Preview** only). Then redeploy the preview: push,
-   or Vercel → Deployments → Redeploy.
+   Environment Variables:
+   - **Environment:** **Preview** only.
+   - **Type:** **Config**. Vercel refuses the **Secret** type for
+     `NEXT_PUBLIC_` variables, because those are built into the page anyway.
+     That's fine here: the URL and the publishable key are meant to be public,
+     and RLS protects the data.
+
+   Then redeploy the preview: push, or Vercel → Deployments → Redeploy. Vercel
+   may ask you to confirm the redeploy with a code sent to your email.
+
 7. **Create your account.** Register at `/register` on the preview.
 8. **Make yourself admin.** In **SQL Editor**, run this with your own email:
 

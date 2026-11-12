@@ -94,9 +94,12 @@ RLS on for every table. Helper `is_admin()`: `security definer` function checkin
 ## 3. First admin (Rei, Supabase dashboard)
 
 1. **New project**, region Singapore (`ap-southeast-1`).
-2. **Authentication → Sign In / Providers → Email**: turn off "Confirm email".
+2. **Authentication → Sign In / Providers → Email**: enable the email provider
+   (it can be off by default), turn off "Confirm email", minimum password
+   length 8.
 3. **Authentication → URL Configuration**: Site URL = preview URL. Redirect URLs:
-   `http://localhost:3000/**`, `https://*-koboy-kampus.vercel.app/**`.
+   `http://localhost:3000/**`, `https://*-<vercel-scope>.vercel.app/**` (see
+   `docs/accounts.md` for finding the scope).
 4. **SQL Editor**: run each file in `supabase/migrations/` in name order, then
    `supabase/seed.sql` (16b).
 5. Register at `/register` on the preview (or **Authentication → Users → Add user**
