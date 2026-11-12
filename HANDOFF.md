@@ -211,7 +211,7 @@ Sessions 1 and 2's known false positives (`mask-image`, design tokens, `SENTRY_A
 
 ## 8. Git
 
-- `main`: the demo, unchanged since session 2 (`df9628d`).
+- `main`: the demo. Since session 2 (`df9628d`) only one change: the author line on `/about` (`ade170f`), also merged into `feat/phase-16-auth`.
 - `feat/phase-16-auth`: Phase 16, pushed, **not merged** (merge only when Rei says so).
 - **Line endings:** `.gitattributes` keeps LF everywhere.
 - **Tags:** `demo-stable-2026-11-11` → `ac3689b`.
