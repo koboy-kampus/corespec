@@ -2,6 +2,8 @@
 
 _Written 12 November 2026, at the end of Phase 16c, on the branch `feat/phase-16-auth`. Every number below comes from a command run during this session, on Windows 11 with Node 26.13.0, unless marked otherwise. Earlier reports are in git history: session 1 `git show 3db675e:HANDOFF.md`, session 2 `git show df9628d:HANDOFF.md`._
 
+> **Update 14 November 2026: Phase 16 is live on production.** PR #3 (`feat/phase-16-auth` → `main`) was merged with merge commit `0325ad6`, and https://corespec-eight.vercel.app now has accounts and the admin panel (see §7, §8, §11). The rest of this report describes the state on 12 November.
+
 **Legend:** ✅ done · ⚠️ partial · ❌ not done · 🔍 not checked
 
 ---
@@ -203,16 +205,17 @@ Sessions 1 and 2's known false positives (`mask-image`, design tokens, `SENTRY_A
 ## 7. Deploy
 
 - **Vercel:** every push to `main` deploys production; every push to `feat/phase-16-auth` deploys a **preview**. No `vercel.json`. Node: `engines >=20.9`, `.nvmrc` 24.
-- **Production (`main`) has no Supabase settings**, so even after a merge it stays the guest-only site until the two env vars are added for Production too.
-- **The preview has accounts on**, against Rei's Supabase project (Singapore), set up from `docs/accounts.md`. 16a was checked there.
+- **Production has accounts on (14 November 2026).** Rei added both `NEXT_PUBLIC_SUPABASE_*` variables for Production in the Vercel dashboard (same values as Preview, the same Supabase project), and set the Supabase Site URL and redirect URLs to `https://corespec-eight.vercel.app`. Vercel reported the deploy of `0325ad6` as completed.
+- **Production smoke test (14 November 2026), on https://corespec-eight.vercel.app:** ✅ `/`, `/builder` and `/login` load (200) with no console errors. ✅ The navbar shows "Log in"; guests reach Register from the login page, not the navbar. ✅ `/account` redirects to `/login`. ✅ `/admin` gives logged-out visitors a 404, by design (§9 item 2). ✅ `/`, `/builder` and `/login` stay prerendered (`x-vercel-cache: PRERENDER`), and no page makes a Supabase request or loads Supabase client code.
+- **The preview has accounts on** too, against the same Supabase project (Singapore), set up from `docs/accounts.md`. Accounts made on either one are the same accounts.
 - 🔍 **Not checked in this session:** PageSpeed on the preview (it's behind Vercel's login) and a real phone.
 
 ---
 
 ## 8. Git
 
-- `main`: the demo. Since session 2 (`df9628d`) only one change: the author line on `/about` (`ade170f`), also merged into `feat/phase-16-auth`.
-- `feat/phase-16-auth`: Phase 16, pushed, **not merged** (merge only when Rei says so).
+- `main`: production. Phase 16 was merged on 14 November 2026 through PR #3 (https://github.com/koboy-kampus/corespec/pull/3), merge commit `0325ad6` (not squashed). Before that, the only change since session 2 (`df9628d`) was the author line on `/about` (`ade170f`).
+- `feat/phase-16-auth`: kept on GitHub after the merge; it equals the second parent of `0325ad6`.
 - **Line endings:** `.gitattributes` keeps LF everywhere.
 - **Tags:** `demo-stable-2026-11-11` → `ac3689b`.
 
@@ -258,7 +261,7 @@ Sessions 1 and 2's known false positives (`mask-image`, design tokens, `SENTRY_A
 
 ## 11. Finishing Phase 16
 
-1. **Run `supabase/tests/rls.sql` again on the real project** (SQL editor) → "All RLS tests passed". The 16b SQL is already there: `…0400_catalogue.sql` and `…0500_audit.sql` ran, and `seed.sql` gave 181 items in 20 categories and 4 listings (12 Nov 2026). With Rei's admin account present, the "last admin can't delete their account" check is skipped with a notice (it would otherwise really delete the test admin until the rollback); the unit tests run it on an empty database.
-2. **Walk the preview checklist** in `docs/accounts.md` (accounts, sync, delete, admin, catalogue, listing, deactivate, audit).
-3. **Merge** `feat/phase-16-auth` into `main` only when Rei says so. Production stays guest-only until the env vars are added for Production.
+1. ✅ **`rls.sql` on the real project:** the fixed version was rerun and ended with "All RLS tests passed" (reported by Rei, 14 Nov 2026). The 16b SQL had already run on 12 Nov (181 items in 20 categories, 4 listings). With Rei's admin account present, the "last admin can't delete their account" check is skipped with a notice; the unit tests run it on an empty database.
+2. 🔍 **Walk the checklist** in `docs/accounts.md` (accounts, sync, delete, admin, catalogue, listing, deactivate, audit), now on production. Only the logged-out smoke test in §7 was run there.
+3. ✅ **Merged** into `main` on 14 Nov 2026 (PR #3, `0325ad6`).
 4. **For the PI:** the pictures and numbers are in `docs/pi/`; English versions of the ERD and use case diagram are in `docs/diagrams/`.
