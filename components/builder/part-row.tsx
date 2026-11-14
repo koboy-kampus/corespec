@@ -37,7 +37,8 @@ export function PartRow({ part, issues, selected, onSelect }: PartRowProps) {
         onClick={onSelect}
         aria-pressed={selected}
         className={cn(
-          "group flex w-full cursor-pointer flex-col gap-2 rounded-btn border px-4 py-3 text-left transition-colors duration-150",
+          // Phones: a little less padding, so four rows fit on a small screen.
+          "group flex w-full cursor-pointer flex-col gap-2 rounded-btn border px-4 py-3 text-left transition-colors duration-150 max-md:py-2.5",
           selected
             ? "border-accent/50 bg-accent-soft"
             : error
@@ -101,7 +102,7 @@ export function PartRow({ part, issues, selected, onSelect }: PartRowProps) {
         ) : null}
       </button>
       {/* Links can't sit inside the row's button: they get their own line under it. */}
-      <ShopLinks item={part} className="px-4 pt-1.5" />
+      <ShopLinks item={part} className="px-4 pt-1.5 max-md:pt-0.5" />
     </li>
   );
 }
