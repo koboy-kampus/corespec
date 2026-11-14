@@ -23,6 +23,10 @@ and see every price in Rupiah.
 - **My builds.** Saved automatically in the browser; rename, duplicate, delete.
 - **Share links.** The whole build lives in the URL (`/b/<code>`), with a read-only
   page, "Copy to my builds" and a social preview image.
+- **Optional accounts (Phase 16).** With Supabase set up: log in, keep builds in
+  your account across browsers, and an admin panel for users, the catalogue,
+  checked listings and an audit log. Without it the site works exactly as a
+  guest-only app. See [docs/accounts.md](docs/accounts.md).
 - **Accessible.** Keyboard-only flow, screen-reader descriptions, zero axe-core
   violations at the last audit.
 
@@ -40,7 +44,8 @@ More: [landing page](docs/screenshots/landing.png) · [shared build](docs/screen
 
 Next.js 16 (App Router, Cache Components) · React 19 · TypeScript (strict) ·
 Tailwind CSS 4 · shadcn/ui on Radix · three.js with React Three Fiber and drei ·
-Zustand · Motion · Vitest · Vercel Analytics · Sentry (optional).
+Zustand · Motion · Vitest · Playwright · Supabase (optional: Auth and Postgres
+with Row Level Security) · Vercel Analytics · Sentry (optional).
 
 ## Getting started
 
@@ -67,6 +72,9 @@ Open <http://localhost:3000>. No environment variables or API keys are needed.
 | `npm run models`                 | Build `data/models.json` into `public/models/` (see 3D models) |
 | `npm run models:check -- <file>` | Size, triangles, materials and budget of a source model        |
 | `npm run hero:poster`            | Re-render the landing hero's poster (server running on :3124)  |
+| `npm run db:seed-sql`            | Regenerate `supabase/seed.sql` from the JSON catalogue         |
+| `npm run db:export`              | Copy the catalogue from Supabase back into `data/`             |
+| `npm run diagrams`               | Redraw the ERD, use case and activity diagrams in `docs/`      |
 
 Before committing: `npm run build && npm run lint && npm test`.
 
@@ -77,23 +85,32 @@ your installed Google Chrome: the builder flow, presets, sharing, My builds,
 keyboard-only use and an axe-core audit of every page. If a server is already
 running on 3124 it is reused. To use Playwright's own Chromium instead, run
 `npx playwright install chromium` and set `PLAYWRIGHT_CHANNEL=chromium`.
+The suite always runs with accounts off; `E2E_SUPABASE_URL=http://127.0.0.1:9`
+runs it with accounts on and the database unreachable (the JSON fallback).
 
 ## Project structure
 
 ```
 app/                  Routes: / · /builder · /builds · /b/[code] · /privacy · /credits · /prices
+                      With accounts: /login · /register · /account · /admin (users, items, settings)
 components/
   builder/            Slot list, part picker, summary, compatibility panel, viewport
   builds/             My builds library, share dialog
   viewer/             The 3D scene: case shell, parts, models, camera, animation
   landing/ layout/    Landing sections, navbar, footer, command palette
   ui/                 Design-system components (Button, Card, Badge, Dialog…)
+  account/ admin/     Login forms, account menu, build sync; admin forms
 data/
   parts/*.json        The parts catalogue (73 parts across 8 categories, each tiered)
   presets.json        Starter builds
   meta.json           pricesAsOf date
   credits.json        3D model credits (required for every model)
 lib/                  All logic: compatibility rules, power, share codes, 3D layout
+  auth/ account/      Sessions (one place: dal.ts), account Server Actions, build merge
+  catalogue/          Catalogue fields, listing rules, database rows ↔ items, JSON fallback
+supabase/             SQL migrations, seed.sql and the RLS checks (rls.sql)
+docs/diagrams, pi/    ERD and use case diagram; the PI diagrams (Indonesian)
+proxy.ts              Session refresh, only on the account routes
 store/                Zustand stores (builds library, UI state)
 models-src/           Original 3D model files, before compression
 public/models, draco  Compressed models and the self-hosted Draco decoder
@@ -103,11 +120,15 @@ Logic lives in `lib/` and is unit-tested; components stay small.
 
 ## Updating prices and parts
 
+With accounts on, admins edit items, listings and "estimates as of" in
+**Admin → Catalogue** instead, and `npm run db:export` copies those edits back
+into the JSON. Without accounts:
+
 1. Edit the part in `data/parts/<category>.json`. Prices are **integer Rupiah**.
 2. Set `pricesAsOf` in `data/meta.json` to today's date. It appears in the builder
    footer and on the price disclaimer.
 3. Run `npm test`. The data tests check every part, and the presets must stay fully
-   compatible.
+   compatible. Then run `npm run db:seed-sql` so `supabase/seed.sql` matches.
 
 Each part needs `dims` (mm) so it can be drawn in 3D.
 
@@ -148,15 +169,21 @@ in the repo.
    Redeploy. The Privacy page switches its wording automatically.
 4. **Set a contact address.** Fill in `CONTACT_EMAIL` in `lib/site.ts`; the Privacy
    page shows it.
-5. **Later, a custom domain.** Project → _Settings → Domains_ → add it, then create
+5. **Optional, accounts.** Follow [docs/accounts.md](docs/accounts.md): create
+   the Supabase project, run the SQL in `supabase/`, and set
+   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (type
+   Config). No secret key is needed.
+6. **Later, a custom domain.** Project → _Settings → Domains_ → add it, then create
    the DNS record Vercel shows at your registrar. Absolute URLs (sitemap, share
    previews) follow the production domain automatically.
-6. **Smoke test.** Open the production URL: load a preset, share a build and open the
+7. **Smoke test.** Open the production URL: load a preset, share a build and open the
    link in a private window, then check `/sitemap.xml` and `/robots.txt`.
 
 ## Legal
 
-- [Privacy](app/privacy/page.tsx): no accounts, no cookies, builds stay in the browser.
+- [Privacy](app/privacy/page.tsx): without accounts, no cookies and builds stay in
+  the browser; with accounts on, it also explains what an account stores
+  (email, display name, builds, in Supabase, Singapore) and how to delete it.
 - [Price disclaimer](app/prices/page.tsx): prices are estimates, so check the store
   before buying.
 - [Credits](app/credits/page.tsx): 3D models, open-source software and fonts.

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1035" height="1332" viewBox="0 0 1035 1332" font-family="Arial, Helvetica, sans-serif" fill="#1a1a1a">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/></marker>
+  <marker id="open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10" fill="none" stroke="#333" stroke-width="1.5"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#fff"/>
+<rect x="310" y="30" width="695" height="1282" fill="#fafafa" stroke="#1a1a1a" stroke-width="2"/>
+<text x="657.5" y="71.7" text-anchor="middle" font-size="22" font-weight="bold" font-style="normal">CoreSpec</text>
+<line x1="100" y1="681" x2="100" y2="415" stroke="#1a1a1a" stroke-width="2"/>
+<polygon points="100,397 89,416 111,416" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<line x1="100" y1="1041" x2="100" y2="841" stroke="#1a1a1a" stroke-width="2"/>
+<polygon points="100,823 89,842 111,842" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<line x1="130" y1="313" x2="355" y2="133" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="313" x2="355" y2="199" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="313" x2="355" y2="265" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="313" x2="355" y2="331" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="313" x2="355" y2="397" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="313" x2="355" y2="463" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="313" x2="355" y2="529" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="739" x2="355" y2="625" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="739" x2="355" y2="691" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="739" x2="355" y2="757" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="739" x2="355" y2="823" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="739" x2="355" y2="889" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="1099" x2="355" y2="985" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="1099" x2="355" y2="1051" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="1099" x2="355" y2="1117" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="1099" x2="355" y2="1183" stroke="#555" stroke-width="1.6"/>
+<line x1="130" y1="1099" x2="355" y2="1249" stroke="#555" stroke-width="1.6"/>
+
+  <g stroke="#1a1a1a" stroke-width="2.2" fill="none">
+    <circle cx="100" cy="271" r="14"/>
+    <line x1="100" y1="285" x2="100" y2="327"/>
+    <line x1="74" y1="301" x2="126" y2="301"/>
+    <line x1="100" y1="327" x2="78" y2="359"/>
+    <line x1="100" y1="327" x2="122" y2="359"/>
+  </g>
+  <text x="100" y="390" text-anchor="middle" font-size="20" font-weight="bold" font-style="normal">Guest</text>
+
+  <g stroke="#1a1a1a" stroke-width="2.2" fill="none">
+    <circle cx="100" cy="697" r="14"/>
+    <line x1="100" y1="711" x2="100" y2="753"/>
+    <line x1="74" y1="727" x2="126" y2="727"/>
+    <line x1="100" y1="753" x2="78" y2="785"/>
+    <line x1="100" y1="753" x2="122" y2="785"/>
+  </g>
+  <text x="100" y="816" text-anchor="middle" font-size="20" font-weight="bold" font-style="normal">User</text>
+
+  <g stroke="#1a1a1a" stroke-width="2.2" fill="none">
+    <circle cx="100" cy="1057" r="14"/>
+    <line x1="100" y1="1071" x2="100" y2="1113"/>
+    <line x1="74" y1="1087" x2="126" y2="1087"/>
+    <line x1="100" y1="1113" x2="78" y2="1145"/>
+    <line x1="100" y1="1113" x2="122" y2="1145"/>
+  </g>
+  <text x="100" y="1176" text-anchor="middle" font-size="20" font-weight="bold" font-style="normal">Admin</text>
+<ellipse cx="600" cy="133" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="139.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Build a PC (pick parts)</text>
+<ellipse cx="600" cy="199" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="205.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Check compatibility</text>
+<ellipse cx="600" cy="265" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="271.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Add a desk setup</text>
+<ellipse cx="600" cy="331" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="337.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">See prices and marketplace links</text>
+<ellipse cx="600" cy="397" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="403.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Share a build (link)</text>
+<ellipse cx="600" cy="463" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="469.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Save builds in the browser</text>
+<ellipse cx="600" cy="529" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="535.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Register an account</text>
+<ellipse cx="600" cy="625" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="631.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Log in / log out</text>
+<ellipse cx="600" cy="691" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="697.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Sync builds to the account</text>
+<ellipse cx="600" cy="757" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="763.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Import builds from this browser</text>
+<ellipse cx="600" cy="823" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="829.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Change name or password</text>
+<ellipse cx="600" cy="889" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="895.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Delete the account</text>
+<ellipse cx="600" cy="985" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="991.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Manage catalogue items</text>
+<ellipse cx="600" cy="1051" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="1057.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Manage checked listings</text>
+<ellipse cx="600" cy="1117" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="1123.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Manage users and roles</text>
+<ellipse cx="600" cy="1183" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="1189.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">Change site settings</text>
+<ellipse cx="600" cy="1249" rx="245" ry="27" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<text x="600" y="1255.65" text-anchor="middle" font-size="19" font-weight="normal" font-style="normal">See totals and the audit log</text>
+<path d="M 845 133 C 915 133, 915 199, 848 199" fill="none" stroke="#333" stroke-width="1.6" stroke-dasharray="7 5" marker-end="url(#open)"/>
+<text x="907" y="171.6" text-anchor="start" font-size="16" font-weight="normal" font-style="italic">«include»</text>
+<path d="M 845 691 C 915 691, 915 463, 848 463" fill="none" stroke="#333" stroke-width="1.6" stroke-dasharray="7 5" marker-end="url(#open)"/>
+<text x="907" y="582.6" text-anchor="start" font-size="16" font-weight="normal" font-style="italic">«extend»</text>
+</svg>

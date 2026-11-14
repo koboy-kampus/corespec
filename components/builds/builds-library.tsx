@@ -62,6 +62,8 @@ export function BuildsLibrary() {
   const current = useBuildStore((s) => s.build);
   const saved = useBuildStore((s) => s.saved);
   const newBuild = useBuildStore((s) => s.newBuild);
+  // Logged in (Phase 16): the account's builds sync, guest builds are marked.
+  const account = useBuildStore((s) => s.account);
 
   const builds = useMemo(
     () =>
@@ -75,9 +77,13 @@ export function BuildsLibrary() {
     <div className="container-page flex flex-col gap-8 py-10 md:py-14">
       <SectionHeader
         as="h1"
-        eyebrow="Saved in this browser"
+        eyebrow={account ? "Saved in your account" : "Saved in this browser"}
         title="My builds"
-        subtitle="Nothing is uploaded. Share a build to send someone a read-only link."
+        subtitle={
+          account
+            ? "Builds sync to your account. Ones marked “This browser only” stay here until you import them from My account."
+            : "Nothing is uploaded. Share a build to send someone a read-only link."
+        }
         layout="split"
         action={
           <Button
@@ -99,7 +105,17 @@ export function BuildsLibrary() {
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {builds.map((b) => (
             <li key={b.id} className="flex min-w-0">
-              <BuildCard build={b} isOpen={b.id === current.id} />
+              <BuildCard
+                build={b}
+                isOpen={b.id === current.id}
+                where={
+                  account
+                    ? b.owner === account
+                      ? "account"
+                      : "browser"
+                    : undefined
+                }
+              />
             </li>
           ))}
         </ul>

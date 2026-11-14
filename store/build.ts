@@ -1,5 +1,12 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  applySync,
+  guestBuilds,
+  type SyncResult,
+  type SyncSent,
+  type Tombstone,
+} from "@/lib/account/merge";
 import { isSetupCategory } from "@/lib/categories";
 import { getItem } from "@/lib/parts";
 import { getPreset, suggestedSetupFor } from "@/lib/presets";
@@ -14,6 +21,12 @@ type Parts = Build["parts"];
  * skipHydration: the server can't see localStorage, so the saved build is loaded
  * after mount (call `useBuildStore.persist.rehydrate()` in a client effect) to avoid
  * React hydration mismatches.
+ *
+ * Accounts (Phase 16): while logged in, `account` is the user id and new builds
+ * get it as their `owner`, so they sync to the account
+ * (components/account/account-sync.tsx). Builds without an owner are guest builds
+ * and stay in this browser unless imported. Deleting an account build leaves a
+ * tombstone until the next sync tells the account.
  */
 
 export const DEFAULT_NAME = "Untitled build";
@@ -85,6 +98,10 @@ interface BuildState {
   build: Build;
   /** Every other saved build, newest first. */
   saved: Build[];
+  /** The logged-in account's user id, while builds sync to it. */
+  account: string | null;
+  /** Account builds deleted here that the account doesn't know about yet. */
+  tombstones: Tombstone[];
 
   /** Put a part in its slot. Ignores unknown ids or a part filed under the wrong slot. */
   setPart: (category: Category, partId: string) => void;
@@ -110,6 +127,15 @@ interface BuildState {
   deleteBuild: (id: string) => void;
   /** Open a shared build as a new build of your own. */
   importBuild: (build: { name: string; parts: Parts }) => string;
+
+  /** Start syncing to this account. Builds of a different, earlier account are forgotten. */
+  setAccount: (userId: string) => void;
+  /** Logged out: forget the account and its builds here. Guest builds stay. */
+  forgetAccount: () => void;
+  /** Move this browser's guest builds into the account. Returns how many. */
+  importGuestBuilds: () => number;
+  /** Apply a finished sync (lib/account/merge.ts `applySync`). */
+  applyAccountSync: (sent: SyncSent, result: SyncResult) => void;
 }
 
 const touch = (build: Build, patch: Partial<Build>): Build => ({
@@ -122,11 +148,34 @@ const touch = (build: Build, patch: Partial<Build>): Build => ({
 const shelve = (s: BuildState): Build[] =>
   isBlank(s.build) ? s.saved : [s.build, ...s.saved];
 
+/** A new, empty build: the account's while logged in. */
+const freshBuild = (s: Pick<BuildState, "account">): Build =>
+  s.account ? { ...emptyBuild(), owner: s.account } : emptyBuild();
+
+/** A tombstone for an account build, so the delete reaches the account. */
+const tombstoneFor = (s: BuildState, b: Build | undefined): Tombstone[] =>
+  b?.owner && b.owner === s.account
+    ? [...s.tombstones, { id: b.id, at: new Date().toISOString() }]
+    : s.tombstones;
+
+/** Removes every account build (any account's) and opens what's left. */
+function withoutAccountBuilds(
+  s: BuildState,
+  keep: (b: Build) => boolean,
+): Pick<BuildState, "build" | "saved"> {
+  const saved = s.saved.filter(keep);
+  if (keep(s.build)) return { build: s.build, saved };
+  const [next, ...rest] = saved;
+  return next ? { build: next, saved: rest } : { build: emptyBuild(), saved };
+}
+
 export const useBuildStore = create<BuildState>()(
   persist(
     (set, get) => ({
       build: emptyBuild(),
       saved: [],
+      account: null,
+      tombstones: [],
 
       setPart: (category, partId) =>
         set((s) => {
@@ -174,7 +223,7 @@ export const useBuildStore = create<BuildState>()(
 
       newBuild: () =>
         set((s) =>
-          isBlank(s.build) ? s : { saved: shelve(s), build: emptyBuild() },
+          isBlank(s.build) ? s : { saved: shelve(s), build: freshBuild(s) },
         ),
 
       openBuild: (id) =>
@@ -206,34 +255,85 @@ export const useBuildStore = create<BuildState>()(
           id: newId(),
           name: cleanName(`${source.name} (copy)`),
           parts: { ...source.parts },
+          owner: s.account ?? undefined,
         });
+        if (!copy.owner) delete copy.owner;
         set({ saved: [copy, ...s.saved] });
         return copy.id;
       },
 
       deleteBuild: (id) =>
         set((s) => {
+          const tombstones = tombstoneFor(
+            s,
+            [s.build, ...s.saved].find((b) => b.id === id),
+          );
           if (id !== s.build.id)
-            return { saved: s.saved.filter((b) => b.id !== id) };
+            return { saved: s.saved.filter((b) => b.id !== id), tombstones };
           const [next, ...rest] = s.saved;
-          return next ? { build: next, saved: rest } : { build: emptyBuild() };
+          return next
+            ? { build: next, saved: rest, tombstones }
+            : { build: freshBuild(s), tombstones };
         }),
 
       importBuild: ({ name, parts }) => {
-        const build = touch(emptyBuild(), {
+        const build = touch(freshBuild(get()), {
           name: cleanName(name),
           parts: cleanParts(parts),
         });
         set((s) => ({ saved: shelve(s), build }));
         return build.id;
       },
+
+      setAccount: (userId) =>
+        set((s) => {
+          if (s.account === userId) return s;
+          // Another account was logged in here before: its builds aren't this one's.
+          const left = s.account
+            ? withoutAccountBuilds(s, (b) => !b.owner)
+            : { build: s.build, saved: s.saved };
+          return { ...left, account: userId, tombstones: [] };
+        }),
+
+      forgetAccount: () =>
+        set((s) => ({
+          ...withoutAccountBuilds(s, (b) => !b.owner),
+          account: null,
+          tombstones: [],
+        })),
+
+      importGuestBuilds: () => {
+        const s = get();
+        const account = s.account;
+        if (!account) return 0;
+        const ids = new Set(guestBuilds(s, isBlank).map((b) => b.id));
+        if (ids.size === 0) return 0;
+        const adopt = (b: Build): Build =>
+          ids.has(b.id) ? { ...b, owner: account } : b;
+        set({ build: adopt(s.build), saved: s.saved.map(adopt) });
+        return ids.size;
+      },
+
+      applyAccountSync: (sent, result) =>
+        set((s) => {
+          if (!s.account) return s;
+          const account = s.account;
+          return applySync(s, sent, result, account, () => freshBuild(s));
+        }),
     }),
     {
       name: "corespec-build",
       version: 2,
       storage: createJSONStorage(browserStorage),
-      partialize: (s) => ({ build: s.build, saved: s.saved }),
+      partialize: (s) => ({
+        build: s.build,
+        saved: s.saved,
+        account: s.account,
+        tombstones: s.tombstones,
+      }),
       // v1 stored only the open build; it carries over as the open build.
+      // `account` and `tombstones` (Phase 16) need no migration: a save without
+      // them loads with the defaults (logged out, nothing pending).
       migrate: (persisted, version) => {
         const old = (persisted ?? {}) as { build?: Build; saved?: Build[] };
         return {

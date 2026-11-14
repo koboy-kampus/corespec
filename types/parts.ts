@@ -65,6 +65,12 @@ export interface ItemBase {
   dims?: { l: number; w: number; h: number }; // mm → sizes placeholder meshes
   /** Its own 3D model: an id in data/models.json (see docs/models.md). */
   modelId?: string;
+  /**
+   * Phase 16b: false when an admin took it out of the picker. It still resolves
+   * everywhere else, so saved builds and share links that use it keep working.
+   * Missing means active (no JSON item has it).
+   */
+  active?: false;
 }
 
 export interface PartBase extends ItemBase {
@@ -292,4 +298,9 @@ export interface Build {
    */
   parts: Partial<Record<Category, string>>;
   updatedAt: string;
+  /**
+   * Phase 16: the account (user id) this build is kept in, when it syncs to an
+   * account. Missing for a build that lives only in this browser (a guest build).
+   */
+  owner?: string;
 }

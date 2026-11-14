@@ -10,6 +10,12 @@ import { useUiStore } from "@/store/ui";
 import { Logo } from "./logo";
 import { NavLinks } from "./nav-links";
 import { MobileMenu } from "./mobile-menu";
+import { AccountMenu } from "@/components/account/account-menu";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+
+// With accounts on, the account menu joins the bar from 768px; the short
+// button label keeps it from scrolling sideways until there's room (1024px).
+const ACCOUNTS = isSupabaseConfigured();
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -53,6 +59,8 @@ export function Navbar() {
             </KbdGroup>
           </Button>
 
+          <AccountMenu className="hidden md:inline-flex" />
+
           <Button
             asChild
             size="sm"
@@ -61,8 +69,19 @@ export function Navbar() {
             }
           >
             <Link href="/builder">
-              <span className="sm:hidden">Build</span>
-              <span className="hidden sm:inline">Start Building</span>
+              <span
+                className={cn("sm:hidden", ACCOUNTS && "md:inline lg:hidden")}
+              >
+                Build
+              </span>
+              <span
+                className={cn(
+                  "hidden sm:inline",
+                  ACCOUNTS && "md:hidden lg:inline",
+                )}
+              >
+                Start Building
+              </span>
             </Link>
           </Button>
 

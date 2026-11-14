@@ -1,6 +1,6 @@
 import { ALL_CATEGORIES } from "@/lib/categories";
-import { ALL_ITEMS, getItem } from "@/lib/parts";
-import type { Build, Category } from "@/types/parts";
+import { ALL_ITEMS, catalogueVersion, getItem } from "@/lib/parts";
+import type { Build, Category, Item } from "@/types/parts";
 
 /**
  * Share codes: a build squeezed into a short, URL-safe string.
@@ -32,7 +32,16 @@ export function partCode(id: string): string {
   return (h % 36 ** PART_CODE_LEN).toString(36).padStart(PART_CODE_LEN, "0");
 }
 
-const BY_CODE = new Map(ALL_ITEMS.map((p) => [partCode(p.id), p]));
+let byCode = new Map<string, Item>();
+let byCodeFor = -1;
+/** Code → item, rebuilt when a database overlay changes the catalogue (Phase 16b). */
+function itemByCode(code: string): Item | undefined {
+  if (byCodeFor !== catalogueVersion) {
+    byCode = new Map(ALL_ITEMS.map((p) => [partCode(p.id), p]));
+    byCodeFor = catalogueVersion;
+  }
+  return byCode.get(code);
+}
 
 function toBase64Url(text: string): string {
   let bin = "";
@@ -80,7 +89,7 @@ export function decodeBuild(code: string): SharedBuild | null {
   const parts: Partial<Record<Category, string>> = {};
   let missing = 0;
   for (let i = 0; i < partChunk.length; i += PART_CODE_LEN) {
-    const part = BY_CODE.get(partChunk.slice(i, i + PART_CODE_LEN));
+    const part = itemByCode(partChunk.slice(i, i + PART_CODE_LEN));
     if (!part || parts[part.category]) missing++;
     else parts[part.category] = part.id;
   }

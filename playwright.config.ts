@@ -32,5 +32,19 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
+    // The tests check the site as guests see it with accounts switched off
+    // (tests/e2e/accounts-off.spec.ts), so the build ignores any Supabase
+    // settings in .env.local: Next never overrides a variable that is already
+    // set, even to "".
+    //
+    // E2E_SUPABASE_URL (Phase 16b) runs the same suite with accounts on but the
+    // database unreachable, e.g. E2E_SUPABASE_URL=http://127.0.0.1:9: the
+    // catalogue must then come from the JSON exactly as before.
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: process.env.E2E_SUPABASE_URL ?? "",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.E2E_SUPABASE_URL
+        ? "sb_publishable_e2e_unreachable"
+        : "",
+    },
   },
 });

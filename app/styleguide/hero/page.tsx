@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Viewer } from "@/components/viewer/viewer";
-import { showcase } from "@/lib/showcase";
+import { loadCatalogue } from "@/lib/catalogue/load";
+import { getShowcase } from "@/lib/showcase";
 
 export const metadata: Metadata = {
   title: "Hero scene",
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
  * it, for `npm run hero:poster` (with reduced motion it holds the first-frame
  * pose) and for the test that checks the poster still matches the scene.
  */
-export default function Page() {
+export default async function Page() {
+  await loadCatalogue();
   return (
     <div className="flex justify-center px-4 py-24">
       <div
@@ -21,7 +23,7 @@ export default function Page() {
       >
         <Viewer
           mode="showcase"
-          parts={showcase.parts}
+          parts={getShowcase().parts}
           skipIntro
           fallback={null}
         />

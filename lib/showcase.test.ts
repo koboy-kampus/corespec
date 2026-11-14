@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { CATEGORIES } from "@/lib/categories";
 import { footerNav } from "@/lib/nav";
 import { POWER, estimateDrawW, headroomRatio } from "@/lib/power";
-import { showcase } from "@/lib/showcase";
+import { getShowcase } from "@/lib/showcase";
+
+const showcase = getShowcase();
 
 describe("landing showcase card", () => {
   it("lists every slot of the example build, in builder order", () => {

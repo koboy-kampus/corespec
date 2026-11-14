@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { check } from "@/lib/compat/check";
 import { getPart, getPartsByCategory, resolveBuild } from "@/lib/parts";
 import { presets } from "@/lib/presets";
-import { showcase } from "@/lib/showcase";
+import { getShowcase } from "@/lib/showcase";
+
+const showcase = getShowcase();
 import type { ResolvedBuild } from "@/types/parts";
 import {
   explodedOrigin,

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { CATEGORY_LABEL, isSetupCategory } from "@/lib/categories";
 import { formatIDR } from "@/lib/format";
-import { getPartsByCategory } from "@/lib/parts";
+import { catalogueVersion, getPickableByCategory } from "@/lib/parts";
 import {
   DEFAULT_FILTERS,
   SORT_LABEL,
@@ -120,7 +120,12 @@ function PickerBody({ category }: { category: Category }) {
   const closePicker = useUiStore((s) => s.closePicker);
   const [filters, setFilters] = useState<PickerFilters>(DEFAULT_FILTERS);
 
-  const all = getPartsByCategory(category);
+  // Items an admin took out (Phase 16b) are left out here only.
+  const all = useMemo(
+    () => getPickableByCategory(category),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a new overlay changes the list
+    [category, catalogueVersion],
+  );
   const facets = facetsFor(category);
   const brands = useMemo(() => brandsOf(all), [all]);
   const results = useMemo(

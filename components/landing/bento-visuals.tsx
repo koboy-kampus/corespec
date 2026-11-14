@@ -2,7 +2,7 @@ import { AlertTriangle, Check, Copy, Link2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatIDR, formatWatts } from "@/lib/format";
 import { POWER } from "@/lib/power";
-import { showcase } from "@/lib/showcase";
+import { getShowcase } from "@/lib/showcase";
 
 /* CSS/SVG illustrations for the feature bento. No external images. */
 
@@ -87,12 +87,12 @@ export function ViewerVisual() {
 }
 
 const SPLIT_OPACITY = [1, 0.7, 0.5, 0.25];
-const COST_SPLIT = showcase.costSplit.map((s, i) => ({
-  ...s,
-  opacity: SPLIT_OPACITY[i] ?? 0.25,
-}));
-
 export function CostVisual() {
+  const showcase = getShowcase();
+  const costSplit = showcase.costSplit.map((s, i) => ({
+    ...s,
+    opacity: SPLIT_OPACITY[i] ?? 0.25,
+  }));
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -107,7 +107,7 @@ export function CostVisual() {
         className="flex h-2 gap-0.5 overflow-hidden rounded-full"
         aria-hidden
       >
-        {COST_SPLIT.map((s) => (
+        {costSplit.map((s) => (
           <span
             key={s.label}
             className="h-full bg-accent"
@@ -116,7 +116,7 @@ export function CostVisual() {
         ))}
       </div>
       <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-        {COST_SPLIT.map((s) => (
+        {costSplit.map((s) => (
           <li
             key={s.label}
             className="flex items-center gap-2 text-[12px] leading-4 text-fg-2"
@@ -135,19 +135,18 @@ export function CostVisual() {
   );
 }
 
-const CHECKS = showcase.checks;
-
 export function CompatVisual() {
+  const checks = getShowcase().checks;
   return (
     <div className="w-full overflow-hidden rounded-btn border border-line bg-canvas/60">
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <span className="label-micro text-fg-3">Checks</span>
         <Badge variant="ok" icon={<Check />}>
-          {CHECKS.length}/{CHECKS.length} passed
+          {checks.length}/{checks.length} passed
         </Badge>
       </div>
       <ul className="divide-y divide-line">
-        {CHECKS.map((c) => (
+        {checks.map((c) => (
           <li key={c.label} className="flex items-center gap-3 px-4 py-2.5">
             <span className="flex size-5 items-center justify-center rounded-full bg-ok/15 text-ok">
               <Check className="size-3" aria-label="Pass" />
@@ -244,6 +243,7 @@ export function ExplodedVisual() {
 
 /** The real share link of the example build, so the tile shows exactly what the builder makes. */
 export function ShareVisual() {
+  const showcase = getShowcase();
   return (
     <div className="flex w-full flex-col gap-3" aria-hidden>
       <div className="flex items-center justify-between gap-3">
@@ -273,8 +273,8 @@ export function ShareVisual() {
 }
 
 export function PowerVisual({
-  draw = showcase.drawW,
-  psu = showcase.psuWatts,
+  draw = getShowcase().drawW,
+  psu = getShowcase().psuWatts,
 }: {
   draw?: number;
   psu?: number;

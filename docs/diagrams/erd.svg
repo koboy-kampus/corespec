@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1140" viewBox="0 0 1280 1140" font-family="Arial, Helvetica, sans-serif" fill="#1a1a1a">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/></marker>
+  <marker id="open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10" fill="none" stroke="#333" stroke-width="1.5"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#fff"/>
+<rect x="480" y="40" width="320" height="102" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<rect x="480" y="40" width="320" height="40" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2"/>
+<text x="640" y="66.65" text-anchor="middle" font-size="19" font-weight="bold" font-style="normal">auth.users</text>
+<text x="494" y="101.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">id</text>
+<text x="645" y="101.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="786" y="100.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK</text>
+<line x1="480" y1="111" x2="800" y2="111" stroke="#ddd"/>
+<text x="494" y="132.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">email</text>
+<text x="645" y="132.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="786" y="131.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<rect x="480" y="210" width="320" height="195" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<rect x="480" y="210" width="320" height="40" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2"/>
+<text x="640" y="236.65" text-anchor="middle" font-size="19" font-weight="bold" font-style="normal">profiles</text>
+<text x="494" y="271.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">id</text>
+<text x="645" y="271.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="786" y="270.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK, FK</text>
+<line x1="480" y1="281" x2="800" y2="281" stroke="#ddd"/>
+<text x="494" y="302.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">display_name</text>
+<text x="645" y="302.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="786" y="301.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="480" y1="312" x2="800" y2="312" stroke="#ddd"/>
+<text x="494" y="333.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">role</text>
+<text x="645" y="333.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="786" y="332.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="480" y1="343" x2="800" y2="343" stroke="#ddd"/>
+<text x="494" y="364.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">created_at</text>
+<text x="645" y="364.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">timestamptz</text>
+<text x="786" y="363.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="480" y1="374" x2="800" y2="374" stroke="#ddd"/>
+<text x="494" y="395.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">updated_at</text>
+<text x="645" y="395.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">timestamptz</text>
+<text x="786" y="394.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<rect x="40" y="210" width="320" height="257" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<rect x="40" y="210" width="320" height="40" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2"/>
+<text x="200" y="236.65" text-anchor="middle" font-size="19" font-weight="bold" font-style="normal">builds</text>
+<text x="54" y="271.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">owner</text>
+<text x="205" y="271.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="346" y="270.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK, FK</text>
+<line x1="40" y1="281" x2="360" y2="281" stroke="#ddd"/>
+<text x="54" y="302.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">id</text>
+<text x="205" y="302.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="301.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK</text>
+<line x1="40" y1="312" x2="360" y2="312" stroke="#ddd"/>
+<text x="54" y="333.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">name</text>
+<text x="205" y="333.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="332.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="343" x2="360" y2="343" stroke="#ddd"/>
+<text x="54" y="364.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">parts</text>
+<text x="205" y="364.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">jsonb</text>
+<text x="346" y="363.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="374" x2="360" y2="374" stroke="#ddd"/>
+<text x="54" y="395.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">created_at</text>
+<text x="205" y="395.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">timestamptz</text>
+<text x="346" y="394.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="405" x2="360" y2="405" stroke="#ddd"/>
+<text x="54" y="426.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">updated_at</text>
+<text x="205" y="426.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">timestamptz</text>
+<text x="346" y="425.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="436" x2="360" y2="436" stroke="#ddd"/>
+<text x="54" y="457.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">deleted_at</text>
+<text x="205" y="457.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">timestamptz</text>
+<text x="346" y="456.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<rect x="920" y="210" width="320" height="257" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<rect x="920" y="210" width="320" height="40" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2"/>
+<text x="1080" y="236.65" text-anchor="middle" font-size="19" font-weight="bold" font-style="normal">audit_log</text>
+<text x="934" y="271.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">id</text>
+<text x="1085" y="271.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">bigint</text>
+<text x="1226" y="270.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK</text>
+<line x1="920" y1="281" x2="1240" y2="281" stroke="#ddd"/>
+<text x="934" y="302.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">at</text>
+<text x="1085" y="302.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">timestamptz</text>
+<text x="1226" y="301.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="920" y1="312" x2="1240" y2="312" stroke="#ddd"/>
+<text x="934" y="333.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">actor</text>
+<text x="1085" y="333.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="1226" y="332.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="920" y1="343" x2="1240" y2="343" stroke="#ddd"/>
+<text x="934" y="364.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">action</text>
+<text x="1085" y="364.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="1226" y="363.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="920" y1="374" x2="1240" y2="374" stroke="#ddd"/>
+<text x="934" y="395.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">table_name</text>
+<text x="1085" y="395.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="1226" y="394.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="920" y1="405" x2="1240" y2="405" stroke="#ddd"/>
+<text x="934" y="426.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">row_id</text>
+<text x="1085" y="426.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="1226" y="425.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="920" y1="436" x2="1240" y2="436" stroke="#ddd"/>
+<text x="934" y="457.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">diff</text>
+<text x="1085" y="457.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">jsonb</text>
+<text x="1226" y="456.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<rect x="40" y="590" width="320" height="412" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<rect x="40" y="590" width="320" height="40" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2"/>
+<text x="200" y="616.65" text-anchor="middle" font-size="19" font-weight="bold" font-style="normal">items</text>
+<text x="54" y="651.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">id</text>
+<text x="205" y="651.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="650.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK</text>
+<line x1="40" y1="661" x2="360" y2="661" stroke="#ddd"/>
+<text x="54" y="682.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">category</text>
+<text x="205" y="682.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="681.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="692" x2="360" y2="692" stroke="#ddd"/>
+<text x="54" y="713.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">brand</text>
+<text x="205" y="713.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="712.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="723" x2="360" y2="723" stroke="#ddd"/>
+<text x="54" y="744.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">name</text>
+<text x="205" y="744.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="743.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="754" x2="360" y2="754" stroke="#ddd"/>
+<text x="54" y="775.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">tier</text>
+<text x="205" y="775.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="774.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="785" x2="360" y2="785" stroke="#ddd"/>
+<text x="54" y="806.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">price_idr</text>
+<text x="205" y="806.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">integer</text>
+<text x="346" y="805.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="816" x2="360" y2="816" stroke="#ddd"/>
+<text x="54" y="837.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">dims</text>
+<text x="205" y="837.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">jsonb</text>
+<text x="346" y="836.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="847" x2="360" y2="847" stroke="#ddd"/>
+<text x="54" y="868.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">specs</text>
+<text x="205" y="868.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">jsonb</text>
+<text x="346" y="867.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="878" x2="360" y2="878" stroke="#ddd"/>
+<text x="54" y="899.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">model_id</text>
+<text x="205" y="899.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="346" y="898.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="909" x2="360" y2="909" stroke="#ddd"/>
+<text x="54" y="930.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">active</text>
+<text x="205" y="930.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">boolean</text>
+<text x="346" y="929.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="940" x2="360" y2="940" stroke="#ddd"/>
+<text x="54" y="961.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">position</text>
+<text x="205" y="961.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">integer</text>
+<text x="346" y="960.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="40" y1="971" x2="360" y2="971" stroke="#ddd"/>
+<text x="54" y="992.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">updated_by</text>
+<text x="205" y="992.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="346" y="991.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">FK</text>
+<rect x="480" y="590" width="320" height="257" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<rect x="480" y="590" width="320" height="40" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2"/>
+<text x="640" y="616.65" text-anchor="middle" font-size="19" font-weight="bold" font-style="normal">listings</text>
+<text x="494" y="651.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">id</text>
+<text x="645" y="651.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="786" y="650.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK</text>
+<line x1="480" y1="661" x2="800" y2="661" stroke="#ddd"/>
+<text x="494" y="682.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">item_id</text>
+<text x="645" y="682.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="786" y="681.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">FK</text>
+<line x1="480" y1="692" x2="800" y2="692" stroke="#ddd"/>
+<text x="494" y="713.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">marketplace</text>
+<text x="645" y="713.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="786" y="712.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="480" y1="723" x2="800" y2="723" stroke="#ddd"/>
+<text x="494" y="744.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">url</text>
+<text x="645" y="744.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="786" y="743.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">UK</text>
+<line x1="480" y1="754" x2="800" y2="754" stroke="#ddd"/>
+<text x="494" y="775.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">price_idr</text>
+<text x="645" y="775.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">integer</text>
+<text x="786" y="774.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="480" y1="785" x2="800" y2="785" stroke="#ddd"/>
+<text x="494" y="806.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">checked_at</text>
+<text x="645" y="806.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">date</text>
+<text x="786" y="805.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="480" y1="816" x2="800" y2="816" stroke="#ddd"/>
+<text x="494" y="837.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">created_by</text>
+<text x="645" y="837.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="786" y="836.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">FK</text>
+<rect x="920" y="590" width="320" height="133" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+<rect x="920" y="590" width="320" height="40" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2"/>
+<text x="1080" y="616.65" text-anchor="middle" font-size="19" font-weight="bold" font-style="normal">site_settings</text>
+<text x="934" y="651.45" text-anchor="start" font-size="17" font-weight="bold" font-style="normal">key</text>
+<text x="1085" y="651.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">text</text>
+<text x="1226" y="650.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">PK</text>
+<line x1="920" y1="661" x2="1240" y2="661" stroke="#ddd"/>
+<text x="934" y="682.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">value</text>
+<text x="1085" y="682.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">jsonb</text>
+<text x="1226" y="681.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal"></text>
+<line x1="920" y1="692" x2="1240" y2="692" stroke="#ddd"/>
+<text x="934" y="713.45" text-anchor="start" font-size="17" font-weight="normal" font-style="normal">updated_by</text>
+<text x="1085" y="713.1" text-anchor="start" font-size="16" font-weight="normal" font-style="normal">uuid</text>
+<text x="1226" y="712.75" text-anchor="end" font-size="15" font-weight="bold" font-style="normal">FK</text>
+<path d="M 640 142 L 640 210" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="649" y1="150" x2="631" y2="150" stroke="#333" stroke-width="2"/><line x1="649" y1="157" x2="631" y2="157" stroke="#333" stroke-width="2"/>
+<line x1="631" y1="202" x2="649" y2="202" stroke="#333" stroke-width="2"/><line x1="631" y1="195" x2="649" y2="195" stroke="#333" stroke-width="2"/>
+<g stroke="#fff" stroke-width="6" paint-order="stroke"><text x="650" y="163.25" text-anchor="start" font-size="15" font-weight="normal" font-style="italic">has</text></g>
+<path d="M 480 296.5 L 360 296.5" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="472" y1="305.5" x2="472" y2="287.5" stroke="#333" stroke-width="2"/><line x1="465" y1="305.5" x2="465" y2="287.5" stroke="#333" stroke-width="2"/>
+<line x1="376" y1="296.5" x2="360" y2="306.5" stroke="#333" stroke-width="2"/><line x1="376" y1="296.5" x2="360" y2="296.5" stroke="#333" stroke-width="2"/><line x1="376" y1="296.5" x2="360" y2="286.5" stroke="#333" stroke-width="2"/><circle cx="386" cy="296.5" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<g stroke="#fff" stroke-width="6" paint-order="stroke"><text x="420" y="287.75" text-anchor="middle" font-size="15" font-weight="normal" font-style="italic">owns</text></g>
+<path d="M 800 296.5 L 920 296.5" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="8 6"/>
+<line x1="810" y1="287.5" x2="810" y2="305.5" stroke="#333" stroke-width="2"/><circle cx="824" cy="296.5" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<line x1="904" y1="296.5" x2="920" y2="286.5" stroke="#333" stroke-width="2"/><line x1="904" y1="296.5" x2="920" y2="296.5" stroke="#333" stroke-width="2"/><line x1="904" y1="296.5" x2="920" y2="306.5" stroke="#333" stroke-width="2"/><circle cx="894" cy="296.5" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<g stroke="#fff" stroke-width="6" paint-order="stroke"><text x="860" y="287.75" text-anchor="middle" font-size="15" font-weight="normal" font-style="italic">made</text></g>
+<path d="M 520 405 L 520 550 L 200 550 L 200 590" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="529" y1="415" x2="511" y2="415" stroke="#333" stroke-width="2"/><circle cx="520" cy="429" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<line x1="200" y1="574" x2="210" y2="590" stroke="#333" stroke-width="2"/><line x1="200" y1="574" x2="200" y2="590" stroke="#333" stroke-width="2"/><line x1="200" y1="574" x2="190" y2="590" stroke="#333" stroke-width="2"/><circle cx="200" cy="564" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<g stroke="#fff" stroke-width="6" paint-order="stroke"><text x="210" y="543.25" text-anchor="start" font-size="15" font-weight="normal" font-style="italic">last edited</text></g>
+<path d="M 640 405 L 640 590" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="649" y1="415" x2="631" y2="415" stroke="#333" stroke-width="2"/><circle cx="640" cy="429" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<line x1="640" y1="574" x2="650" y2="590" stroke="#333" stroke-width="2"/><line x1="640" y1="574" x2="640" y2="590" stroke="#333" stroke-width="2"/><line x1="640" y1="574" x2="630" y2="590" stroke="#333" stroke-width="2"/><circle cx="640" cy="564" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<g stroke="#fff" stroke-width="6" paint-order="stroke"><text x="630" y="502.75" text-anchor="end" font-size="15" font-weight="normal" font-style="italic">added</text></g>
+<path d="M 740 405 L 740 550 L 1080 550 L 1080 590" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="749" y1="415" x2="731" y2="415" stroke="#333" stroke-width="2"/><circle cx="740" cy="429" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<line x1="1080" y1="574" x2="1090" y2="590" stroke="#333" stroke-width="2"/><line x1="1080" y1="574" x2="1080" y2="590" stroke="#333" stroke-width="2"/><line x1="1080" y1="574" x2="1070" y2="590" stroke="#333" stroke-width="2"/><circle cx="1080" cy="564" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<g stroke="#fff" stroke-width="6" paint-order="stroke"><text x="1090" y="543.25" text-anchor="start" font-size="15" font-weight="normal" font-style="italic">last edited</text></g>
+<path d="M 360 676.5 L 480 676.5" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="368" y1="667.5" x2="368" y2="685.5" stroke="#333" stroke-width="2"/><line x1="375" y1="667.5" x2="375" y2="685.5" stroke="#333" stroke-width="2"/>
+<line x1="464" y1="676.5" x2="480" y2="666.5" stroke="#333" stroke-width="2"/><line x1="464" y1="676.5" x2="480" y2="676.5" stroke="#333" stroke-width="2"/><line x1="464" y1="676.5" x2="480" y2="686.5" stroke="#333" stroke-width="2"/><circle cx="454" cy="676.5" r="6" fill="#fff" stroke="#333" stroke-width="2"/>
+<g stroke="#fff" stroke-width="6" paint-order="stroke"><text x="420" y="667.75" text-anchor="middle" font-size="15" font-weight="normal" font-style="italic">has</text></g>
+<text x="40" y="1047.25" text-anchor="start" font-size="15" font-weight="normal" font-style="normal">PK primary key · FK foreign key · UK unique (with item_id)</text>
+<text x="40" y="1073.25" text-anchor="start" font-size="15" font-weight="normal" font-style="normal">Crow's foot notation: bar = one, circle = zero, three-way fork = many.</text>
+<text x="40" y="1099.25" text-anchor="start" font-size="15" font-weight="normal" font-style="normal">Dashed line: no foreign key (the audit log outlives deleted accounts).</text>
+</svg>

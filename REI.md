@@ -515,7 +515,7 @@ Rei's supervisor suggested user and admin login, because examiners like seeing i
 
 - **Supabase** (Auth + Postgres), using `@supabase/ssr` with Next 16 (read the Next docs first).
 - **Rei creates the Supabase project himself** and puts the keys in `.env.local` and Vercel. You never see, print or ask for their values. The service-role key is server-only and never gets a `NEXT_PUBLIC_` prefix (section 7).
-- **Tables:** `profiles` (id, name, `role`: `user` | `admin`), `builds` (owner, name, parts, timestamps), `parts` (seeded from the JSON, PC and setup, with `tier` and `modelId`), `listings` (seeded from the JSON). Row Level Security on every table: users read and write only their own builds; only admins write parts and listings; everyone can read parts and listings.
+- **Tables:** `profiles` (id, name, `role`: `user` | `admin`), `builds` (owner, name, parts, timestamps), `items` (the catalogue, seeded from the JSON, PC parts and setup items, with `tier` and `modelId`; called `items` to match the code's `Item` type), `listings` (seeded from the JSON). Row Level Security on every table: users read and write only their own builds; only admins write items and listings; everyone can read items (active and inactive, so old share links keep working) and listings.
 - **Pages:** `/login` and `/register` (styled to the design system; the supervisor wants these to look good), account menu in the navbar, `/admin` guarded on the server.
 - **Admin panel:** CRUD for parts, setup items and listings (with "mark as checked today"), so price checks move from the CSV into the browser.
 - **Guests keep working with localStorage.** After logging in, offer "Import builds from this browser".

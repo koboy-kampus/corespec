@@ -15,6 +15,10 @@ import {
 import { mainNav } from "@/lib/nav";
 import { useUiStore } from "@/store/ui";
 import { Logo } from "./logo";
+import { MobileAccountLinks } from "@/components/account/account-menu";
+
+const linkClass =
+  "group flex items-center justify-between rounded-btn px-3 py-3 text-[18px] leading-6 font-medium text-fg transition-colors hover:bg-surface-2";
 
 /** Below 768px: hamburger → slide-in drawer from the right. */
 export function MobileMenu({ className }: { className?: string }) {
@@ -46,15 +50,16 @@ export function MobileMenu({ className }: { className?: string }) {
         <nav aria-label="Mobile" className="flex flex-col px-3 py-4">
           {mainNav.map((item) => (
             <SheetClose asChild key={item.label}>
-              <Link
-                href={item.href ?? "/"}
-                className="group flex items-center justify-between rounded-btn px-3 py-3 text-[18px] leading-6 font-medium text-fg transition-colors hover:bg-surface-2"
-              >
+              <Link href={item.href ?? "/"} className={linkClass}>
                 {item.label}
                 <ArrowUpRight className="size-4 text-fg-3 transition-colors group-hover:text-accent" />
               </Link>
             </SheetClose>
           ))}
+          <MobileAccountLinks
+            linkClass={linkClass}
+            onNavigate={() => setOpen(false)}
+          />
         </nav>
 
         <div className="mt-auto flex flex-col gap-3 border-t border-line p-6">
