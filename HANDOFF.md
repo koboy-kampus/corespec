@@ -3,6 +3,8 @@
 _Written 12 November 2026, at the end of Phase 16c, on the branch `feat/phase-16-auth`. Every number below comes from a command run during this session, on Windows 11 with Node 26.13.0, unless marked otherwise. Earlier reports are in git history: session 1 `git show 3db675e:HANDOFF.md`, session 2 `git show df9628d:HANDOFF.md`._
 
 > **Update 14 November 2026: Phase 16 is live on production.** PR #3 (`feat/phase-16-auth` → `main`) was merged with merge commit `0325ad6`, and https://corespec-eight.vercel.app now has accounts and the admin panel (see §7, §8, §11). The rest of this report describes the state on 12 November.
+>
+> **Update 15 November 2026: the part picker works on phones.** PR #4 (`fix/mobile-picker-filters` → `main`), merge commit `9b804b8`, fixes the picker on narrow screens (Rei saw it on an iPhone 13 Pro and a Galaxy A07). Below 768 px only: a full-height sheet (`100dvh`, safe-area padding), one row with search, a sort button and "Filters · N", a filter panel that is closed by default (Clear all, Done), removable filter chips with "N of M", and only the list scrolls. Escape closes the panel before the picker; the search box isn't focused on open, so the phone keyboard doesn't cover the list. Tablet and desktop render the same markup as before (screenshots identical). Checks: lint clean, 319 unit tests, **95 e2e passed** (20 new in `tests/e2e/mobile-picker.spec.ts`; at 375×667, 390×844 and 360×800, Monitor, Keyboard and Monitor arm show at least 4 whole items), axe 0 with the panel closed, open and with chips. Production deploy succeeded. 🔍 Not yet checked on a real phone.
 
 **Legend:** ✅ done · ⚠️ partial · ❌ not done · 🔍 not checked
 
@@ -72,18 +74,19 @@ Session 2 ended at 238 unit and 70 e2e tests.
 
 ### What the e2e suite covers (`tests/e2e/`)
 
-| File                                                       | Covers                                                                                                                        |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `builder.spec.ts`                                          | Picking parts, incompatibilities, picker filters (including tiers), presets, saving, the replace-preset dialog, phone layout  |
-| `setup.spec.ts`, `setup-rules.spec.ts`                     | Setup tab, suggested setup, filter chips, totals, every setup rule from the UI                                                |
-| `desk.spec.ts`                                             | Desk view switch, warnings in 3D, touch and wheel on the desk, chair fade                                                     |
-| `prices.spec.ts`                                           | Checked and estimate labels, shop links and their `rel`, the 14-day note (mocked clock), summary and shared page              |
-| `share.spec.ts`                                            | Storage migration, share links (old and new), My builds, touch and wheel on shared builds, phone widths                       |
-| `hero.spec.ts`                                             | The hero and the builder show the same build; the hero poster still matches the live scene                                    |
-| `visual.spec.ts`                                           | Screenshot baselines of the PC views, the hero and a full desk; models load once, and only when used                          |
-| `demo.spec.ts`                                             | `docs/demo-script.md`, click for click                                                                                        |
-| `keyboard.spec.ts`, `a11y.spec.ts`, `site.spec.ts`         | Keyboard-only run, axe on every page and dialog, site wording, no sideways scroll, poster first and no 3D with reduced motion |
-| `accounts-off.spec.ts`, `catalogue-fallback.spec.ts` (new) | No account UI, cookies or outside requests without settings; the JSON catalogue with Supabase off or unreachable              |
+| File                                                       | Covers                                                                                                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `builder.spec.ts`                                          | Picking parts, incompatibilities, picker filters (including tiers), presets, saving, the replace-preset dialog, phone layout    |
+| `setup.spec.ts`, `setup-rules.spec.ts`                     | Setup tab, suggested setup, filter chips, totals, every setup rule from the UI                                                  |
+| `desk.spec.ts`                                             | Desk view switch, warnings in 3D, touch and wheel on the desk, chair fade                                                       |
+| `prices.spec.ts`                                           | Checked and estimate labels, shop links and their `rel`, the 14-day note (mocked clock), summary and shared page                |
+| `share.spec.ts`                                            | Storage migration, share links (old and new), My builds, touch and wheel on shared builds, phone widths                         |
+| `hero.spec.ts`                                             | The hero and the builder show the same build; the hero poster still matches the live scene                                      |
+| `visual.spec.ts`                                           | Screenshot baselines of the PC views, the hero and a full desk; models load once, and only when used                            |
+| `demo.spec.ts`                                             | `docs/demo-script.md`, click for click                                                                                          |
+| `keyboard.spec.ts`, `a11y.spec.ts`, `site.spec.ts`         | Keyboard-only run, axe on every page and dialog, site wording, no sideways scroll, poster first and no 3D with reduced motion   |
+| `accounts-off.spec.ts`, `catalogue-fallback.spec.ts` (new) | No account UI, cookies or outside requests without settings; the JSON catalogue with Supabase off or unreachable                |
+| `mobile-picker.spec.ts` (15 Nov)                           | Picker on three phone sizes: whole items visible, filter panel, chips, Clear all, Escape order, focus; tablet/desktop unchanged |
 
 ### Lighthouse (mobile, median of 3 runs, local production build)
 
@@ -216,6 +219,7 @@ Sessions 1 and 2's known false positives (`mask-image`, design tokens, `SENTRY_A
 
 - `main`: production. Phase 16 was merged on 14 November 2026 through PR #3 (https://github.com/koboy-kampus/corespec/pull/3), merge commit `0325ad6` (not squashed). Before that, the only change since session 2 (`df9628d`) was the author line on `/about` (`ade170f`).
 - `feat/phase-16-auth`: kept on GitHub after the merge; it equals the second parent of `0325ad6`.
+- `fix/mobile-picker-filters`: merged on 15 November 2026 through PR #4 (https://github.com/koboy-kampus/corespec/pull/4), merge commit `9b804b8` (not squashed); kept on GitHub.
 - **Line endings:** `.gitattributes` keeps LF everywhere.
 - **Tags:** `demo-stable-2026-11-11` → `ac3689b`.
 
