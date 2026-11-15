@@ -10,7 +10,8 @@ import {
  * Hands the database's catalogue changes (Phase 16b) to the browser before
  * anything below it renders. It imports only the tiny hand-off module, never
  * the catalogue itself, so pages that don't use the catalogue load no more
- * JavaScript. With no changes (the usual case) `overlay` is null.
+ * JavaScript. With no changes (the usual case) `overlay` is null (no database)
+ * or empty (the database matches the JSON).
  */
 export function CatalogueOverlay({
   overlay,

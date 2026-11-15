@@ -14,7 +14,7 @@ import { CATEGORIES, CATEGORY_LABEL, SETUP_CATEGORIES } from "@/lib/categories";
 import { deriveBuild } from "@/lib/derive";
 import { partLabel } from "@/lib/parts";
 import { shownPrice } from "@/lib/prices";
-import type { SharedBuild } from "@/lib/share";
+import { missingNote, type SharedBuild } from "@/lib/share";
 import { partSpecs } from "@/lib/specs";
 import type { Category, Item } from "@/types/parts";
 import { CopyToBuilds } from "./copy-to-builds";
@@ -59,6 +59,7 @@ function ItemRow({ category, part }: { category: Category; part?: Item }) {
 /** Read-only view of a build someone shared: 3D view, parts, checks and total. */
 export function SharedBuildView({ shared }: { shared: SharedBuild }) {
   const d = deriveBuild(shared.parts);
+  const note = missingNote(shared.missing);
 
   return (
     <div className="container-page flex flex-col gap-6 py-8 md:py-12">
@@ -101,15 +102,16 @@ export function SharedBuildView({ shared }: { shared: SharedBuild }) {
         </div>
       </header>
 
-      {shared.missing > 0 ? (
-        <p className="flex items-start gap-2 rounded-btn border border-warn/30 bg-warn/5 px-3.5 py-2.5 text-[13px] leading-5 text-fg-2">
+      {note ? (
+        <p
+          data-testid="missing-note"
+          className="flex items-start gap-2 rounded-btn border border-warn/30 bg-warn/5 px-3.5 py-2.5 text-[13px] leading-5 text-fg-2"
+        >
           <AlertTriangle
             className="mt-0.5 size-4 shrink-0 text-warn"
             aria-hidden
           />
-          {shared.missing === 1
-            ? "1 part in this link is no longer in our catalogue, so it was left out."
-            : `${shared.missing} parts in this link are no longer in our catalogue, so they were left out.`}
+          {note}
         </p>
       ) : null}
 

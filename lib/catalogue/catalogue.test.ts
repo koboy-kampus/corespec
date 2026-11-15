@@ -242,6 +242,30 @@ describe("the overlay on lib/parts", () => {
       added.id,
     );
   });
+
+  it("drops an item only the database had once the database no longer has it (deleted)", () => {
+    const added = {
+      ...cpu,
+      id: "cpu-amd-ryzen-5-5600-deleted-later",
+      name: "Deleted later",
+    } as Item;
+    applyCatalogueOverlay({ key: "d1", items: [added] });
+    expect(getItem(added.id)).toBeDefined();
+    const code = encodeBuild({ name: "x", parts: { cpu: added.id } });
+    expect(decodeBuild(code)?.parts.cpu).toBe(added.id);
+    const count = getPartsByCategory("cpu").length;
+
+    // The database is reachable and matches the JSON: the item was deleted.
+    applyCatalogueOverlay({ key: "matches-json", items: [] });
+    expect(getItem(added.id)).toBeUndefined();
+    expect(getPartsByCategory("cpu")).toHaveLength(count - 1);
+    expect(ALL_ITEMS.some((i) => i.id === added.id)).toBe(false);
+    expect(decodeBuild(code)).toMatchObject({ parts: {}, missing: 1 });
+    expect(jsonCatalogue().map(canonicalItem)).toEqual(
+      JSON_COPY.map(canonicalItem),
+    );
+    applyCatalogueOverlay(null);
+  });
 });
 
 describe("where the catalogue comes from", () => {
@@ -305,11 +329,16 @@ describe("where the catalogue comes from", () => {
     expect(r).toMatchObject({ overlay: null, source: "json", reason: "empty" });
   });
 
-  it("Supabase on and seeded: no overlay at all", async () => {
+  it("Supabase on and seeded: an empty overlay, no items travel", async () => {
     const r = await readCatalogue({ url: "x", key: "y" }, async () =>
       dbRows(JSON_COPY),
     );
-    expect(r).toMatchObject({ overlay: null, source: "database", skipped: [] });
+    expect(r).toMatchObject({
+      overlay: { items: [] },
+      source: "database",
+      skipped: [],
+    });
+    expect(r.overlay?.estimatesAsOf).toBeUndefined();
   });
 
   it("Supabase on with one edit: only that item travels", async () => {

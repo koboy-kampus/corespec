@@ -192,6 +192,10 @@ In **SQL Editor → New query**, paste each file and **Run**, in this order:
    was there before, and rolls everything back. With other admins present, the
    "last admin can't delete their account" check is skipped with a notice.
 
+Later, for **Delete item** on `/admin/items/<id>` (November 2026):
+`supabase/migrations/20261115000100_item_delete.sql`, then `rls.sql` once more.
+Until it has run, the item page says it can't check usage and offers no delete.
+
 All four are safe to run again. **Careful:** running `seed.sql` again puts the
 seeded items back as the JSON has them, undoing admin edits to them. Run
 `npm run db:export` first if those edits should be kept.
@@ -202,7 +206,12 @@ seeded items back as the JSON has them, undoing admin edits to them. Run
   active or not, no checked listing). **Add item** creates a new one.
 - **`/admin/items/<id>`:** the item's fields (the spec inputs come from
   `lib/catalogue/schema.ts`) and its checked listings: add, edit, delete, and
-  **Mark checked today**.
+  **Mark checked today**. **Delete item** removes an item for good, with its
+  listings, after you type its id. Only for items you added (not from the
+  repo's JSON, which would bring them back), that no preset uses and that no
+  saved build uses (`item_usage_count`, a count only); otherwise the page says
+  why and you deactivate it instead. The audit log keeps the deleted rows.
+  Share links that held the item open without it, with a note.
 - **`/admin/settings`:** "Estimates as of".
 - **`/admin`:** catalogue totals, listings over 14 days old, and the 12 most
   recent changes from the audit log.

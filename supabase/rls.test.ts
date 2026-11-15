@@ -196,6 +196,43 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     await db.close();
   });
 
+  // Item delete: each of these loosens one rule and rls.sql must notice.
+  it("catch item_usage_count answering a non-admin", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      create or replace function public.item_usage_count(p_item_id text)
+      returns integer language sql stable security definer set search_path = '' as $$
+        select count(*)::integer from public.builds b
+        where b.deleted_at is null and b.parts ->> 'cpu' = p_item_id;
+      $$;
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /a user calls item_usage_count/,
+    );
+    await db.close();
+  });
+
+  it("catch an item in use being deletable", async () => {
+    const db = await freshDb();
+    await db.exec("drop trigger items_refuse_delete_in_use on public.items;");
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /an item a saved build uses can't be deleted/,
+    );
+    await db.close();
+  });
+
+  it("catch a user being able to delete items", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      drop policy "items: admins delete" on public.items;
+      create policy "items: anyone deletes" on public.items for delete to authenticated using (true);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /non-admin writes an item or listing \(user deletes an item\)|a user deletes an item/,
+    );
+    await db.close();
+  });
+
   it("set search_path on every security definer function", async () => {
     const db = await freshDb();
     const { rows } = await db.query<{ name: string; config: string[] | null }>(`
@@ -210,6 +247,8 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
       "delete_my_account",
       "handle_new_user",
       "is_admin",
+      "item_usage_count",
+      "items_refuse_delete_in_use",
       "set_role",
     ]);
     for (const r of rows) expect(r.config, r.name).toContain('search_path=""');
@@ -224,7 +263,11 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     `);
     expect(grants.filter((g) => g.who === "anon")).toEqual([]);
     // The trigger functions can't be called by anyone.
-    for (const name of ["handle_new_user", "audit_row"])
+    for (const name of [
+      "handle_new_user",
+      "audit_row",
+      "items_refuse_delete_in_use",
+    ])
       expect(
         grants.find((g) => g.name === name),
         name,

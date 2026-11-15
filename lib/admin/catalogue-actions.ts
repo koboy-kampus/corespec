@@ -17,6 +17,7 @@ import { presets } from "@/lib/presets";
 import { partCode } from "@/lib/share";
 import type { Item } from "@/types/parts";
 import { formValues, readItemForm, readRupiah } from "./catalogue-form";
+import { deleteBlock, isSeedItem, presetsUsing } from "./item-delete";
 
 /**
  * Catalogue Server Actions for /admin/items and /admin/settings (Phase 16b).
@@ -56,6 +57,9 @@ function dbMessage(message: string, fallback: string): string {
   if (/row-level security|permission denied/i.test(message)) return NOT_ADMIN;
   if (/duplicate key|already exists/i.test(message))
     return "That already exists.";
+  const inUse = /used in (\d+) saved build/i.exec(message);
+  if (inUse)
+    return `Used in ${inUse[1]} saved build${inUse[1] === "1" ? "" : "s"} — deactivate instead.`;
   if (/violates check constraint/i.test(message))
     return "The database refused a value. Check the fields and try again.";
   return fallback;
@@ -249,4 +253,50 @@ export async function saveSettings(
     };
   saved();
   return { done: "saved", values };
+}
+
+/**
+ * Deletes an item for good, with its listings (the database cascades them, and
+ * the audit log keeps the deleted rows). Only items that aren't in the repo,
+ * that no preset uses and that no saved build uses (lib/admin/item-delete.ts);
+ * the admin types the item's id to confirm.
+ */
+export async function deleteItem(
+  _: AdminFormState,
+  form: FormData,
+): Promise<AdminFormState> {
+  const session = await admin();
+  if (!session) return { error: NOT_ADMIN };
+  const id = String(form.get("itemId") ?? "");
+  if (!id || String(form.get("confirmId") ?? "").trim() !== id)
+    return {
+      fields: { confirmId: "Type the item's id exactly to confirm." },
+    };
+
+  let usage: number | null = null;
+  if (!isSeedItem(id) && !presetsUsing(id).length) {
+    const { data, error } = await session.supabase.rpc("item_usage_count", {
+      p_item_id: id,
+    });
+    if (!error && typeof data === "number") usage = data;
+  }
+  const block = deleteBlock({
+    seed: isSeedItem(id),
+    presets: presetsUsing(id),
+    usage,
+  });
+  if (block) return { error: block.message };
+
+  const { data, error } = await session.supabase
+    .from("items")
+    .delete()
+    .eq("id", id)
+    .select("id");
+  if (error)
+    return {
+      error: dbMessage(error.message, "Couldn't delete the item. Try again."),
+    };
+  if (!data?.length) return { error: "That item isn't in the database." };
+  updateTag(CATALOGUE_TAG);
+  redirect(`/admin/items?deleted=${encodeURIComponent(id)}`);
 }
