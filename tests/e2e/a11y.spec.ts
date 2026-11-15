@@ -117,3 +117,32 @@ test("no axe violations: shared build, desk view", async ({ page }) => {
   await page.waitForTimeout(800);
   expect(await audit(page)).toEqual([]);
 });
+
+test.describe("part picker on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("no axe violations: filters closed and open", async ({ page }) => {
+    await page.goto("/builder");
+    await page.getByRole("tab", { name: /^Setup/ }).click();
+    await page.getByRole("button", { name: /^Monitor Choose/ }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(600);
+    expect(await audit(page)).toEqual([]);
+
+    await dialog.getByRole("button", { name: /^Filters/ }).click();
+    await expect(dialog.getByRole("group", { name: "Filters" })).toBeVisible();
+    await dialog
+      .getByRole("group", { name: "Filter by tier" })
+      .getByRole("button", { name: "Mid" })
+      .click();
+    expect(await audit(page)).toEqual([]);
+
+    // Closed again, with the active-filter chips showing.
+    await dialog.getByRole("button", { name: "Done" }).click();
+    await expect(
+      dialog.getByRole("button", { name: "Remove filter: Mid" }),
+    ).toBeVisible();
+    expect(await audit(page)).toEqual([]);
+  });
+});
