@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono, IBM_Plex_Mono } from "next/font/google";
+import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -81,6 +82,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <Footer />
             <CommandPalette />
             <AccountSync />
+            <Toaster />
           </TooltipProvider>
         </CatalogueOverlay>
         {/* Cookieless page-view counts. Vercel serves the script, so only render it there. */}
