@@ -60,7 +60,7 @@ function fromBase64Url(b64: string): string {
 export interface SharedBuild {
   name: string;
   parts: Build["parts"];
-  /** Parts in the link that are no longer in the catalogue. */
+  /** Items in the link that are no longer in the catalogue (deleted, or unknown). */
   missing: number;
 }
 
@@ -99,6 +99,14 @@ export function decodeBuild(code: string): SharedBuild | null {
     parts,
     missing,
   };
+}
+
+/** The note on a shared build when some of its items were left out. */
+export function missingNote(missing: number): string | null {
+  if (missing <= 0) return null;
+  return missing === 1
+    ? "1 item is no longer in the catalogue, so it was left out."
+    : `${missing} items are no longer in the catalogue, so they were left out.`;
 }
 
 export function sharePath(build: Pick<Build, "name" | "parts">): string {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight, ArrowUpRight, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import { mainNav } from "@/lib/nav";
 import { useUiStore } from "@/store/ui";
 import { Logo } from "./logo";
 import { MobileAccountLinks } from "@/components/account/account-menu";
+import { SaveStatus, ShareBuildButton } from "./builder-nav-actions";
 
 const linkClass =
   "group flex items-center justify-between rounded-btn px-3 py-3 text-[18px] leading-6 font-medium text-fg transition-colors hover:bg-surface-2";
@@ -74,14 +76,33 @@ export function MobileMenu({ className }: { className?: string }) {
           >
             Search
           </Button>
-          <SheetClose asChild>
-            <Button asChild size="lg" iconRight={<ArrowRight />}>
-              <Link href="/builder">Start Building</Link>
-            </Button>
-          </SheetClose>
+          <Suspense fallback={<StartBuilding />}>
+            <PageAction onShared={() => setOpen(false)} />
+          </Suspense>
           <p className="pt-2 label-micro text-fg-3">CoreSpec · Rev 0.1</p>
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function StartBuilding() {
+  return (
+    <SheetClose asChild>
+      <Button asChild size="lg" iconRight={<ArrowRight />}>
+        <Link href="/builder">Start Building</Link>
+      </Button>
+    </SheetClose>
+  );
+}
+
+/** The same rule as the navbar: on /builder, share the build instead. */
+function PageAction({ onShared }: { onShared: () => void }) {
+  if (usePathname() !== "/builder") return <StartBuilding />;
+  return (
+    <div className="flex flex-col gap-2">
+      <ShareBuildButton size="lg" onCopied={onShared} />
+      <SaveStatus className="self-center" />
+    </div>
   );
 }

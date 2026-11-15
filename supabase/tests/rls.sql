@@ -1,6 +1,6 @@
 -- Row Level Security tests for CoreSpec: profiles, builds and the account/admin
 -- functions (Phase 16a), then the catalogue, listings, settings and the audit
--- log (Phase 16b).
+-- log (Phase 16b), then deleting items (20261115000100_item_delete.sql).
 --
 -- How to run: Supabase dashboard → SQL Editor → paste this whole file → Run.
 -- It creates three throwaway accounts, acts as anon, as each of them and as an
@@ -693,6 +693,132 @@ begin
   -- A deactivated item is still readable (old share links).
   assert (select count(*) from public.items where id = 'cpu-rls-new' and not active) = 1,
     'FAIL: a deactivated item can still be read';
+end;
+$$;
+
+reset role;
+
+-- ===========================================================================
+-- Deleting items (20261115000100_item_delete.sql)
+-- ===========================================================================
+
+-- Fixtures, as the database owner: an item one of bob's builds uses, and a
+-- free item with a listing that only a deleted build (a tombstone) used.
+-- (bob, not alice: alice's account is full from the build-limit check.)
+insert into public.items (id, category, brand, name, tier, price_idr, dims, specs) values
+  ('cpu-rls-used', 'cpu', 'RLS', 'Used CPU', 'mid', 2000000,
+    '{"l": 40, "w": 40, "h": 7}',
+    '{"anchor": "cpu", "socket": "AM5", "cores": 6, "threads": 12, "tdpW": 65}'),
+  ('cpu-rls-free', 'cpu', 'RLS', 'Free CPU', 'budget', 1800000,
+    '{"l": 40, "w": 40, "h": 7}',
+    '{"anchor": "cpu", "socket": "AM4", "cores": 6, "threads": 12, "tdpW": 65}');
+insert into public.listings (item_id, marketplace, url, price_idr, checked_at) values
+  ('cpu-rls-free', 'tokopedia', 'https://www.tokopedia.com/shop/rls-free', 1750000, current_date - 1);
+insert into public.builds (owner, id, name, parts) values
+  ('00000000-0000-4000-8000-00000000000b', 'bob-uses', 'Uses an RLS CPU',
+    '{"cpu": "cpu-rls-used"}'),
+  ('00000000-0000-4000-8000-00000000000b', 'bob-tomb', 'Deleted later',
+    '{"cpu": "cpu-rls-free"}');
+update public.builds set deleted_at = now() where id = 'bob-tomb';
+
+-- anon: can't count usage or delete.
+set local role anon;
+select set_config('request.jwt.claims', '{"role": "anon"}', true);
+
+do $$
+begin
+  begin
+    perform public.item_usage_count('cpu-rls-used');
+    raise exception 'FAIL: anon calls item_usage_count';
+  exception when insufficient_privilege then
+    if sqlerrm not like 'permission denied for function%' then
+      raise exception 'FAIL: anon calls item_usage_count (reached the function: %)', sqlerrm;
+    end if;
+  end;
+  begin
+    delete from public.items where id = 'cpu-rls-free';
+    raise exception 'FAIL: anon deletes an item';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$$;
+
+reset role;
+
+-- alice (a user): the function refuses her, and a delete touches nothing.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000a", "role": "authenticated"}', true);
+
+do $$
+declare
+  n integer;
+begin
+  begin
+    perform public.item_usage_count('cpu-rls-used');
+    raise exception 'FAIL: a user calls item_usage_count';
+  exception when insufficient_privilege then null;
+  end;
+  delete from public.items where id = 'cpu-rls-free';
+  get diagnostics n = row_count;
+  assert n = 0, 'FAIL: a user deletes an item';
+  delete from public.listings where item_id = 'cpu-rls-free';
+  get diagnostics n = row_count;
+  assert n = 0, 'FAIL: a user deletes a listing';
+end;
+$$;
+
+reset role;
+
+-- carol (the admin): counts usage (a number, nothing else), can't delete an
+-- item in use, deletes a free one with its listing, and both are logged.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000c", "role": "authenticated"}', true);
+
+do $$
+declare
+  n integer;
+  e record;
+begin
+  assert pg_get_function_result('public.item_usage_count(text)'::regprocedure) = 'integer',
+    'FAIL: item_usage_count returns a count only';
+  assert public.item_usage_count('cpu-rls-used') = 1,
+    'FAIL: item_usage_count counts the saved builds that use an item';
+  assert public.item_usage_count('cpu-rls-free') = 0,
+    'FAIL: item_usage_count ignores deleted builds';
+  assert public.item_usage_count('cpu-rls-nope') = 0,
+    'FAIL: item_usage_count is 0 for an unknown item';
+
+  begin
+    delete from public.items where id = 'cpu-rls-used';
+    raise exception 'FAIL: an item a saved build uses can''t be deleted';
+  exception when raise_exception then
+    if sqlerrm not like '%is used in 1 saved build%' then
+      raise exception '%', sqlerrm;
+    end if;
+  end;
+  assert exists (select 1 from public.items where id = 'cpu-rls-used'),
+    'FAIL: an item a saved build uses can''t be deleted (it is gone)';
+
+  delete from public.items where id = 'cpu-rls-free';
+  get diagnostics n = row_count;
+  assert n = 1, 'FAIL: an admin deletes an unused item';
+  assert not exists (select 1 from public.listings where item_id = 'cpu-rls-free'),
+    'FAIL: deleting an item deletes its listings';
+
+  select * into e from public.audit_log
+  where table_name = 'items' and action = 'delete' and row_id = 'cpu-rls-free'
+  order by id desc limit 1;
+  assert e.actor = '00000000-0000-4000-8000-00000000000c'
+    and e.diff ->> 'name' = 'Free CPU'
+    and (e.diff ->> 'price_idr')::int = 1800000
+    and e.diff -> 'specs' ->> 'socket' = 'AM4',
+    'FAIL: a deleted item is logged with its data';
+  assert exists (select 1 from public.audit_log
+                 where table_name = 'listings' and action = 'delete'
+                   and row_id like 'cpu-rls-free · %'),
+    'FAIL: the listings deleted with an item are logged';
 end;
 $$;
 

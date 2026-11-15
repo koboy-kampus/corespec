@@ -89,7 +89,11 @@ function SyncEngine() {
   const offered = useRef(false);
 
   useEffect(() => {
-    if (!hint) return;
+    const status = useAccountStore.getState().setSync;
+    if (!hint) {
+      status("idle");
+      return;
+    }
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let running: Promise<void> | null = null;
@@ -104,6 +108,7 @@ function SyncEngine() {
     };
 
     const once = async () => {
+      status("syncing");
       const before = useBuildStore.getState();
       const sent = snapshot(before);
       let res: Awaited<ReturnType<typeof syncBuilds>> | null = null;
@@ -115,10 +120,15 @@ function SyncEngine() {
       if (stopped) return;
 
       if (!res || (!res.ok && res.reason === "error")) {
+        status("failed");
         schedule(RETRY_MS[Math.min(failures++, RETRY_MS.length - 1)]);
         return;
       }
       if (!res.ok) {
+        // A quick second try for "signed out" (two tabs refreshing at once).
+        status(
+          res.reason === "signed-out" && !signedOutOnce ? "syncing" : "failed",
+        );
         if (res.reason === "signed-out" && !signedOutOnce) {
           signedOutOnce = true;
           schedule(SIGNED_OUT_RETRY_MS);
@@ -143,6 +153,8 @@ function SyncEngine() {
       useAccountStore.getState().set(res.displayName, res.role);
       const after = useBuildStore.getState();
       synced = signature(after);
+      // Changed again while this sync was out: the queued run sends it.
+      status(queued ? "syncing" : "synced");
 
       // First sync after logging in: offer to import this browser's guest builds.
       if (!offered.current) {
@@ -184,8 +196,10 @@ function SyncEngine() {
         !stopped &&
         useBuildStore.persist.hasHydrated() &&
         signature(s) !== synced
-      )
+      ) {
+        status("syncing");
         schedule(DEBOUNCE_MS);
+      }
     });
     registerFlush(run);
 

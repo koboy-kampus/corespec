@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { FormMessage } from "@/components/account/field";
+import { ItemDelete } from "@/components/admin/item-delete";
 import { ItemForm } from "@/components/admin/item-form";
 import {
   ListingForm,
@@ -13,6 +14,7 @@ import {
 import { SectionHeader } from "@/components/ui/section-header";
 import { itemFormValues } from "@/lib/admin/catalogue-form";
 import { isStaleCheck, readAdminCatalogue } from "@/lib/admin/catalogue-data";
+import { deleteBlock, isSeedItem, presetsUsing } from "@/lib/admin/item-delete";
 import { requireAdmin } from "@/lib/auth/dal";
 import { MAX_PRICE_GAP, todayJakarta } from "@/lib/catalogue/listings";
 import { formatIDR } from "@/lib/format";
@@ -70,6 +72,20 @@ async function ItemPage({
       Object.values(p.parts).includes(id) ||
       Object.values(p.setup ?? {}).includes(id),
   );
+
+  // Delete: only for items not from the repo, in no preset and no saved build.
+  const seed = isSeedItem(id);
+  const usedByPresets = presetsUsing(id);
+  let usage: number | null = null;
+  let usageFailed = false;
+  if (item && !seed && !usedByPresets.length) {
+    const res = await supabase.rpc("item_usage_count", { p_item_id: id });
+    if (!res.error && typeof res.data === "number") usage = res.data;
+    else usageFailed = true;
+  }
+  const blocked = usageFailed
+    ? "Couldn't check whether saved builds use this item, so it can't be deleted right now. If this keeps happening, run supabase/migrations/20261115000100_item_delete.sql in the SQL editor."
+    : (deleteBlock({ seed, presets: usedByPresets, usage })?.message ?? null);
 
   return (
     <div className="container-page flex flex-col gap-8 py-10 md:py-14">
@@ -144,6 +160,13 @@ async function ItemPage({
             initial={itemFormValues(item)}
             presetLocked={presetLocked}
             modelIds={Object.keys(models)}
+          />
+
+          <ItemDelete
+            itemId={item.id}
+            label={`${item.brand} ${item.name}`}
+            listings={views.length}
+            blocked={blocked}
           />
         </>
       )}

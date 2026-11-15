@@ -7,6 +7,7 @@ import { ItemFilters } from "@/components/admin/item-filters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/ui/section-header";
+import { ToastOnLoad } from "@/components/ui/toast";
 import { isStaleCheck, readAdminCatalogue } from "@/lib/admin/catalogue-data";
 import { requireAdmin } from "@/lib/auth/dal";
 import { CATEGORY_LABEL, ALL_CATEGORIES } from "@/lib/categories";
@@ -45,6 +46,8 @@ async function Items({
     status: param(sp.status),
     unchecked: param(sp.unchecked) === "1",
   };
+  // Set by deleteItem's redirect (lib/admin/catalogue-actions.ts).
+  const deleted = param(sp.deleted);
   const { items, error } = await readAdminCatalogue(supabase);
   const order = new Map(ALL_CATEGORIES.map((c, i) => [c, i]));
   const q = filters.q.toLowerCase();
@@ -69,6 +72,12 @@ async function Items({
       >
         <ArrowLeft className="size-3.5" aria-hidden /> Admin
       </Link>
+      {deleted ? (
+        <ToastOnLoad
+          message={`Deleted ${deleted}. The site updates in a few seconds.`}
+          cleanUrl="/admin/items"
+        />
+      ) : null}
       <SectionHeader
         as="h1"
         eyebrow="Admin"

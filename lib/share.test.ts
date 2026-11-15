@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { ALL_ITEMS, ALL_PARTS } from "@/lib/parts";
+import { deriveBuild } from "@/lib/derive";
+import {
+  ALL_ITEMS,
+  ALL_PARTS,
+  applyCatalogueOverlay,
+  getItem,
+} from "@/lib/parts";
+import type { Item } from "@/types/parts";
 import { presets } from "@/lib/presets";
-import { decodeBuild, encodeBuild, partCode, sharePath } from "./share";
+import {
+  decodeBuild,
+  encodeBuild,
+  missingNote,
+  partCode,
+  sharePath,
+} from "./share";
 
 describe("share codes", () => {
   it("gives every catalogue part a unique code", () => {
@@ -47,6 +60,40 @@ describe("share codes", () => {
       parts: { cpu: "cpu-amd-ryzen-5-7600" },
       missing: 1,
     });
+  });
+
+  it("opens a link whose item an admin deleted: skipped, counted, no crash", () => {
+    const gpu = getItem("gpu-sapphire-pulse-radeon-rx-6600-8gb")!;
+    const added = { ...gpu, id: "gpu-admin-added-test", name: "Added" } as Item;
+    applyCatalogueOverlay({ key: "share-added", items: [added] });
+    const code = encodeBuild({
+      name: "Mine",
+      parts: { cpu: "cpu-amd-ryzen-5-7600", gpu: added.id },
+    });
+    expect(decodeBuild(code)?.parts.gpu).toBe(added.id);
+
+    // Deleted: the database is reachable and no longer has it.
+    applyCatalogueOverlay({ key: "matches-json", items: [] });
+    const shared = decodeBuild(code)!;
+    expect(shared).toEqual({
+      name: "Mine",
+      parts: { cpu: "cpu-amd-ryzen-5-7600" },
+      missing: 1,
+    });
+    const d = deriveBuild(shared.parts);
+    expect(d.filled).toBe(1);
+    expect(d.resolved.gpu).toBeUndefined();
+    expect(missingNote(shared.missing)).toBe(
+      "1 item is no longer in the catalogue, so it was left out.",
+    );
+    applyCatalogueOverlay(null);
+  });
+
+  it("words the missing-items note", () => {
+    expect(missingNote(0)).toBeNull();
+    expect(missingNote(2)).toBe(
+      "2 items are no longer in the catalogue, so they were left out.",
+    );
   });
 
   it("rejects codes that aren't valid", () => {

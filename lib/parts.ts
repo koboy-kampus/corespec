@@ -109,6 +109,11 @@ export const CATALOG_STATS = {
  * holding one (presets, resolved builds) sees the change. An item no longer in
  * the overlay goes back to its JSON version; null restores the JSON exactly.
  * Applying the same overlay again does nothing.
+ *
+ * An item only the database had (not in the JSON) that's missing from a later
+ * overlay was deleted by an admin: it leaves the catalogue, so links and builds
+ * that use it skip it. With a null overlay (database unreachable or not set
+ * up) nothing is known, so such an item only leaves the picker.
  */
 let appliedKey: string | null = null;
 let pristine: Map<string, Item> | null = null;
@@ -123,16 +128,40 @@ function replaceInPlace(target: Item, source: Item) {
 export function applyCatalogueOverlay(overlay: CatalogueOverlay | null): void {
   const key = overlay?.key ?? null;
   if (key === appliedKey) return;
+  // An empty overlay on the untouched JSON (the database matches it): nothing to do.
+  if (!pristine && overlay && !overlay.items.length && !overlay.estimatesAsOf) {
+    appliedKey = key;
+    return;
+  }
   pristine ??= new Map(ALL_ITEMS.map((i) => [i.id, structuredClone(i)]));
 
   const next = new Map(overlay?.items.map((i) => [i.id, i]));
+  const deleted = new Set<Item>();
   for (const item of ALL_ITEMS) {
     const source = next.get(item.id) ?? pristine.get(item.id);
     next.delete(item.id);
     if (source && source.category === item.category)
       replaceInPlace(item, source);
-    // An item an earlier overlay added that's gone from this one: out of the picker.
-    else if (!source) (item as { active?: false }).active = false;
+    // An item an earlier overlay added that's gone from this one.
+    else if (!source) {
+      if (overlay) deleted.add(item);
+      else (item as { active?: false }).active = false;
+    }
+  }
+  if (deleted.size) {
+    const keep = (list: Item[]) => {
+      const kept = list.filter((i) => !deleted.has(i));
+      list.splice(0, list.length, ...kept);
+    };
+    for (const list of [
+      ...Object.values(CATALOG),
+      ...Object.values(SETUP_CATALOG),
+      ALL_PARTS,
+      ALL_SETUP,
+      ALL_ITEMS,
+    ])
+      keep(list as Item[]);
+    for (const item of deleted) byId.delete(item.id);
   }
   for (const source of next.values()) {
     const item = structuredClone(source);

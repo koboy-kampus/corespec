@@ -29,6 +29,11 @@ import {
  */
 
 export const CATALOGUE_TAG = "catalogue";
+/** The overlay when the database has exactly the JSON's catalogue. */
+export const MATCHES_JSON: CatalogueOverlay = {
+  key: "matches-json",
+  items: [],
+};
 /** How long a page build waits for the database before falling back to the JSON. */
 export const FETCH_TIMEOUT_MS = 4000;
 
@@ -108,12 +113,16 @@ export async function readCatalogue(
         `[catalogue] ${skipped.length} database item(s) didn't pass the checks; using the JSON for: ${skipped.join(", ")}`,
       );
     return {
-      overlay: diffCatalogue(
-        jsonCatalogue(),
-        JSON_ESTIMATES_AS_OF,
-        items,
-        rows.estimatesAsOf,
-      ),
+      // The database matches the JSON: an empty overlay rather than null, so a
+      // running server knows that items only the database had are gone
+      // (deleted), not just out of reach (lib/parts.ts applyCatalogueOverlay).
+      overlay:
+        diffCatalogue(
+          jsonCatalogue(),
+          JSON_ESTIMATES_AS_OF,
+          items,
+          rows.estimatesAsOf,
+        ) ?? MATCHES_JSON,
       source: "database",
       skipped,
       retrySoon: false,

@@ -152,6 +152,7 @@ export interface Database {
         Returns: undefined;
       };
       delete_my_account: { Args: Record<string, never>; Returns: undefined };
+      item_usage_count: { Args: { p_item_id: string }; Returns: number };
       admin_stats: {
         Args: Record<string, never>;
         Returns: {

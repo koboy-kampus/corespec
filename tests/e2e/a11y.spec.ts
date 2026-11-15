@@ -118,6 +118,30 @@ test("no axe violations: shared build, desk view", async ({ page }) => {
   expect(await audit(page)).toEqual([]);
 });
 
+test.describe("navbar on /builder", () => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+
+  test("no axe violations: Share build, status and toast", async ({ page }) => {
+    await openPreset(page, "sweet-spot-1440p");
+    await page
+      .getByRole("banner")
+      .getByRole("button", { name: "Share build" })
+      .click();
+    await expect(page.getByTestId("toast")).toBeVisible();
+    await page.waitForTimeout(400);
+    expect(await audit(page)).toEqual([]);
+  });
+
+  test("no axe violations: phone, menu open", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/builder");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.getByRole("dialog", { name: "Menu" })).toBeVisible();
+    await page.waitForTimeout(600);
+    expect(await audit(page)).toEqual([]);
+  });
+});
+
 test.describe("part picker on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

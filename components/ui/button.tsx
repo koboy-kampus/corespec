@@ -22,6 +22,8 @@ const buttonVariants = cva(
           "glass border-line text-fg shadow-edge hover:border-line-hover hover:bg-surface-2/80",
         ghost:
           "border-transparent bg-transparent text-fg-2 hover:bg-surface-2 hover:text-fg",
+        danger:
+          "border-accent/50 bg-transparent text-accent hover:border-accent hover:bg-accent-soft",
       },
       size: {
         sm: "h-8 rounded-input px-3 text-[13px]",

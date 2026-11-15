@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight, Search } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { NavLinks } from "./nav-links";
 import { MobileMenu } from "./mobile-menu";
 import { AccountMenu } from "@/components/account/account-menu";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { SaveStatus, ShareBuildButton } from "./builder-nav-actions";
 
 // With accounts on, the account menu joins the bar from 768px; the short
 // button label keeps it from scrolling sideways until there's room (1024px).
@@ -61,33 +63,51 @@ export function Navbar() {
 
           <AccountMenu className="hidden md:inline-flex" />
 
-          <Button
-            asChild
-            size="sm"
-            iconRight={
-              <ArrowRight className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
-            }
-          >
-            <Link href="/builder">
-              <span
-                className={cn("sm:hidden", ACCOUNTS && "md:inline lg:hidden")}
-              >
-                Build
-              </span>
-              <span
-                className={cn(
-                  "hidden sm:inline",
-                  ACCOUNTS && "md:hidden lg:inline",
-                )}
-              >
-                Start Building
-              </span>
-            </Link>
-          </Button>
+          {/* usePathname can suspend on dynamic routes: those aren't /builder. */}
+          <Suspense fallback={<StartBuilding />}>
+            <PageAction />
+          </Suspense>
 
           <MobileMenu className="md:hidden" />
         </div>
       </div>
     </header>
+  );
+}
+
+function StartBuilding() {
+  return (
+    <Button
+      asChild
+      size="sm"
+      iconRight={
+        <ArrowRight className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
+      }
+    >
+      <Link href="/builder">
+        <span className={cn("sm:hidden", ACCOUNTS && "md:inline lg:hidden")}>
+          Build
+        </span>
+        <span
+          className={cn("hidden sm:inline", ACCOUNTS && "md:hidden lg:inline")}
+        >
+          Start Building
+        </span>
+      </Link>
+    </Button>
+  );
+}
+
+/**
+ * "Start Building" everywhere except /builder, where it would link to the page
+ * you're on: there it's "Share build" and the build's save status.
+ */
+function PageAction() {
+  if (usePathname() !== "/builder") return <StartBuilding />;
+  return (
+    <>
+      <SaveStatus compact />
+      <ShareBuildButton compact />
+    </>
   );
 }
