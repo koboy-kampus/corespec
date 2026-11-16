@@ -522,9 +522,112 @@ Rei's supervisor suggested user and admin login, because examiners like seeing i
 - The compatibility rules stay pure functions on plain objects, so their tests don't change.
 - For the PI: export an ERD and a use case diagram (actors: Guest, User, Admin) into `docs/`.
 
+## 9. Session 3 — Phases 17 and 18
+
+> **How to use (session 3):** open Claude Code in the repo and say:
+> `Read REI.md section 9 and HANDOFF.md, then start Phase 17a.`
+
+Rei's supervisor asked for two more features at the 16 November bimbingan: a **payment simulation with a downloadable PDF receipt** (the items plus a picture of the PC and the setup) and a **live chat** with the admin. CoreSpec is still **not a shop**: nothing is sold, stocked or shipped, and every screen and the PDF say so.
+
+**Deadline: Phase 17a and 17b must be on a Vercel preview by Wednesday 18 Nov, evening**, so Rei can test on his phones before the bimbingan on Thursday 19 Nov. If time runs short, cut scope in this order: admin orders list → QR code on the PDF → desk picture on the PDF. Never cut: the "simulation" wording, the server-side price recalculation, the tests of the status rules.
+
+**Everything in sections 0, 3, 6, 7 and the session 2 rules in section 8 still applies** (read the Next 16 docs in `node_modules/next/dist/docs/` before using a Next API that's new to this repo: Route Handlers and `next/script` are both new here). On top of that:
+
+- Work on a new branch **`feat/phase-17-checkout`** and open a PR; never push to `main`.
+- **Still no Supabase service-role key.** The pattern for trusted writes is in 17a.
+- New SQL goes in **new** migration files (rerunnable, like the others). Don't run them on the real project: the chat does that, then reruns `supabase/tests/rls.sql`.
+- **With the Midtrans settings missing the site is exactly as before**: no Checkout button, no order pages, no request to Midtrans, and `accounts-off.spec.ts` stays green. Checkout also needs accounts on.
+- Rei types every key himself. Never print, log or ask for a key's value.
+
+### Facts checked in the Midtrans docs on 17 Nov 2026 (don't work from memory)
+
+- **Product: Snap, pop-up mode.** The server asks for a token; the browser opens the payment pop-up with it. No Core API charge calls.
+- **Create a transaction:** `POST https://app.sandbox.midtrans.com/snap/v1/transactions`, headers `Accept: application/json`, `Content-Type: application/json`, `Authorization: Basic base64(SERVER_KEY + ":")`. Body: `transaction_details: { order_id, gross_amount }` (integer rupiah) plus optional `item_details: [{ id, price, quantity, name }]`, `customer_details`, `expiry: { unit, duration }`, `custom_field1..3`. `order_id`: unique, at most 50 characters, only letters, digits, `-`, `_`, `~`, `.`. **The item prices × quantities must add up to `gross_amount`** or Midtrans rejects the request. Success is HTTP 201 with `{ token, redirect_url }`.
+- **Browser:** load `https://app.sandbox.midtrans.com/snap/snap.js` with `data-client-key="<client key>"`, then `window.snap.pay(token, { onSuccess, onPending, onError, onClose })`. The same token re-opens the same payment.
+- **Status check:** `GET https://api.sandbox.midtrans.com/v2/{order_id}/status`, same Basic auth. Returns `transaction_status`, `fraud_status`, `gross_amount` (a string like `"9080000.00"`), `payment_type`, `transaction_id`, `settlement_time`, `status_code`. An order whose pop-up was closed before a payment method was chosen has no transaction yet (expect a 404; **check this in the sandbox** and treat it as "still pending").
+- **Statuses:** `pending`, `settlement`, `capture` (cards), `deny`, `cancel`, `expire`, `failure`, `refund`, `partial_refund`, `chargeback`, `authorize`. Paid means `status_code` 200 **and** `transaction_status` is `settlement`, or `capture` with `fraud_status` `accept`.
+- **Notification (webhook):** Midtrans POSTs JSON to the Payment Notification URL set in its dashboard (Settings → Configuration). The URL must be public: **a Vercel preview URL is behind Vercel's login, so the webhook only works on production.** `signature_key` = SHA-512 hex of `order_id + status_code + gross_amount + SERVER_KEY`, with `gross_amount` exactly as the string in the body. Notifications can arrive twice or out of order. Answer within 5 seconds; any 2xx stops retries.
+- **Sandbox testing:** card `4811 1111 1111 1114`, any future expiry, CVV `123`, OTP `112233`. QRIS on a desktop: copy the QR image's address into `https://simulator.sandbox.midtrans.com/v2/qris/index`. BCA VA: `https://simulator.sandbox.midtrans.com/bca/va/index`. **QRIS has a Rp 10.000.000 limit per transaction** (a Bank Indonesia rule), and most CoreSpec builds cost more, so **don't restrict `enabled_payments`**: let Snap list every method the sandbox account has. Check in the sandbox what Snap does with QRIS above the limit and say so in the summary.
+
+### Phase 17a — Orders and the Midtrans Sandbox checkout
+
+**Environment variables** (add to `.env.example` with empty values and comments; `docs/accounts.md` gets a "Checkout simulation" section with the setup steps):
+
+| Name | Kind | Notes |
+| --- | --- | --- |
+| `MIDTRANS_SERVER_KEY` | **secret**, server only | Vercel type Secret. Used only in `lib/checkout/midtrans.ts` (`import "server-only"`). |
+| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | public by design | Vercel type Config. Goes in the `snap.js` tag. |
+| `ORDER_WRITE_SECRET` | **secret**, server only | Random, 32 bytes or more. See "Trusted writes". |
+
+`lib/checkout/config.ts`: `checkoutConfig()` returns null unless all three **and** the Supabase settings are present. **Only the sandbox hosts appear in the code** (`app.sandbox.midtrans.com`, `api.sandbox.midtrans.com`); there is no production switch, so a real key can never charge anyone.
+
+**Database** (`supabase/migrations/20261117000100_orders.sql`):
+
+- `public.orders`: `id uuid` pk, `order_no text unique` (e.g. `CS-20261119-7K3F9Q`: this is the Midtrans `order_id`), `owner uuid` → `profiles` (on delete cascade), `build_name text`, `parts jsonb` (the `{category: itemId}` snapshot, checked by `build_parts_ok`), `items jsonb` (the price snapshot: `[{ id, category, brand, name, priceIDR, priceKind: "checked" | "estimate" }]`), `pc_idr`, `setup_idr`, `total_idr` (integers, `total_idr > 0`), `status text` in (`pending`, `paid`, `failed`, `expired`, `cancelled`) default `pending`, `payment_type text`, `midtrans_transaction_id text`, `snap_token text`, `created_at`, `updated_at`, `paid_at`.
+- RLS on. `select`: the owner reads their own, admins read all (use the existing admin check function). **No insert, update or delete grants for `anon` or `authenticated` at all.**
+- **Trusted writes without a service-role key:** a table `public.payment_config` (one row, `secret_hash text`, RLS on, no policies, no grants) holds the SHA-256 hex of `ORDER_WRITE_SECRET`. Two `security definer` functions with `search_path = ''`, each taking `p_secret text` first and raising unless `encode(sha256(convert_to(p_secret, 'utf8')), 'hex')` equals the stored hash (and refusing everything while the hash is null):
+  - `create_order(p_secret, p_owner, p_order_no, p_build_name, p_parts, p_items, p_pc_idr, p_setup_idr, p_total_idr)` → the new row. Also refuses when the owner already has 5 `pending` orders created in the last hour (spam cap).
+  - `set_order_payment(p_secret, p_order_no, p_status, p_payment_type, p_transaction_id, p_snap_token)` → the row. **Status rules live here:** `paid` is final; `pending` never replaces another status; `failed` / `expired` / `cancelled` never replace `paid`; `paid_at` is set once; a null argument leaves its column alone. Unknown `order_no` returns nothing (no error).
+  - Grant execute to `anon` and `authenticated` (the webhook has no session). Without the secret they are useless: test exactly that.
+- The migration leaves `secret_hash` null. Rei makes the secret and its hash locally; the hash (not the secret) is safe to share, and the chat stores it with one SQL statement.
+- Extend `supabase/tests/rls.sql` and `supabase/rls.test.ts`: anon reads no orders; a user reads only their own; an admin reads all; nobody can insert/update/delete directly; both functions refuse a wrong secret and a null hash; every status rule above; the spam cap. Add mutation tests for the two rules that matter most (owner-only read, wrong secret refused). Update `types/supabase.ts`.
+
+**Server code** (`lib/checkout/`, logic in pure functions with unit tests):
+
+- `order.ts` (pure): `buildOrderDraft(parts, name)` resolves the items from the catalogue, takes `shownPrice` and `priceSource` per item, and returns the snapshot and totals, or a refusal: `empty` (no items) or `incompatible` (`check(parts)` has at least one **error**; warnings and missing parts don't block). **Prices never come from the browser.** `toMidtransItems()` (names cut to 50 characters, quantity 1; test that the sum always equals `total_idr`), `newOrderNo()`, `mapMidtransStatus()` (the "Statuses" rule above → our five statuses, or null for "no change"), `verifySignature()` (SHA-512, `timingSafeEqual`).
+- `midtrans.ts` (server only): `createSnapToken(order)` and `fetchStatus(orderNo)` with `fetch`, a 8-second timeout and no caching. No Midtrans npm package.
+- `actions.ts` (`"use server"`):
+  - `startCheckout({ name, parts })`: `getSession()` (refuse guests) → `loadCatalogue()` → `buildOrderDraft` → `create_order` → `createSnapToken` (with `expiry` 60 minutes and `customer_details.first_name` = the display name only: **never send the user's email to Midtrans**) → store the token with `set_order_payment` → return `{ orderId, orderNo, token }`.
+  - `refreshOrder(orderId)`: the owner (or an admin) asks; the server calls `fetchStatus`, checks `gross_amount` equals the order's total, maps the status and calls `set_order_payment`. **This is the main path**: it works on localhost and on previews, where the webhook can't reach.
+  - `resumePayment(orderId)`: returns the stored token for the owner's `pending` order.
+- `app/api/midtrans/notification/route.ts` (`POST`, the first Route Handler in this repo: read the Next docs): parse the JSON, find nothing → 200; verify the signature with `MIDTRANS_SERVER_KEY` (bad signature → 403, logged without the body's secrets); check `gross_amount` against the order; then **confirm with `fetchStatus`** and apply that status. Always answer 200 once the signature is good. It isn't in `proxy.ts`'s matcher; keep it that way.
+
+**Pages and UI** (English UI as everywhere; the Indonesian line below is fixed wording):
+
+- **Builder:** a primary **"Checkout (simulation)"** button in the build summary. Disabled, with the reason next to it, when the build is empty or has compatibility **errors** ("Fix 2 compatibility errors to check out": this is the rule-based system gating the order, which the PI is about). Guests see it enabled and go to `/login?next=/checkout`. Hidden entirely when checkout isn't configured.
+- **`/checkout`** (needs a login; add `/checkout` and `/orders/:path*` to `proxy.ts`'s matcher and guard on the server with `requireSession`): the order summary for the current build from the browser's store: items grouped PC / Setup with Checked or Estimate labels, both subtotals, the total, the compatibility status, and a banner: **"Payment simulation. Midtrans Sandbox: no real money, nothing is sold or shipped."** with **"SIMULASI — bukan bukti transaksi"**. "Pay with Midtrans (sandbox)" calls `startCheckout`, loads `snap.js` **only now** (never on any other page) and opens the pop-up. `onSuccess` / `onPending` / `onClose` → go to `/orders/<id>`; `onError` → a toast and stay.
+- **`/orders`** ("My orders", in the account menu): order number, date, build name, total, status badge.
+- **`/orders/[id]`**: on load, a `pending` order calls `refreshOrder` once (and has a "Check payment status" button and "Continue payment"). Shows the status, the same item table from the **snapshot** (not today's prices), totals, payment method, the sandbox banner, a short "How to pay in the sandbox" box (the test card and the QRIS simulator link from the facts above, opening in a new tab), and a link to the build's share page. A missing or foreign order is a 404.
+- **`/admin/orders`**: every order, newest first, with the owner's display name, total and status; filter by status. Read-only.
+- `robots`: disallow `/checkout` and `/orders`; all three pages `noindex`.
+
+**Tests:** unit tests for everything in `order.ts` (including: a tampered price in the input changes nothing; an incompatible build is refused; the signature check with a known example). The Server Actions and the route handler get unit tests with `fetch` mocked: wrong amount, bad signature, duplicate and out-of-order notifications, 404 from the status API. e2e: with checkout off, no button and `/checkout` is a 404; with dummy settings, the button's three states (empty, errors, ready) and the guest redirect. A real payment can't run in CI: add a manual checklist to `docs/accounts.md`. axe stays at 0 on the new pages.
+
+### Phase 17b — The PDF receipt with the 3D pictures
+
+- On `/orders/[id]`, a **"Download receipt (PDF)"** button, for any status (the status is printed on it).
+- **Pictures:** the page already knows the order's `parts`, so render them: mount the PC `Viewer` and, when the order has setup items, the `DeskViewer`, at a fixed size (e.g. 1200 × 900, pixel ratio 2) in the default assembled camera position, not exploded, no error glow, on the app's dark background. Capture each canvas to PNG **straight after a render** (call `gl.render(scene, camera)` then `toDataURL` in the same tick, or use `preserveDrawingBuffer` on these two canvases only: don't change the builder's canvases). Wait until the models have loaded (the scenes already know) before capturing. If WebGL is missing or a capture fails, the PDF is still made, with "3D preview unavailable" in the picture's place.
+- **PDF:** made in the browser with **`pdf-lib`** (loaded only when the button is clicked; say in the summary how many KB it adds to that click and confirm no other page's JavaScript grew). A4 portrait, light background so it prints well:
+  - Header: the CoreSpec wordmark as text, "Receipt — payment simulation", order number, date and time (WIB), the buyer's display name.
+  - A diagonal watermark and a footer line on **every page**: **"SIMULASI — bukan bukti transaksi"**, and "Midtrans Sandbox. No real payment was made and nothing is sold or shipped."
+  - Status (Paid / Pending / …), payment method, Midtrans transaction id.
+  - The PC picture and the desk picture.
+  - The item table from the snapshot: category, brand and name, Checked / Estimate, price; PC subtotal, setup subtotal, total, in Rupiah as the app formats them.
+  - Compatibility line: "Compatible: all 15 rules passed" (or the warnings, in short).
+  - A QR code to the build's share link, with the link as text under it. A small QR library is fine (lazy, with the PDF); if none is small enough, print the link only and say so.
+- File name `corespec-receipt-<order_no>.pdf`. Keep the layout code in `lib/receipt/` (pure: data in, bytes out) with a unit test that the PDF has the order number, the watermark text on each page and the right total, for a PC-only order, a PC + setup order and a 20-item order that needs a second page.
+- e2e: with a stubbed order, the button downloads a file starting with `%PDF`. Test the capture at phone width too: the pictures must come out the same size whatever the screen.
+
+### Phase 17c — Docs, diagrams and handoff
+
+- `npm run diagrams`: add `orders` (and `payment_config`) to the ERD; add "Checkout (simulation)", "Download receipt" (User) and "View orders" (Admin) to the use case diagram; a new activity diagram "Simulasi pembayaran" for `docs/pi/`. Update `docs/pi/angka.md` (tables, tests, pages).
+- `docs/accounts.md`: the Midtrans setup steps, the env vars, the manual test checklist. `docs/demo-script.md`: a checkout segment (pick the Budget 1080p preset → checkout → pay with the test card → receipt PDF). `/privacy`: one paragraph on what goes to Midtrans (order number, item names, amounts, display name; no email).
+- `HANDOFF.md`: a session 4 report in the usual format, with the new false positives for the secret scan (`MIDTRANS_SERVER_KEY`, `ORDER_WRITE_SECRET`, `snap_token`, `signature_key` as names).
+
+### Phase 18 — Live chat *(after the 19 Nov bimbingan — don't start without Rei saying so)*
+
+Outline only; plan it in detail when Rei starts it.
+
+- A chat bubble for logged-in users; one conversation per user; **`/admin/chat`** inbox with live updates.
+- **Supabase Realtime** on a `messages` table; `conversations` + `messages` with RLS (users read and write only their own conversation, admins all). This is the first Supabase code that would run in the browser: plan how (Realtime needs the user's token client-side) and say what it changes about "no Supabase code in the browser".
+- A **rule-based auto-reply bot** (keywords and quick replies, no AI API): are the prices real, why is my build incompatible, how do I share, how does the checkout simulation work; fallback "Admin akan membalas segera". Pure functions with tests, like the compatibility rules.
+- Message length cap and a rate limit in the database. No personal contact details anywhere.
+
 ---
 
-**Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
+**Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
+
+_Session 2 instruction, kept for history:_ **Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
 
 ---
 
