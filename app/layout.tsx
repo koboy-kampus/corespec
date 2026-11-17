@@ -8,7 +8,7 @@ import { Footer } from "@/components/layout/footer";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { AccountSync } from "@/components/account/account-sync";
 import { CatalogueOverlay } from "@/components/catalogue/catalogue-overlay";
-import { ChatLauncher } from "@/components/chat/chat-launcher";
+import { ChatSlot } from "@/components/chat/chat-slot";
 import { CheckoutFlag } from "@/components/checkout/checkout-flag";
 import { loadCatalogue } from "@/lib/catalogue/load";
 import { isCheckoutConfigured } from "@/lib/checkout/config";
@@ -88,7 +88,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <CommandPalette />
               <AccountSync />
               {/* Live chat (Phase 18): only with accounts on. */}
-              {isSupabaseConfigured() ? <ChatLauncher /> : null}
+              {isSupabaseConfigured() ? <ChatSlot /> : null}
               <Toaster />
             </TooltipProvider>
           </CheckoutFlag>
