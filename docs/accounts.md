@@ -467,7 +467,9 @@ The local tests check the join rules through a stand-in for Supabase's
 - [ ] Type "talk to admin" on the phone: the bot says the admin will reply, and
       the inbox shows "Needs admin".
 - [ ] Reply from the inbox: the phone shows it at once, without a refresh; the
-      bot stays quiet for the next 10 minutes; "Needs admin" goes away.
+      bot skips greetings and "talk to admin" for the next 10 minutes but
+      still answers questions (try "bagaimana cara share build?"); "Needs
+      admin" goes away.
 - [ ] Close the panel, reply again from the admin side, wait a minute and open
       another page: the button shows the unread dot.
 - [ ] A second user account never sees the first one's messages.

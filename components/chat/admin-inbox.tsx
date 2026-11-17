@@ -455,7 +455,7 @@ export function ThreadView({
   listRef?: React.Ref<HTMLDivElement>;
 }) {
   return (
-    <div className="flex h-full min-h-[560px] flex-col md:min-h-0">
+    <div className="flex h-full min-h-[560px] min-w-0 flex-col overflow-x-hidden md:min-h-0">
       <div className="flex items-center gap-2 border-b border-line p-3">
         <Button
           variant="ghost"

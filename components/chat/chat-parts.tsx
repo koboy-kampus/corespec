@@ -2,6 +2,7 @@
 
 import {
   useId,
+  useLayoutEffect,
   type ComponentType,
   type KeyboardEvent,
   type ReactNode,
@@ -24,7 +25,10 @@ export const MAX_MESSAGE = 1000;
 export type ChatMessage = Pick<
   ChatMessageRow,
   "id" | "sender_role" | "body" | "created_at" | "bot_rule"
->;
+> & {
+  /** Only on the user's own message before the server has saved it. */
+  state?: "sending" | "failed";
+};
 
 const TIME = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
@@ -71,10 +75,13 @@ export function MessageBubble({
   message,
   side,
   userName = "User",
+  onRetry,
 }: {
   message: ChatMessage;
   side: "user" | "admin";
   userName?: string;
+  /** Sends a message that failed ("Not sent — Retry") again. */
+  onRetry?: (id: string) => void;
 }) {
   const mine =
     (side === "user" && message.sender_role === "user") ||
@@ -93,11 +100,17 @@ export function MessageBubble({
         ) : (
           <span>{senderLabel(message, side, userName)}</span>
         )}
-        <time dateTime={message.created_at}>{timeWIB(message.created_at)}</time>
+        {message.state === "sending" ? (
+          <span>Sending…</span>
+        ) : message.state === "failed" ? null : (
+          <time dateTime={message.created_at}>
+            {timeWIB(message.created_at)}
+          </time>
+        )}
       </span>
       <p
         className={cn(
-          "max-w-[85%] rounded-[16px] px-3 py-2 text-[14px] leading-5 break-words whitespace-pre-wrap",
+          "max-w-[85%] min-w-0 rounded-[16px] px-3 py-2 text-[14px] leading-5 [overflow-wrap:anywhere] whitespace-pre-wrap",
           mine
             ? "rounded-br-[4px] bg-accent-strong text-white"
             : bot
@@ -107,6 +120,18 @@ export function MessageBubble({
       >
         {message.body}
       </p>
+      {message.state === "failed" ? (
+        <span className="flex items-center gap-1.5 text-[12px] leading-4 text-accent">
+          Not sent —
+          <button
+            type="button"
+            onClick={() => onRetry?.(message.id)}
+            className="font-medium underline underline-offset-2 hover:text-fg"
+          >
+            Retry
+          </button>
+        </span>
+      ) : null}
     </li>
   );
 }
@@ -120,9 +145,11 @@ export function MessageList({
   onLoadEarlier,
   empty,
   listRef,
+  onRetry,
 }: {
   messages: readonly ChatMessage[];
   side: "user" | "admin";
+  onRetry?: (id: string) => void;
   userName?: string;
   hasEarlier?: boolean;
   loadingEarlier?: boolean;
@@ -137,7 +164,7 @@ export function MessageList({
       tabIndex={0}
       role="group"
       aria-label="Messages"
-      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+      className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
     >
       {hasEarlier ? (
         <div className="mb-3 flex justify-center">
@@ -159,6 +186,7 @@ export function MessageList({
               message={m}
               side={side}
               userName={userName}
+              onRetry={onRetry}
             />
           ))}
         </ol>
@@ -197,7 +225,13 @@ export function QuickReplies({
   );
 }
 
-/** The text box: a counter, Enter sends, Shift+Enter is a new line. */
+/** Tallest the text box grows (px) before it scrolls; matches max-h-32. */
+const BOX_MAX = 128;
+
+/**
+ * The text box: one line when empty, growing with the text up to BOX_MAX, a
+ * counter, Enter sends, Shift+Enter is a new line.
+ */
 export function Composer({
   value,
   onChange,
@@ -220,6 +254,14 @@ export function Composer({
   inputRef?: Ref<HTMLTextAreaElement>;
 }) {
   const id = useId();
+  // Fit the text. Empty goes back to the CSS height (one line), so the
+  // placeholder is never measured or clipped.
+  useLayoutEffect(() => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.height = "";
+    if (value) el.style.height = `${Math.min(el.scrollHeight + 2, BOX_MAX)}px`;
+  }, [id, value]);
   const length = [...value].length;
   const over = length > MAX_MESSAGE;
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -252,7 +294,7 @@ export function Composer({
         <textarea
           id={id}
           ref={inputRef}
-          rows={2}
+          rows={1}
           value={value}
           disabled={disabled}
           placeholder={placeholder}
@@ -260,7 +302,8 @@ export function Composer({
           onKeyDown={onKeyDown}
           aria-describedby={`${id}-count${error ? ` ${id}-error` : ""}`}
           aria-invalid={over || undefined}
-          className="max-h-32 min-h-11 flex-1 resize-none rounded-input border border-line bg-canvas px-3 py-2 text-[14px] leading-5 text-fg placeholder:text-fg-3 focus-visible:border-accent focus-visible:outline-none disabled:opacity-60"
+          // 16px on phones, or iOS Safari zooms in when the box is focused.
+          className="max-h-32 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto rounded-input border border-line bg-canvas px-3 py-[11px] text-base leading-5 text-fg placeholder:text-fg-3 focus-visible:border-accent focus-visible:outline-none disabled:opacity-60 md:text-[14px]"
         />
         <Button
           type="submit"
@@ -308,6 +351,7 @@ export function ChatPanelView({
   closeButton,
   listRef,
   inputRef,
+  onRetry,
 }: {
   /** The dialog's own title and description elements, when inside one. */
   Title?: ComponentType<TextProps> | "h2";
@@ -331,9 +375,10 @@ export function ChatPanelView({
   closeButton?: ReactNode;
   listRef?: Ref<HTMLDivElement>;
   inputRef?: Ref<HTMLTextAreaElement>;
+  onRetry?: (id: string) => void;
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-x-hidden">
       <div className="flex items-start justify-between gap-3 border-b border-line px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-center gap-2.5">
@@ -363,6 +408,7 @@ export function ChatPanelView({
         loadingEarlier={loadingEarlier}
         onLoadEarlier={onLoadEarlier}
         listRef={listRef}
+        onRetry={onRetry}
         empty={
           <p className="py-6 text-center text-[14px] leading-5 text-fg-2">
             Ask about prices, compatibility, checkout or receipts. Pick a

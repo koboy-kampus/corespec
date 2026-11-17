@@ -79,6 +79,17 @@ const STATES: {
     draft: "One more question",
   },
   {
+    id: "sending",
+    title: "Sending, and not sent",
+    status: "live",
+    messages: [
+      ...BOT_REPLY,
+      { ...msg("user", "How does checkout work?", 2), state: "failed" },
+      { ...msg("user", "Download receipt", 2), state: "sending" },
+    ],
+    error: "Couldn't send your message. Check your connection and try again.",
+  },
+  {
     id: "reconnecting",
     title: "Reconnecting (polling)",
     status: "reconnecting",
@@ -133,6 +144,27 @@ const THREAD: ThreadState = {
 
 const noop = () => {};
 
+/** One panel state; the text box is live, so the resize can be tried. */
+function SamplePanel({ sample: s }: { sample: (typeof STATES)[number] }) {
+  const [draft, setDraft] = useState(s.draft ?? "");
+  return (
+    <ChatPanelView
+      titleId={`t-${s.id}`}
+      descriptionId={`d-${s.id}`}
+      status={s.status}
+      messages={s.messages}
+      hasEarlier={s.id === "admin"}
+      showQuickReplies={wantsQuickReplies(s.messages)}
+      onQuickReply={noop}
+      draft={draft}
+      onDraft={setDraft}
+      onSend={() => setDraft("")}
+      error={s.error}
+      onRetry={noop}
+    />
+  );
+}
+
 export function ChatSamples() {
   const [filter, setFilter] = useState<InboxFilter>("all");
   return (
@@ -152,19 +184,7 @@ export function ChatSamples() {
                 {s.title}
               </figcaption>
               <div className="h-[560px] overflow-hidden rounded-card border border-line bg-surface">
-                <ChatPanelView
-                  titleId={`t-${s.id}`}
-                  descriptionId={`d-${s.id}`}
-                  status={s.status}
-                  messages={s.messages}
-                  hasEarlier={s.id === "admin"}
-                  showQuickReplies={wantsQuickReplies(s.messages)}
-                  onQuickReply={noop}
-                  draft={s.draft ?? ""}
-                  onDraft={noop}
-                  onSend={noop}
-                  error={s.error}
-                />
+                <SamplePanel sample={s} />
               </div>
             </figure>
           ))}

@@ -143,12 +143,19 @@ describe("sendChatMessage", () => {
     });
   });
 
-  it("stays quiet while an admin is active, but still saves the message", async () => {
+  it("answers questions while an admin is active, but not a greeting", async () => {
     const store = memoryStore();
     store.addAdmin(3);
-    const r = await send(store, "harga?");
-    expect(r.ok && r.messages.map((m) => m.sender_role)).toEqual(["user"]);
-    expect(r.ok && r.quickReplies).toEqual([]);
+    const asked = await send(store, "bagaimana cara share build?");
+    expect(asked.ok && asked.messages.map((m) => m.bot_rule)).toEqual([
+      null,
+      "share",
+    ]);
+    const hello = await send(store, "halo");
+    expect(hello.ok && hello.messages.map((m) => m.sender_role)).toEqual([
+      "user",
+    ]);
+    expect(hello.ok && hello.quickReplies).toEqual([]);
   });
 
   it("sends the fallback once, then stays quiet for 10 minutes", async () => {

@@ -153,11 +153,19 @@ function hits(words: readonly string[], keyword: string): boolean {
   );
 }
 
-/** The first rule (in priority order) whose keyword is in the text, or null. */
-export function matchBotRule(text: string): BotMatch | null {
+/**
+ * The first rule (in priority order) whose keyword is in the text, or null.
+ * Rules in `skip` are passed over, so the next matching rule can answer.
+ */
+export function matchBotRule(
+  text: string,
+  skip?: ReadonlySet<BotRuleId>,
+): BotMatch | null {
   const words = normalize(text).split(" ").filter(Boolean);
   if (!words.length) return null;
-  const rule = BOT_RULES.find((r) => r.keywords.some((k) => hits(words, k)));
+  const rule = BOT_RULES.find(
+    (r) => !skip?.has(r.id) && r.keywords.some((k) => hits(words, k)),
+  );
   return rule
     ? { rule: rule.id, reply: rule.reply, quickReplies: QUICK_REPLIES }
     : null;
@@ -182,10 +190,23 @@ const within = (iso: string, now: number) =>
   now - new Date(iso).getTime() < QUIET_MS;
 
 /**
+ * Rules that stay quiet while an admin is in the conversation: a greeting or
+ * "talk to admin" adds nothing then (the no-match fallback is quiet too).
+ * The other rules answer real questions, so they always answer.
+ */
+export const QUIET_WHILE_ADMIN: ReadonlySet<BotRuleId> = new Set([
+  "greeting",
+  "human",
+]);
+
+/**
  * Whether and how the bot answers `text`, given the conversation's recent
  * messages (any order) and the time:
- * - quiet while an admin has written in the last 10 minutes;
- * - a matching rule answers;
+ * - a question rule (prices, compatibility, receipt, checkout, share,
+ *   account) always answers;
+ * - while an admin has written in the last 10 minutes, `greeting`, `human`
+ *   and the fallback stay quiet (a question rule lower in the order still
+ *   answers, e.g. "admin, harganya?" gets the prices answer);
  * - otherwise the fallback, at most once per 10 minutes.
  */
 export function botDecision(
@@ -193,12 +214,12 @@ export function botDecision(
   recent: readonly RecentMessage[],
   now: number,
 ): BotDecision {
-  if (
-    recent.some((m) => m.sender_role === "admin" && within(m.created_at, now))
-  )
-    return { reply: null, reason: "admin-active" };
-  const match = matchBotRule(text);
+  const adminActive = recent.some(
+    (m) => m.sender_role === "admin" && within(m.created_at, now),
+  );
+  const match = matchBotRule(text, adminActive ? QUIET_WHILE_ADMIN : undefined);
   if (match) return match;
+  if (adminActive) return { reply: null, reason: "admin-active" };
   if (
     recent.some(
       (m) =>

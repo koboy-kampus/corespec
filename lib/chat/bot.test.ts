@@ -154,6 +154,15 @@ describe("matchBotRule: priority, matching and no match", () => {
     expect(matchBotRule("?!…")).toBeNull();
   });
 
+  it("can pass over rules", () => {
+    expect(matchBotRule("halo admin", new Set(["human"]))?.rule).toBe(
+      "greeting",
+    );
+    expect(
+      matchBotRule("halo admin", new Set(["human", "greeting"])),
+    ).toBeNull();
+  });
+
   it("returns the 5 quick replies with every match", () => {
     expect(matchBotRule("halo")?.quickReplies).toEqual(QUICK_REPLIES);
   });
@@ -212,20 +221,46 @@ describe("botDecision: the quiet rules", () => {
     expect(botDecision("harga?", [], now)).toMatchObject({ rule: "prices" });
   });
 
-  it("stays quiet while an admin wrote in the last 10 minutes", () => {
-    expect(botDecision("harga?", [msg("admin", 9.9)], now)).toEqual({
-      reply: null,
-      reason: "admin-active",
-    });
-    expect(botDecision("asdf", [msg("admin", 1)], now)).toEqual({
-      reply: null,
-      reason: "admin-active",
-    });
+  it("question rules always answer, even right after an admin wrote", () => {
+    const admin = [msg("admin", 1)];
+    for (const [text, id] of [
+      ["bagaimana cara share build?", "share"],
+      ["harga?", "prices"],
+      ["kenapa tidak kompatibel", "compatibility"],
+      ["struk saya mana", "receipt"],
+      ["gimana cara bayar", "checkout"],
+      ["lupa password", "account"],
+    ] as const)
+      expect(botDecision(text, admin, now), text).toMatchObject({ rule: id });
   });
 
-  it("answers again once the admin's message is 10 minutes old", () => {
-    expect(botDecision("harga?", [msg("admin", 10)], now)).toMatchObject({
-      rule: "prices",
+  it("greeting, human and the fallback stay quiet while an admin wrote in the last 10 minutes", () => {
+    for (const text of ["halo", "talk to admin", "asdf"])
+      expect(botDecision(text, [msg("admin", 9.9)], now), text).toEqual({
+        reply: null,
+        reason: "admin-active",
+      });
+  });
+
+  it("passes over a quiet rule to a question rule lower in the order", () => {
+    // Alone, "halo admin, harga?" picks `human`.
+    expect(botDecision("halo admin, harga?", [], now)).toMatchObject({
+      rule: "human",
+    });
+    expect(
+      botDecision("halo admin, harga?", [msg("admin", 2)], now),
+    ).toMatchObject({ rule: "prices" });
+  });
+
+  it("greets and passes on to the admin again once the admin's message is 10 minutes old", () => {
+    expect(botDecision("halo", [msg("admin", 10)], now)).toMatchObject({
+      rule: "greeting",
+    });
+    expect(botDecision("talk to admin", [msg("admin", 10)], now)).toMatchObject(
+      { rule: "human" },
+    );
+    expect(botDecision("asdf", [msg("admin", 10)], now)).toMatchObject({
+      rule: FALLBACK_RULE,
     });
   });
 

@@ -19,6 +19,14 @@ import {
   type Connect,
   type LiveStatus,
 } from "@/lib/chat/live";
+import {
+  dropPending,
+  newPending,
+  setPendingState,
+  settlePending,
+  withPending,
+  type PendingMessage,
+} from "@/lib/chat/pending";
 import type { ChatMessageRow } from "@/types/supabase";
 import { ChatPanelView, wantsQuickReplies } from "./chat-parts";
 
@@ -53,7 +61,7 @@ export function ChatDialog({
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 md:bg-black/20" />
         <Dialog.Content
           data-testid="chat-panel"
-          className="fixed inset-0 z-50 flex h-[100dvh] flex-col bg-surface outline-none md:inset-auto md:right-4 md:bottom-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px] md:overflow-hidden md:rounded-card md:border md:border-line md:shadow-2xl"
+          className="fixed inset-0 z-50 flex h-[100dvh] w-full max-w-[100vw] flex-col overflow-x-hidden overscroll-none bg-surface outline-none md:inset-auto md:right-4 md:bottom-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px] md:overflow-hidden md:rounded-card md:border md:border-line md:shadow-2xl"
           onCloseAutoFocus={(e) => {
             // Radix returns focus to its own Trigger; the chat button isn't one.
             e.preventDefault();
@@ -79,6 +87,8 @@ export function ChatDialog({
 
 function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
+  // The user's messages on their way to the server (optimistic sending).
+  const [pending, setPending] = useState<PendingMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [hasEarlier, setHasEarlier] = useState(false);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
@@ -101,6 +111,8 @@ function ChatPanel() {
       latest.current = next;
       return next;
     });
+    // A saved copy (from the action or Realtime) replaces the "Sending…" one.
+    setPending((cur) => settlePending(cur, incoming));
     if (fromOthers) {
       const news = incoming.filter((m) => m.sender_role !== "user");
       const last = news.at(-1);
@@ -171,30 +183,50 @@ function ChatPanel() {
     return () => el.removeEventListener("scroll", onScroll);
   }, [loaded]);
 
-  async function send(text: string) {
-    if (sending) return;
+  /**
+   * Shows the message at once ("Sending…"), then swaps in the saved row, or
+   * marks it "Not sent — Retry". `retryId` resends a failed one.
+   */
+  async function send(text: string, retryId?: string) {
+    const body = text.trim();
+    if (sending || !body) return;
+    const fresh = retryId ? null : newPending(body);
+    const id = retryId ?? fresh!.id;
+    if (fresh) {
+      setPending((cur) => [...cur, fresh]);
+      setDraft("");
+    } else setPending((cur) => setPendingState(cur, id, "sending"));
+    stickToBottom.current = true;
     setSending(true);
     setError(null);
+    const notSent = (message: string) => {
+      setError(message);
+      setPending((cur) => setPendingState(cur, id, "failed"));
+    };
     try {
-      const r = await sendChatMessage(text);
+      const r = await sendChatMessage(body);
       if (!r.ok) {
         if (r.code === "login") setLoginNeeded(true);
-        setError(r.error);
+        notSent(r.error);
         return;
       }
-      stickToBottom.current = true;
-      setDraft((d) => (d === text ? "" : d));
+      setPending((cur) => dropPending(cur, id));
       setConversationId(r.conversationId);
       add(r.messages.slice(0, 1), false);
       add(r.messages.slice(1), true);
     } catch {
-      setError(
+      notSent(
         "Couldn't send your message. Check your connection and try again.",
       );
     } finally {
       setSending(false);
       inputRef.current?.focus();
     }
+  }
+
+  function retry(id: string) {
+    const p = pending.find((m) => m.id === id);
+    if (p) void send(p.body, id);
   }
 
   async function loadEarlier() {
@@ -210,6 +242,7 @@ function ChatPanel() {
     }
   }
 
+  const shown = withPending(messages, pending);
   const titleId = "chat-title";
   const descriptionId = "chat-description";
   return (
@@ -220,11 +253,12 @@ function ChatPanel() {
         titleId={titleId}
         descriptionId={descriptionId}
         status={conversationId ? status : null}
-        messages={messages}
+        messages={shown}
+        onRetry={retry}
         hasEarlier={hasEarlier}
         loadingEarlier={loadingEarlier}
         onLoadEarlier={loadEarlier}
-        showQuickReplies={loaded && wantsQuickReplies(messages)}
+        showQuickReplies={loaded && wantsQuickReplies(shown)}
         onQuickReply={(q) => void send(q)}
         draft={draft}
         onDraft={setDraft}

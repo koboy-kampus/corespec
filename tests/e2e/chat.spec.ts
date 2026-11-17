@@ -152,4 +152,46 @@ test.describe("/styleguide/chat", () => {
       { maxDiffPixelRatio: 0.02 },
     );
   });
+
+  test("the text box is 16px on a phone (no iOS zoom), one line when empty, grows and resets after sending", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/styleguide/chat");
+    const box = page
+      .getByTestId("chat-sample-bot")
+      .getByRole("textbox", { name: "Message" });
+    const size = () =>
+      box.evaluate((el) => ({
+        font: getComputedStyle(el).fontSize,
+        height: el.getBoundingClientRect().height,
+        clipped: el.scrollWidth > el.clientWidth,
+      }));
+    expect(await size()).toEqual({ font: "16px", height: 44, clipped: false });
+    await expect(box).toHaveAttribute("placeholder", "Type a message");
+
+    await box.fill(["one", "two", "three"].join("\n"));
+    expect((await size()).height).toBeGreaterThan(44);
+    await box.fill(Array(30).fill("x").join("\n"));
+    expect((await size()).height).toBeLessThanOrEqual(128);
+    // Enter sends (the sample just clears the box), and it's one line again.
+    await box.press("Enter");
+    await expect(box).toHaveValue("");
+    expect(await size()).toEqual({ font: "16px", height: 44, clipped: false });
+    expect(await overflowX(page)).toBe(0);
+
+    // Larger screens keep the 14px text.
+    await page.setViewportSize({ width: 1280, height: 900 });
+    expect((await size()).font).toBe("14px");
+  });
+
+  test("shows a message that's sending, and one that wasn't sent with Retry", async ({
+    page,
+  }) => {
+    await page.goto("/styleguide/chat");
+    const sample = page.getByTestId("chat-sample-sending");
+    await expect(sample.getByText("Sending…")).toBeVisible();
+    await expect(sample.getByText("Not sent —")).toBeVisible();
+    await expect(sample.getByRole("button", { name: "Retry" })).toBeVisible();
+  });
 });
