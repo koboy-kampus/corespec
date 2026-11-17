@@ -11,8 +11,8 @@ export type BotRuleId =
   | "human"
   | "prices"
   | "compatibility"
-  | "checkout"
   | "receipt"
+  | "checkout"
   | "share"
   | "account"
   | "greeting";
@@ -78,6 +78,12 @@ export const BOT_RULES: readonly BotRule[] = [
       "CoreSpec checks 15 rules: 10 for the PC (socket, RAM, size, clearance, power) and 5 for the desk. An error means it can't be built; a warning means it works but isn't ideal. In the builder (/builder), click an error to fix it.",
   },
   {
+    id: "receipt",
+    keywords: ["struk", "receipt", "pdf", "nota", "invoice"],
+    reply:
+      'Open My orders (/orders), pick an order and press Download receipt (PDF). Every receipt is marked "SIMULASI — bukan bukti transaksi": it isn\'t proof of a real purchase.',
+  },
+  {
     id: "checkout",
     keywords: [
       "checkout",
@@ -91,12 +97,6 @@ export const BOT_RULES: readonly BotRule[] = [
     ],
     reply:
       "Checkout is a payment simulation with Midtrans Sandbox: no real money moves and nothing is sold or shipped. To try it, use the test card 4811 1111 1111 1114, any future expiry, CVV 123 and OTP 112233.",
-  },
-  {
-    id: "receipt",
-    keywords: ["struk", "receipt", "pdf", "nota", "invoice"],
-    reply:
-      'Open My orders (/orders), pick an order and press Download receipt (PDF). Every receipt is marked "SIMULASI — bukan bukti transaksi": it isn\'t proof of a real purchase.',
   },
   {
     id: "share",

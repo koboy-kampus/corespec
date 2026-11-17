@@ -56,6 +56,10 @@ describe("matchBotRule: every rule, in English and Indonesian", () => {
       ],
     ],
     [
+      "receipt",
+      ["Download receipt", "struk saya mana", "pdf", "minta nota", "invoice"],
+    ],
+    [
       "checkout",
       [
         "How does checkout work?",
@@ -65,10 +69,6 @@ describe("matchBotRule: every rule, in English and Indonesian", () => {
         "Midtrans?",
         "ini simulasi?",
       ],
-    ],
-    [
-      "receipt",
-      ["Download receipt", "struk saya mana", "pdf", "minta nota", "invoice"],
     ],
     [
       "share",
@@ -124,7 +124,10 @@ describe("matchBotRule: priority, matching and no match", () => {
     expect(rule("checkout harga")).toBe("prices");
     expect(rule("halo admin, harga?")).toBe("human");
     expect(rule("error saat pembayaran")).toBe("compatibility");
-    expect(rule("struk pembayaran")).toBe("checkout");
+    // A receipt question about a payment is about the receipt.
+    expect(rule("struk pembayaran")).toBe("receipt");
+    expect(rule("download receipt for my payment")).toBe("receipt");
+    expect(rule("bayar pakai apa")).toBe("checkout");
     expect(rule("hai, mau share link")).toBe("share");
   });
 
