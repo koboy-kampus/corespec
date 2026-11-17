@@ -614,18 +614,141 @@ Rei's supervisor asked for two more features at the 16 November bimbingan: a **p
 - `docs/accounts.md`: the Midtrans setup steps, the env vars, the manual test checklist. `docs/demo-script.md`: a checkout segment (pick the Budget 1080p preset → checkout → pay with the test card → receipt PDF). `/privacy`: one paragraph on what goes to Midtrans (order number, item names, amounts, display name; no email).
 - `HANDOFF.md`: a session 4 report in the usual format, with the new false positives for the secret scan (`MIDTRANS_SERVER_KEY`, `ORDER_WRITE_SECRET`, `snap_token`, `signature_key` as names).
 
-### Phase 18 — Live chat *(after the 19 Nov bimbingan — don't start without Rei saying so)*
+### Phase 18 — Live chat with a rule-based bot
 
-Outline only; plan it in detail when Rei starts it.
+> **How to use:** `Read REI.md "Phase 18", then plan Phase 18a.` Work on the branch **`feat/phase-18-chat`** (it starts from `feat/phase-17-checkout`, so all of Phase 17 is in it). **Never push to `feat/phase-17-checkout`**: its preview is Rei's Thursday demo and must not change. Open a separate draft PR, `feat/phase-18-chat` → `main`.
 
-- A chat bubble for logged-in users; one conversation per user; **`/admin/chat`** inbox with live updates.
-- **Supabase Realtime** on a `messages` table; `conversations` + `messages` with RLS (users read and write only their own conversation, admins all). This is the first Supabase code that would run in the browser: plan how (Realtime needs the user's token client-side) and say what it changes about "no Supabase code in the browser".
-- A **rule-based auto-reply bot** (keywords and quick replies, no AI API): are the prices real, why is my build incompatible, how do I share, how does the checkout simulation work; fallback "Admin akan membalas segera". Pure functions with tests, like the compatibility rules.
-- Message length cap and a rate limit in the database. No personal contact details anywhere.
+**Goal:** before the 19 Nov bimbingan, a logged-in user can open a chat, get instant answers from a **rule-based bot** for common questions, and talk to the **admin**, who answers from an inbox. Both sides update **live**.
+
+**Deadline and cuts:** 18a and 18b on the Phase 18 preview by Wednesday 18 Nov, morning WIB. If time runs short, cut in this order: unread badges → quick-reply chips → closing a conversation. Never cut: the database rules (RLS, length cap, rate limit), the bot's tests, and the polling fallback.
+
+All of section 9's rules still apply (no service-role key, new SQL in a new migration that the chat runs, Rei types keys, read the Next docs before new Next APIs). On top of that:
+
+- **Chat needs accounts on.** Without the Supabase settings there is no chat UI, no Realtime code and no outside request; `accounts-off.spec.ts` stays green.
+- **Pages that don't show the chat don't grow.** The Realtime client loads only when a logged-in user opens the chat panel or the admin opens `/admin/chat`. Report the KB that adds.
+
+### Facts checked in the Supabase docs on 18 Nov 2026
+
+- **Use Realtime Broadcast from the database**, not Postgres Changes: Supabase recommends Broadcast for most cases and Postgres Changes only for testing or few users. A trigger on the table calls `realtime.send(payload, event, topic, is_private)` (or `realtime.broadcast_changes(...)`), which writes to `realtime.messages`, and Realtime sends it to subscribed clients.
+- **Private channels:** the client subscribes with `supabase.channel(topic, { config: { private: true } })` after `await supabase.realtime.setAuth(token)`. Who may join a topic is decided by **RLS policies on `realtime.messages`**, using `(select realtime.topic())` for the topic name. Policies are cached per connection.
+- Messages sent with `is_private = true` only reach private channels.
+
+### Design
+
+**Topics:**
+- `chat:<conversation_id>`: one per user conversation. The owner and admins may join.
+- `chat:admin`: admins only. Every new message in any conversation is also sent here, so the inbox updates live.
+
+**Clients only listen.** They never send over Realtime. Every write goes through a Server Action, so the database checks run, and **no insert policy on `realtime.messages`** is needed. Only add select policies.
+
+**Getting the token to the browser.** CoreSpec's session lives in httpOnly cookies, and so far no Supabase code runs in the browser. Realtime needs the user's access token client-side. A Server Action `getRealtimeToken()` returns the current access token, or null for guests, through the existing `getSession()` (which renews it). The client calls `setAuth` with it and asks again shortly before it expires or when the channel errors. This is the **one exception** to "no Supabase in the browser". It's read-only: the browser client is never used for queries. Write it down in `docs/accounts.md`, and say in the summary what it changes.
+
+**Fallback:** if the channel isn't `SUBSCRIBED` within 10 seconds, or drops, the panel polls a Server Action every 5 seconds until Realtime is back. The demo must work on campus wifi.
+
+### Phase 18a — Database and the bot
+
+**Migration `supabase/migrations/20261118000100_chat.sql`** (rerunnable):
+
+- `public.conversations`:
+  - `id uuid` pk, `owner uuid unique` → `profiles` (on delete cascade). One conversation per user.
+  - `status` in (`open`, `closed`), default `open`.
+  - `last_message_at`, `user_last_read_at`, `admin_last_read_at`, `created_at`.
+- `public.chat_messages`:
+  - `id uuid` pk, `conversation_id` → conversations (cascade).
+  - `sender_role` in (`user`, `admin`, `bot`), `sender_id uuid` (null for bot).
+  - `body text`, 1–1000 characters after trimming.
+  - `bot_rule text` (which rule answered, for bot messages; null otherwise), `created_at`.
+  - Index on `(conversation_id, created_at)`.
+- **RLS (select):** the owner reads their own conversation and its messages; admins read all.
+- **Writes:**
+  - No direct insert, update or delete grants for anyone except as below.
+  - A user inserts only `sender_role = 'user'`, with `sender_id = auth.uid()`, into their own conversation.
+  - An admin inserts only `sender_role = 'admin'`, with `sender_id = auth.uid()`, into any conversation.
+  - Use insert policies plus a `before insert` trigger that forces `created_at = now()` and refuses anything else.
+  - `get_or_create_conversation()`: `security definer`, for the caller only. Re-opens a closed conversation.
+  - `mark_chat_read(conversation_id)`: sets the caller's read time; owner or admin only.
+  - `set_conversation_status(conversation_id, status)`: admin only.
+- **Bot messages** are written through `post_bot_reply(p_secret, conversation_id, body, bot_rule)`. It's `security definer`, checks the secret like `create_order` does (reuse `check_order_secret`, so it's the same `ORDER_WRITE_SECRET`; no new env var), and only accepts a reply in a conversation whose latest message is from the user. Users can't fake bot messages.
+- **Rate limit (database):**
+  - A user may send at most 5 messages in 30 seconds and 60 per day; the 6th raises `chat_rate_limit` with a friendly message.
+  - Admins: no limit.
+  - Bot: at most 1 reply per user message, enforced by the "latest message is from the user" rule.
+- **Broadcast trigger:** `after insert` on `chat_messages`, `security definer`, `search_path = ''`. It calls `realtime.send` with the message row as JSON, event `message`, to **both** `chat:<conversation_id>` and `chat:admin`, private. It also updates `conversations.last_message_at`.
+- **`realtime.messages` select policies:**
+  - Authenticated users may join `chat:<id>` when that conversation's owner is `auth.uid()`, or when they're an admin.
+  - Only admins may join `chat:admin`.
+  - Use `(select realtime.topic())` and check `realtime.messages.extension = 'broadcast'`.
+  - No other policies on that table.
+- **Tests:**
+  - PGlite has no `realtime` schema: add a stand-in to `supabase/tests/supabase-shim.sql` (`realtime.messages`, `realtime.topic()` reading a setting, `realtime.send()` inserting a row) and keep it out of the real project.
+  - Extend `rls.sql` (and its counts in `docs/pi/angka.md`): who reads which conversations and messages; users can't post as admin or bot, or into another user's conversation; the length cap; the rate limit; bot replies need the secret and a user's message last; topic join rules for user, other user, admin and anon.
+  - **The `realtime.messages` policies can't be tested in PGlite the same way as on Supabase.** Test the policy expressions through the shim, and add a short manual check (two browsers) to `docs/accounts.md`.
+  - Two new mutation tests: "another user's messages readable" and "bot reply without the secret accepted".
+
+**The bot (`lib/chat/bot.ts`, pure functions, tested like the compatibility rules):**
+
+- `matchBotRule(text)` returns `{ rule, reply, quickReplies }` or null. It normalises the text (lowercase, strip accents and punctuation) and matches keywords in **English and Indonesian**. Rules, in priority order:
+  1. `human` (admin, human, manusia, cs, operator): "I'll let the admin know. An admin will reply soon (Admin akan membalas segera)." Marks the conversation as needing a human.
+  2. `prices` (price, harga, mahal, murah, real, asli): explains Checked vs Estimate, the check date, and that prices are never scraped.
+  3. `compatibility` (compatible, kompatibel, error, incompatible, cocok, socket, psu, watt): how the 15 rules work, error vs warning, and a link to the builder.
+  4. `checkout` (checkout, bayar, pay, payment, pembayaran, midtrans, simulasi): it's a Midtrans **Sandbox** simulation, no real money, nothing is sold or shipped, plus the test card.
+  5. `receipt` (struk, receipt, pdf, nota, invoice): where to download it, and the "SIMULASI — bukan bukti transaksi" mark.
+  6. `share` (share, bagikan, link, kirim): how share links work.
+  7. `account` (login, akun, account, password, daftar, register): what an account adds; the bot never asks for or handles passwords.
+  8. `greeting` (halo, hai, hi, hello, pagi, siang, malam, p): a greeting plus the quick replies.
+- **No match:** "Thanks! An admin will reply soon (Admin akan membalas segera)." Send it **at most once per 10 minutes** per conversation, so the bot doesn't repeat itself.
+- **The bot stays quiet while an admin is active:** no bot reply if an admin message is in the last 10 minutes.
+- Replies are English (the UI language), with the Indonesian line where given. Keep them short (≤ 300 characters), with no links outside CoreSpec and no contact details.
+- `quickReplies`: 4–5 chips that send a canned question: "Are the prices real?", "Why is my build incompatible?", "How does checkout work?", "Download receipt", "Talk to admin".
+- **Unit tests:** every rule fires on its English and Indonesian keywords; priority order (e.g. "harga checkout" picks one, deterministically); accents and casing; no match → null; the 10-minute rules; reply length cap.
+- **Server Action `sendChatMessage(body)`:** session → `get_or_create_conversation` → insert the user message (RLS) → `matchBotRule` + the quiet rules → `post_bot_reply`. Return the new rows. Errors (`chat_rate_limit`, length) come back as friendly messages.
+
+### Phase 18b — Chat UI and the admin inbox
+
+**User side:**
+- A **chat button** (bottom right, above the safe area on phones) for logged-in users only, on every page except `/admin/*`.
+  - Don't let it cover the builder's sticky summary bar or the Snap pop-up. On `/checkout` it's hidden while paying.
+  - Guests see nothing. The `/about` page gets one line: "Log in to chat with the admin."
+- The panel is a sheet on phones (full height, like the mobile picker: `100dvh`, safe areas, only the list scrolls) and a 380 × 560 card on desktop.
+  - Header: "CoreSpec chat", a status dot (Live / Reconnecting), and a note: "A bot answers common questions; the admin replies when online."
+  - Bubbles by sender: you, Admin, Bot (with a small "Bot" label).
+  - Quick-reply chips when the conversation is empty or after a bot reply.
+  - Text box with a counter (1000) and Enter to send (Shift+Enter for a new line).
+  - Errors shown inline.
+- **Loading:** the first open loads the history (last 50 messages, "Load earlier" for more), subscribes to `chat:<id>`, and marks it read. A new message while the panel is closed shows an unread dot on the button. Keep it simple: check when the user navigates, not with a background socket.
+- **Accessibility:**
+  - The panel is a dialog with a label; focus moves to the text box.
+  - New messages are announced through a polite live region.
+  - Escape closes the panel; focus returns to the button.
+  - axe 0.
+
+**Admin side, `/admin/chat`** (plus a link on `/admin` with the count of unread conversations):
+- Left: conversations, newest first, with the user's display name, last message preview, an unread badge, and "Needs admin" when the `human` rule fired or the bot had no answer. Filter: All / Needs admin / Open / Closed.
+- Right: the thread, a reply box, and Close / Reopen.
+- Subscribed to `chat:admin`: new messages move their conversation to the top live.
+- On phones: the list, and tapping opens the thread full screen with a back button.
+
+**Tests:**
+- Unit: the Server Actions with Supabase mocked (rate-limit message, length, bot quiet rules, guest refused).
+- e2e with accounts off: no chat button, `/admin/chat` is a 404.
+- e2e with dummy settings: the button is hidden for guests.
+- The logged-in panel can't run in CI. Build `/styleguide/chat`, showing the panel and the inbox with sample messages in every state (empty, quick replies, bot, admin, error, reconnecting). Run axe and a phone-width screenshot check there.
+- Add a manual two-browser checklist to `docs/accounts.md`: user sends → bot answers instantly → admin inbox shows it live → admin replies → user sees it live without refreshing; a second user can't see it; a 6th fast message is refused; with wifi off and on, it reconnects.
+
+### Phase 18c — Docs and diagrams (short)
+
+- `npm run diagrams`:
+  - ERD: add `conversations` and `chat_messages`.
+  - Use case: User "Chat dengan admin / bot"; Admin "Membalas chat".
+  - New activity diagram `docs/pi/aktivitas-live-chat.png`, with lanes Pengguna, Server, Basis data, Admin, and the bot's rule matching as its own decision.
+- `docs/pi/angka.md`: tables, functions, bot rules (8 + fallback) with a table of their keywords, test counts, RLS check count.
+- `docs/demo-script.md`: a chat segment (2 browsers: phone as user, laptop as admin).
+- `/privacy`: chat messages are stored in the database and readable by admins.
+- `HANDOFF.md`: Phase 18 section.
 
 ---
 
-**Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
+**Session 3: Phase 17 is done (PR #6). Phase 18 runs on `feat/phase-18-chat`; start with Phase 18a.** _Earlier:_ **Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
 
 _Session 2 instruction, kept for history:_ **Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
 
