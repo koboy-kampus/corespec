@@ -53,12 +53,20 @@ export function useSnap() {
   const pay = useCallback(
     async (token: string): Promise<SnapOutcome> => {
       await whenReady();
+      // While the pop-up is open, the chat button hides (globals.css), so it
+      // never sits on top of Midtrans's window.
+      const root = document.documentElement;
+      root.dataset.paying = "";
+      const done = (outcome: SnapOutcome) => {
+        delete root.dataset.paying;
+        return outcome;
+      };
       return new Promise<SnapOutcome>((resolve) => {
         window.snap!.pay(token, {
-          onSuccess: () => resolve("success"),
-          onPending: () => resolve("pending"),
-          onError: () => resolve("error"),
-          onClose: () => resolve("close"),
+          onSuccess: () => resolve(done("success")),
+          onPending: () => resolve(done("pending")),
+          onError: () => resolve(done("error")),
+          onClose: () => resolve(done("close")),
         });
       });
     },

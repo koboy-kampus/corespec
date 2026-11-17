@@ -33,9 +33,9 @@ as an admin.
 
 ## How it fits together
 
-- **No Supabase code in the browser.** Logging in, logging out and syncing are
-  Server Actions. The session lives in httpOnly cookies that page scripts can't
-  read.
+- **No Supabase code in the browser**, with one exception (the chat's
+  Realtime listener, below). Logging in, logging out and syncing are Server
+  Actions. The session lives in httpOnly cookies that page scripts can't read.
 - **Every query runs as the visitor**, so the database's Row Level Security
   decides what they can see and change. The app has no service-role key at all.
 - **Who is logged in** is decided in one place: `lib/auth/dal.ts`. Every
@@ -364,8 +364,8 @@ lock the database side at once: `update public.payment_config set secret_hash = 
 
 A logged-in user chats with the admin; a **rule-based bot** (no AI) answers
 common questions first. Chat needs accounts on: without the Supabase settings
-there is no chat at all. The panel and the admin inbox come in Phase 18b; this
-part is the database and the bot.
+there is no chat at all (no button, no Realtime code, no outside request, and
+`/admin/chat` is a 404).
 
 ### How it works
 
@@ -394,6 +394,51 @@ part is the database and the bot.
   listen. If `realtime.send` fails, the message is still saved (a warning is
   logged) and the panel's polling picks it up.
 
+### The panel and the inbox (18b)
+
+- **The chat button** (bottom right) shows for logged-in visitors on every
+  page except `/admin/*`, and hides while Midtrans's Snap pop-up is open.
+  Guests see nothing; `/about` says "Log in to chat with the admin."
+- **The panel** loads with `import()` on the first press: a full-height sheet
+  on phones, a 380 × 560 card on larger screens. The last 50 messages ("Load
+  earlier" for more), quick-reply chips when the chat is empty or after a bot
+  reply, a 1000-character counter, Enter to send and Shift+Enter for a new
+  line. It's a dialog: focus goes to the text box, new messages are read out
+  by a polite live region, Escape closes it and focus returns to the button.
+- **Unread dot:** the button asks the server whether the admin or the bot
+  wrote since the user last read the chat, at most once a minute per tab
+  (sessionStorage), and once when the panel closes. No background socket.
+- **`/admin/chat`** (and a "Chat" card on `/admin` with the number of unread
+  conversations): conversations newest first with name, preview, Unread and
+  "Needs admin"; filters All / Needs admin / Open / Closed; the thread with a
+  reply box and Close / Reopen. On phones the list and the thread take turns.
+  The inbox reads at most the 200 newest conversations and their 2,000 newest
+  messages, plenty at this scale.
+
+### The Realtime token: the one Supabase exception in the browser
+
+Realtime needs the user's access token in the browser. So far no Supabase
+code ran there and the session stayed in httpOnly cookies. Now:
+
+- `getRealtimeToken()` (a Server Action) returns the visitor's current access
+  token and its expiry, or null for guests. It goes through `getSession()`,
+  which renews the token when it's near expiry.
+- The browser loads only `@supabase/realtime-js` (pinned to the version
+  `@supabase/supabase-js` uses, so there's one copy), and only when the panel
+  or `/admin/chat` opens. It passes the token to Realtime, asks for a new one
+  90 seconds before it expires or after a channel error, and **only
+  listens**: it never queries the database or sends anything over Realtime.
+  Every write is still a Server Action.
+- **What changes:** a script on those two screens holds the access token in
+  memory while they're open. It's the same token the cookies hold and only
+  allows what RLS allows the user anyway, but a script injected into the page
+  could read it there, where it couldn't read the httpOnly cookie. It isn't
+  stored anywhere (not in localStorage, not in a cookie).
+- **Fallback:** if the channel isn't subscribed within 10 seconds, or drops,
+  the panel (and the inbox) polls a Server Action every 5 seconds until
+  Realtime is back, then polls once more to catch up. The header shows Live
+  or Reconnecting.
+
 ### Setting it up
 
 1. **Migration:** run `supabase/migrations/20261118000100_chat.sql` in the SQL
@@ -411,6 +456,32 @@ The local tests check the join rules through a stand-in for Supabase's
 - [ ] User B, logged in elsewhere, never sees A's messages, and can't join A's
       topic (no messages arrive when subscribing to `chat:<A's id>` by hand).
 - [ ] A non-admin can't receive anything on `chat:admin`.
+
+### Checking the chat by hand (two browsers, e.g. a phone and a laptop)
+
+- [ ] **User** (phone): the chat button is there; a guest sees none.
+- [ ] Open it: the empty chat shows the quick questions. Tap "Are the prices
+      real?": the bot answers at once.
+- [ ] **Admin** (laptop, `/admin/chat`): the conversation appears at the top
+      without a refresh, header "Live".
+- [ ] Type "talk to admin" on the phone: the bot says the admin will reply, and
+      the inbox shows "Needs admin".
+- [ ] Reply from the inbox: the phone shows it at once, without a refresh; the
+      bot stays quiet for the next 10 minutes; "Needs admin" goes away.
+- [ ] Close the panel, reply again from the admin side, wait a minute and open
+      another page: the button shows the unread dot.
+- [ ] A second user account never sees the first one's messages.
+- [ ] Send 6 messages quickly: the 6th says "You're sending messages too
+      fast…".
+- [ ] Turn wifi off on the phone for 20 seconds: the header says
+      Reconnecting; turn it on: it says Live again, and anything sent
+      meanwhile appears.
+- [ ] Close and reopen a conversation from the inbox; the user writing again
+      reopens it.
+- [ ] Keyboard: open the panel, Escape closes it and focus is back on the
+      chat button.
+- [ ] On `/checkout`, the chat button disappears while the Snap pop-up is
+      open.
 
 ## Checking the preview by hand
 
@@ -455,10 +526,13 @@ The local tests check the join rules through a stand-in for Supabase's
   `lib/checkout/` (order rules, Midtrans client, Server Actions, the
   notification logic), `app/api/midtrans/notification`, `components/checkout/`,
   `app/checkout`, `app/orders`, `app/admin/orders`.
-- **Chat (18a):** `supabase/migrations/20261118000100_chat.sql`, `lib/chat/`
-  (`bot.ts` the rules, `service.ts` and `actions.ts` the Server Action,
-  `store.ts` Supabase), the Realtime stand-in in
-  `supabase/tests/supabase-shim.sql`.
+- **Chat (18a, 18b):** `supabase/migrations/20261118000100_chat.sql`;
+  `lib/chat/` (`bot.ts` the rules, `service.ts` / `panel.ts` / `inbox.ts` the
+  server steps, `actions.ts` and `admin-actions.ts` the Server Actions,
+  `store.ts` Supabase, `live.ts` the Realtime-or-polling rules, `realtime.ts`
+  the browser's Realtime client); `components/chat/` (button, panel, inbox,
+  styleguide samples); `app/admin/chat`, `app/styleguide/chat`; the Realtime
+  stand-in in `supabase/tests/supabase-shim.sql`.
 - **Receipt (17b):** `lib/receipt/` (the PDF layout: data in, bytes out, with
   pdf-lib and uqr), `components/receipt/` (the button and the off-screen 3D
   capture), `components/viewer/capture-frame.tsx`.

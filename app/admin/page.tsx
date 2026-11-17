@@ -12,6 +12,8 @@ import { getCatalogue } from "@/lib/catalogue/load";
 import { isCheckoutConfigured } from "@/lib/checkout/config";
 import { formatShortDate } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { unreadCount } from "@/lib/chat/inbox";
+import { supabaseAdminChat } from "@/lib/chat/store";
 import { AdminSkeleton } from "./skeleton";
 
 export const metadata: Metadata = {
@@ -57,6 +59,20 @@ const ORDERS_LINK = {
   text: "Every payment simulation, read-only.",
 } as const;
 
+/** Live chat (Phase 18): the text says how many conversations are unread. */
+function chatLink(unread: number | null) {
+  return {
+    href: "/admin/chat",
+    title: "Chat",
+    text:
+      unread === null
+        ? "Users' questions and the bot's answers."
+        : unread
+          ? `${unread} conversation${unread === 1 ? "" : "s"} with unread messages.`
+          : "No unread messages.",
+  };
+}
+
 const ACTION_LABEL = { insert: "Added", update: "Changed", delete: "Deleted" };
 const TABLE_LABEL: Record<string, string> = {
   items: "Item",
@@ -67,7 +83,7 @@ const TABLE_LABEL: Record<string, string> = {
 
 async function Overview() {
   const { supabase } = await requireAdmin();
-  const [{ data }, catalogue, audit, source] = await Promise.all([
+  const [{ data }, catalogue, audit, source, chat] = await Promise.all([
     supabase.rpc("admin_stats"),
     readAdminCatalogue(supabase),
     supabase
@@ -76,6 +92,10 @@ async function Overview() {
       .order("id", { ascending: false })
       .limit(12),
     getCatalogue(),
+    supabaseAdminChat(supabase)
+      .inbox()
+      .then(unreadCount)
+      .catch(() => null),
   ]);
   const s = data?.[0];
   const now = new Date();
@@ -127,27 +147,29 @@ async function Overview() {
         ))}
       </dl>
       <div className="grid gap-3 sm:grid-cols-3">
-        {[...LINKS, ...(isCheckoutConfigured() ? [ORDERS_LINK] : [])].map(
-          (l) => (
-            <Card key={l.href} padding="none" interactive>
-              <Link
-                href={l.href}
-                className="flex items-center justify-between gap-3 p-5"
-              >
-                <span className="flex flex-col gap-1">
-                  <span className="text-h3 text-fg">{l.title}</span>
-                  <span className="text-[14px] leading-5 text-fg-2">
-                    {l.text}
-                  </span>
+        {[
+          ...LINKS,
+          ...(isCheckoutConfigured() ? [ORDERS_LINK] : []),
+          chatLink(chat),
+        ].map((l) => (
+          <Card key={l.href} padding="none" interactive>
+            <Link
+              href={l.href}
+              className="flex items-center justify-between gap-3 p-5"
+            >
+              <span className="flex flex-col gap-1">
+                <span className="text-h3 text-fg">{l.title}</span>
+                <span className="text-[14px] leading-5 text-fg-2">
+                  {l.text}
                 </span>
-                <ArrowRight
-                  className="size-4 text-fg-3 transition-colors group-hover/card:text-accent"
-                  aria-hidden
-                />
-              </Link>
-            </Card>
-          ),
-        )}
+              </span>
+              <ArrowRight
+                className="size-4 text-fg-3 transition-colors group-hover/card:text-accent"
+                aria-hidden
+              />
+            </Link>
+          </Card>
+        ))}
       </div>
       <section aria-labelledby="recent" className="flex flex-col gap-3">
         <h2 id="recent" className="text-h3 text-fg">

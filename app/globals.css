@@ -240,3 +240,8 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* The chat button hides while Midtrans's Snap pop-up is open (use-snap.tsx). */
+html[data-paying] [data-chat-launcher] {
+  display: none;
+}

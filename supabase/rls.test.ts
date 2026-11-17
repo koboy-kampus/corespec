@@ -372,10 +372,14 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     }>(
       "select topic, event, private, payload->>'body' as body from realtime.messages order by topic",
     );
-    expect(rows).toEqual([
-      { topic: `chat:${id}`, event: "message", private: true, body: "Hello" },
-      { topic: "chat:admin", event: "message", private: true, body: "Hello" },
-    ]);
+    // Two sends, in any order (the topic names sort by the random id).
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { topic: `chat:${id}`, event: "message", private: true, body: "Hello" },
+        { topic: "chat:admin", event: "message", private: true, body: "Hello" },
+      ]),
+    );
     await db.close();
   });
 

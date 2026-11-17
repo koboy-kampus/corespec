@@ -8,10 +8,12 @@ import { Footer } from "@/components/layout/footer";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { AccountSync } from "@/components/account/account-sync";
 import { CatalogueOverlay } from "@/components/catalogue/catalogue-overlay";
+import { ChatLauncher } from "@/components/chat/chat-launcher";
 import { CheckoutFlag } from "@/components/checkout/checkout-flag";
 import { loadCatalogue } from "@/lib/catalogue/load";
 import { isCheckoutConfigured } from "@/lib/checkout/config";
 import { SITE_URL } from "@/lib/site";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -85,6 +87,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Footer />
               <CommandPalette />
               <AccountSync />
+              {/* Live chat (Phase 18): only with accounts on. */}
+              {isSupabaseConfigured() ? <ChatLauncher /> : null}
               <Toaster />
             </TooltipProvider>
           </CheckoutFlag>

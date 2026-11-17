@@ -7,6 +7,8 @@
  * pages, and gives no contact details.
  */
 
+import { QUICK_REPLIES } from "./quick-replies";
+
 export type BotRuleId =
   | "human"
   | "prices"
@@ -27,13 +29,7 @@ export const MAX_REPLY = 300;
 export const QUIET_MS = 10 * 60 * 1000;
 
 /** Chips that send a canned question; each one hits a rule below. */
-export const QUICK_REPLIES = [
-  "Are the prices real?",
-  "Why is my build incompatible?",
-  "How does checkout work?",
-  "Download receipt",
-  "Talk to admin",
-] as const;
+export { QUICK_REPLIES };
 
 export interface BotRule {
   id: BotRuleId;
