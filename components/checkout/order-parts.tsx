@@ -9,6 +9,7 @@ import {
   SIMULATION_BANNER,
   SIMULATION_STAMP,
 } from "@/lib/checkout/sandbox";
+import { paymentTypeLabel, STATUS_LABEL } from "@/lib/checkout/labels";
 import { formatIDR } from "@/lib/format";
 import type { Category } from "@/types/parts";
 import type { OrderItem, OrderStatus } from "@/types/supabase";
@@ -39,13 +40,7 @@ export function SimulationBanner({ className }: { className?: string }) {
   );
 }
 
-export const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: "Pending",
-  paid: "Paid",
-  failed: "Failed",
-  expired: "Expired",
-  cancelled: "Cancelled",
-};
+export { paymentTypeLabel, STATUS_LABEL };
 
 const STATUS_VARIANT = {
   pending: "warn",
@@ -57,24 +52,6 @@ const STATUS_VARIANT = {
 
 export function StatusBadge({ status }: { status: OrderStatus }) {
   return <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;
-}
-
-/** "bank_transfer" → "Bank transfer". */
-export function paymentTypeLabel(type: string | null): string {
-  if (!type) return "Not chosen yet";
-  const known: Record<string, string> = {
-    credit_card: "Card",
-    bank_transfer: "Bank transfer (VA)",
-    echannel: "Mandiri Bill",
-    qris: "QRIS",
-    gopay: "GoPay",
-    shopeepay: "ShopeePay",
-    cstore: "Convenience store",
-  };
-  return (
-    known[type] ??
-    type.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase())
-  );
 }
 
 /**

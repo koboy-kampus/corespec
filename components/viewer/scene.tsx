@@ -28,6 +28,7 @@ import { Animated } from "./animated";
 import { CameraRig, type CameraKeys } from "./camera-rig";
 import { CaseShell } from "./case-shell";
 import { ACCENT, type Flag } from "./palette";
+import { CaptureFrame } from "./capture-frame";
 import { SuspendModelsUp } from "./model-block";
 import { PartMesh } from "./part-mesh";
 import { PartTooltip } from "./part-tooltip";
@@ -66,6 +67,14 @@ export interface SceneProps {
    * image of it can be swapped for the live scene invisibly (the landing hero).
    */
   onReady?: () => void;
+  /**
+   * The PDF receipt's picture: once every model has loaded and a frame is drawn,
+   * called with a PNG of the canvas (or null). Like onReady, nothing is drawn
+   * until the models are in. See CaptureFrame.
+   */
+  onCapture?: (png: string | null) => void;
+  /** A fixed pixel ratio (the receipt's capture), instead of the screen's. */
+  pixelRatio?: number;
 }
 
 type Item =
@@ -190,6 +199,8 @@ function SceneCanvas({
   embedded = false,
   skipIntro = false,
   onReady,
+  onCapture,
+  pixelRatio,
 }: SceneProps) {
   const scene = useMemo(() => layoutBuild(parts), [parts]);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -276,7 +287,7 @@ function SceneCanvas({
     <Canvas
       frameloop="demand"
       // The hero is decoration: a lower pixel ratio halves its fill cost on phones.
-      dpr={mode === "showcase" ? [1, 1.5] : [1, 2]}
+      dpr={pixelRatio ?? (mode === "showcase" ? [1, 1.5] : [1, 2])}
       camera={{ fov: 30, near: 0.1, far: 100, position: [0, 0, 12] }}
       gl={{ antialias: true, alpha: true }}
       fallback={fallback}
@@ -286,11 +297,12 @@ function SceneCanvas({
       <Turntable spinning={mode === "showcase" && !reducedMotion && !paused}>
         <group scale={MM_TO_UNITS}>
           {/* One keyed list, so a removed part keeps its instance while it animates out. */}
-          {onReady ? (
+          {onReady || onCapture ? (
             <SuspendModelsUp.Provider value>
               <Suspense fallback={null}>
                 {items.map((i) => render(i, false))}
-                <FirstFrame onReady={onReady} />
+                {onReady ? <FirstFrame onReady={onReady} /> : null}
+                {onCapture ? <CaptureFrame onCapture={onCapture} /> : null}
               </Suspense>
             </SuspendModelsUp.Provider>
           ) : (

@@ -347,6 +347,12 @@ lock the database side at once: `update public.payment_config set secret_hash = 
       filter works.
 - [ ] Six checkouts within an hour without paying: the sixth says "5 unpaid
       orders".
+- [ ] **Receipt (17b):** on a paid and on a pending order, **Download receipt
+      (PDF)** saves `corespec-receipt-<order_no>.pdf`, with the status, the
+      payment method, the PC and desk pictures, the items, "Compatibility
+      (checked <today>)", the QR code (scan it: it opens the share page) and
+      "SIMULASI — bukan bukti transaksi" on every page.
+- [ ] The same from a phone: the pictures look the same as from the laptop.
 
 ## Checking the preview by hand
 
@@ -391,6 +397,9 @@ lock the database side at once: `update public.payment_config set secret_hash = 
   `lib/checkout/` (order rules, Midtrans client, Server Actions, the
   notification logic), `app/api/midtrans/notification`, `components/checkout/`,
   `app/checkout`, `app/orders`, `app/admin/orders`.
+- **Receipt (17b):** `lib/receipt/` (the PDF layout: data in, bytes out, with
+  pdf-lib and uqr), `components/receipt/` (the button and the off-screen 3D
+  capture), `components/viewer/capture-frame.tsx`.
 - **Catalogue (16b):**
   - `lib/catalogue/` (fields per category, listing rules, rows ↔ items, the
     loader and its fallback, the seed generator);

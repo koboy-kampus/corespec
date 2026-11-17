@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { OrderActions } from "@/components/checkout/order-actions";
+import { ReceiptButton } from "@/components/receipt/receipt-button";
 import {
   OrderItemsTable,
   paymentTypeLabel,
@@ -16,7 +17,7 @@ import { loadCatalogue } from "@/lib/catalogue/load";
 import { isCheckoutConfigured } from "@/lib/checkout/config";
 import { readMyOrder } from "@/lib/checkout/read";
 import { formatWIB } from "@/lib/checkout/when";
-import { encodeBuild } from "@/lib/share";
+import { receiptProps } from "@/lib/receipt/props";
 
 export const metadata: Metadata = {
   title: "Order",
@@ -55,7 +56,7 @@ async function Order({ params }: Pick<PageProps<"/orders/[id]">, "params">) {
   // Missing, someone else's, or not an id at all: the same 404.
   if (!order) notFound();
   await loadCatalogue();
-  const shareCode = encodeBuild({ name: order.build_name, parts: order.parts });
+  const receipt = receiptProps(order, viewer.displayName);
 
   const facts: [string, React.ReactNode][] = [
     [
@@ -99,6 +100,8 @@ async function Order({ params }: Pick<PageProps<"/orders/[id]">, "params">) {
         ))}
       </dl>
 
+      <ReceiptButton {...receipt} />
+
       {order.status === "pending" ? (
         <OrderActions orderId={order.id} canPay={!!order.snap_token} />
       ) : null}
@@ -114,7 +117,7 @@ async function Order({ params }: Pick<PageProps<"/orders/[id]">, "params">) {
       </p>
 
       <Link
-        href={`/b/${shareCode}`}
+        href={receipt.order.sharePath}
         className="flex w-fit items-center gap-1.5 text-[14px] text-fg underline-offset-2 hover:text-accent hover:underline"
       >
         <Share2 className="size-4" aria-hidden /> Open this build&apos;s share
