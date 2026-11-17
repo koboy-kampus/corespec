@@ -3,7 +3,7 @@
 //   docs/diagrams/  English, for the repo docs: erd, use-cases
 //   docs/pi/        Indonesian, for the PI write-up (PNG, sized for a Word
 //                   page): erd, use-case, aktivitas-cek-kompatibilitas,
-//                   aktivitas-admin-ubah-listing
+//                   aktivitas-admin-ubah-listing, aktivitas-simulasi-pembayaran
 //
 // Everything is drawn here as plain SVG (UML notation: crow's feet in the ERD,
 // actors and «include»/«extend» in the use case diagram, swimlanes in the
@@ -197,6 +197,41 @@ const ERD_TABLES = [
       ["updated_by", "uuid", "FK"],
     ],
   ],
+  // Phase 17a: the checkout simulation. Wider, for midtrans_transaction_id.
+  [
+    "orders",
+    3,
+    210,
+    [
+      ["id", "uuid", "PK"],
+      ["order_no", "text", "UK"],
+      ["owner", "uuid", "FK"],
+      ["build_name", "text", ""],
+      ["parts", "jsonb", ""],
+      ["items", "jsonb", ""],
+      ["pc_idr", "integer", ""],
+      ["setup_idr", "integer", ""],
+      ["total_idr", "integer", ""],
+      ["status", "text", ""],
+      ["payment_type", "text", ""],
+      ["midtrans_transaction_id", "text", ""],
+      ["snap_token", "text", ""],
+      ["created_at", "timestamptz", ""],
+      ["updated_at", "timestamptz", ""],
+      ["paid_at", "timestamptz", ""],
+    ],
+    380,
+  ],
+  [
+    "payment_config",
+    3,
+    800,
+    [
+      ["id", "boolean", "PK"],
+      ["secret_hash", "text", ""],
+    ],
+    380,
+  ],
 ];
 
 const ERD_TEXT = {
@@ -207,10 +242,12 @@ const ERD_TEXT = {
     adds: "added",
     made: "made",
     contains: "has",
+    orders: "places",
     legend: [
-      "PK primary key · FK foreign key · UK unique (with item_id)",
+      "PK primary key · FK foreign key · UK unique (in listings: together with item_id)",
       "Crow's foot notation: bar = one, circle = zero, three-way fork = many.",
       "Dashed line: no foreign key (the audit log outlives deleted accounts).",
+      "payment_config: one row, linked to nothing; it holds only the SHA-256 of the server's ORDER_WRITE_SECRET.",
     ],
   },
   id: {
@@ -220,15 +257,17 @@ const ERD_TEXT = {
     adds: "menambahkan",
     made: "melakukan",
     contains: "memiliki",
+    orders: "memesan",
     legend: [
-      "PK kunci primer · FK kunci tamu · UK unik (bersama item_id)",
+      "PK kunci primer · FK kunci tamu · UK unik (di listings: bersama item_id)",
       "Notasi kaki gagak: garis tegak = satu, lingkaran = nol, cabang tiga = banyak.",
       "Garis putus-putus: tanpa kunci tamu (log audit tetap ada setelah akun dihapus).",
+      "payment_config: satu baris, tanpa relasi; hanya berisi SHA-256 dari ORDER_WRITE_SECRET milik server.",
     ],
   },
 };
 
-const COL_X = [40, 480, 920];
+const COL_X = [40, 480, 920, 1360];
 const TABLE_W = 320;
 const HEAD = 40;
 const ROW_H = 31;
@@ -272,20 +311,20 @@ function erdSvg(lang) {
   const t = ERD_TEXT[lang];
   const box = {};
   const parts = [];
-  for (const [name, col, top, fields] of ERD_TABLES) {
+  for (const [name, col, top, fields, TW = TABLE_W] of ERD_TABLES) {
     const x = COL_X[col];
     const h = HEAD + fields.length * ROW_H;
-    box[name] = { x, y: top, w: TABLE_W, h };
+    box[name] = { x, y: top, w: TW, h };
     parts.push(
-      `<rect x="${x}" y="${top}" width="${TABLE_W}" height="${h}" fill="#fff" stroke="${INK}" stroke-width="2"/>`,
-      `<rect x="${x}" y="${top}" width="${TABLE_W}" height="${HEAD}" fill="#e6e6e6" stroke="${INK}" stroke-width="2"/>`,
-      text(x + TABLE_W / 2, top + HEAD / 2, name, { size: 19, weight: "bold" }),
+      `<rect x="${x}" y="${top}" width="${TW}" height="${h}" fill="#fff" stroke="${INK}" stroke-width="2"/>`,
+      `<rect x="${x}" y="${top}" width="${TW}" height="${HEAD}" fill="#e6e6e6" stroke="${INK}" stroke-width="2"/>`,
+      text(x + TW / 2, top + HEAD / 2, name, { size: 19, weight: "bold" }),
     );
     fields.forEach(([f, type, key], i) => {
       const y = top + HEAD + i * ROW_H + ROW_H / 2;
       if (i)
         parts.push(
-          `<line x1="${x}" y1="${y - ROW_H / 2}" x2="${x + TABLE_W}" y2="${y - ROW_H / 2}" stroke="#ddd"/>`,
+          `<line x1="${x}" y1="${y - ROW_H / 2}" x2="${x + TW}" y2="${y - ROW_H / 2}" stroke="#ddd"/>`,
         );
       parts.push(
         text(x + 14, y, f, {
@@ -293,8 +332,8 @@ function erdSvg(lang) {
           anchor: "start",
           weight: key.includes("PK") ? "bold" : "normal",
         }),
-        text(x + 165, y, type, { size: 16, anchor: "start" }),
-        text(x + TABLE_W - 14, y, key, {
+        text(x + TW - 155, y, type, { size: 16, anchor: "start" }),
+        text(x + TW - 14, y, key, {
           size: 15,
           anchor: "end",
           weight: "bold",
@@ -302,9 +341,9 @@ function erdSvg(lang) {
       );
     });
   }
-  // [from, side, at, to, side, at, from end, to end, label, dashed]. `at` is
-  // the x (top/bottom sides) or y (left/right sides) where the line meets the
-  // table; null = the middle.
+  // [from, side, at, to, side, at, from end, to end, label, dashed, via]. `at`
+  // is the x (top/bottom sides) or y (left/right sides) where the line meets
+  // the table; null = the middle. `via`: the corridor (see route()).
   const rowY = (top, i) => top + HEAD + ROW_H * i + ROW_H / 2;
   const rels = [
     ["auth.users", "b", null, "profiles", "t", null, "1", "1", t.has],
@@ -355,6 +394,20 @@ function erdSvg(lang) {
       "0n",
       t.contains,
     ],
+    // Over the top of audit_log, through the gap under auth.users.
+    [
+      "profiles",
+      "t",
+      COL_X[1] + TABLE_W - 40,
+      "orders",
+      "t",
+      COL_X[3] + 60,
+      "1",
+      "0n",
+      t.orders,
+      false,
+      160,
+    ],
   ];
   const at = (bx, side, v) => {
     const [x, y] = anchor(bx, side);
@@ -362,7 +415,7 @@ function erdSvg(lang) {
     return side === "t" || side === "b" ? [v, y] : [x, v];
   };
   const dir = (p, q) => [Math.sign(q[0] - p[0]), Math.sign(q[1] - p[1])];
-  for (const [a, as, av, b, bs, bv, ea, eb, label, dashed] of rels) {
+  for (const [a, as, av, b, bs, bv, ea, eb, label, dashed, via] of rels) {
     const pa = at(box[a], as, av);
     const pb = at(box[b], bs, bv);
     const pts = route(
@@ -370,7 +423,7 @@ function erdSvg(lang) {
       as,
       pb,
       bs,
-      as === "b" && bs === "t" ? box[b].y - 40 : undefined,
+      via ?? (as === "b" && bs === "t" ? box[b].y - 40 : undefined),
     );
     parts.push(
       `<path d="${pathD(pts)}" fill="none" stroke="${LINE}" stroke-width="2"${dashed ? ' stroke-dasharray="8 6"' : ""}/>`,
@@ -398,7 +451,7 @@ function erdSvg(lang) {
         "</g>",
     );
   }
-  const W = COL_X[2] + TABLE_W + 40;
+  const W = Math.max(...Object.values(box).map((b) => b.x + b.w)) + 40;
   const bottom = Math.max(...Object.values(box).map((b) => b.y + b.h));
   parts.push(
     ...t.legend.map((l, i) =>
@@ -431,8 +484,11 @@ const USE_CASES = {
         ["import", "Import builds from this browser"],
         ["profile", "Change name or password"],
         ["delete", "Delete the account"],
+        ["checkout", "Checkout (simulation)"],
+        ["receipt", "Download receipt (PDF)"],
       ],
       admin: [
+        ["orders", "View orders"],
         ["items", "Manage catalogue items"],
         ["listings", "Manage checked listings"],
         ["users", "Manage users and roles"],
@@ -459,8 +515,11 @@ const USE_CASES = {
         ["import", "Mengimpor build dari browser"],
         ["profile", "Mengubah nama atau kata sandi"],
         ["delete", "Menghapus akun"],
+        ["checkout", "Checkout (simulasi pembayaran)"],
+        ["receipt", "Mengunduh struk (PDF)"],
       ],
       admin: [
+        ["orders", "Melihat semua pesanan"],
         ["items", "Mengelola item katalog"],
         ["listings", "Mengelola listing yang dicek"],
         ["users", "Mengelola pengguna & peran"],
@@ -553,6 +612,7 @@ function drawUseCases(lang) {
   };
   dep("build", "check", "«include»"); // building always runs the check
   dep("sync", "save", "«extend»"); // syncing extends saving in the browser
+  dep("receipt", "checkout", "«extend»"); // a receipt is for an order
   return svgDoc(boxR + 30, H, parts.join("\n"));
 }
 
@@ -823,6 +883,123 @@ const ACT_LISTING = {
 ACT_LISTING.edges.find((e) => e[0] === "sure" && e[2] === "write")[5] =
   undefined;
 
+/** The checkout simulation (Phase 17a), from the button to the receipt. */
+const ACT_CHECKOUT = {
+  width: 1400,
+  lanes: [
+    ["Pengguna", 10, 330],
+    ["Server (Next.js)", 330, 780],
+    ["Basis data (Supabase)", 780, 1090],
+    ["Midtrans Sandbox", 1090, 1390],
+  ],
+  nodes: [
+    ["start", "start", 170, 0, ""],
+    [
+      "push",
+      "action",
+      170,
+      1,
+      "Menekan Checkout\n(simulation), lalu Pay\nwith Midtrans (sandbox)",
+      280,
+    ],
+    [
+      "recalc",
+      "action",
+      555,
+      2,
+      "Menghitung ulang harga dari\nkatalog (bukan dari browser)",
+      340,
+    ],
+    ["empty", "decision", 555, 3, "Build kosong atau\nada error?¹", 250],
+    ["fix", "action", 170, 4, "Memperbaiki build", 260],
+    [
+      "create",
+      "action",
+      935,
+      4,
+      "create_order²:\npesanan baru,\nstatus pending",
+      260,
+    ],
+    [
+      "token",
+      "action",
+      1240,
+      5,
+      "Membuat token Snap³\n(berlaku 60 menit)",
+      260,
+    ],
+    [
+      "pay",
+      "action",
+      170,
+      6,
+      "Pop-up Snap terbuka;\nmembayar dengan kartu\nuji, QRIS atau VA",
+      280,
+    ],
+    [
+      "process",
+      "action",
+      1240,
+      7,
+      "Memproses pembayaran\n(sandbox: tanpa\nuang nyata)",
+      260,
+    ],
+    [
+      "refresh",
+      "action",
+      555,
+      8,
+      "Menanyakan status ke Midtrans⁴;\nmencocokkan jumlah\ndengan total pesanan",
+      360,
+    ],
+    ["save", "action", 935, 9, "set_order_payment⁵:\nmenyimpan status", 260],
+    [
+      "view",
+      "action",
+      170,
+      10,
+      "Membuka /orders/[id]:\nstatus, item, total",
+      280,
+    ],
+    ["pending", "decision", 170, 11, "Masih pending?", 180],
+    [
+      "receipt",
+      "action",
+      170,
+      12,
+      "Mengunduh struk PDF\n(SIMULASI — bukan\nbukti transaksi)",
+      280,
+    ],
+    ["end", "end", 170, 13, ""],
+  ],
+  edges: [
+    ["start", "b", "push", "t"],
+    ["push", "r", "recalc", "t"],
+    ["recalc", "b", "empty", "t"],
+    ["empty", "l", "fix", "t", "ya"],
+    ["empty", "r", "create", "t", "tidak"],
+    ["fix", "l", "push", "l", undefined, 30],
+    ["create", "r", "token", "t"],
+    ["token", "l", "pay", "t"],
+    ["pay", "r", "process", "t"],
+    ["process", "l", "refresh", "t"],
+    ["refresh", "r", "save", "t"],
+    ["save", "l", "view", "t"],
+    ["view", "b", "pending", "t"],
+    ["pending", "l", "refresh", "l", "ya", 30, [-10, -12]],
+    ["pending", "b", "receipt", "t", "tidak"],
+    ["receipt", "b", "end", "t"],
+  ],
+  notes: [
+    "¹ Aturan kompatibilitas yang sama dengan di builder. Warning dan slot yang belum diisi tidak menghalangi checkout.",
+    "² Fungsi security definer yang hanya jalan dengan ORDER_WRITE_SECRET milik server; maksimal 5 pesanan pending per jam.",
+    "³ Yang dikirim ke Midtrans: nomor pesanan, nama dan harga item, total, nama tampilan. Email tidak dikirim.",
+    "⁴ Dari tombol Check payment status atau saat halaman dibuka. Di produksi Midtrans juga mengirim notifikasi",
+    "   (webhook) yang tanda tangan SHA-512-nya diperiksa lebih dulu, lalu statusnya dikonfirmasi dengan cara yang sama.",
+    "⁵ Aturan status: paid bersifat final; pending tidak pernah menggantikan status lain.",
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------
@@ -836,6 +1013,10 @@ const jobs = [
   {
     svg: activitySvg(ACT_LISTING),
     out: "docs/pi/aktivitas-admin-ubah-listing",
+  },
+  {
+    svg: activitySvg(ACT_CHECKOUT),
+    out: "docs/pi/aktivitas-simulasi-pembayaran",
   },
 ];
 

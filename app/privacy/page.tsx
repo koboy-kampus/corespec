@@ -8,10 +8,15 @@ import {
   LEGAL_UPDATED,
 } from "@/lib/site";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isCheckoutConfigured } from "@/lib/checkout/config";
 
 // Accounts (Phase 16) exist only when Supabase is configured; without it this
 // page reads exactly as before.
 const accounts = isSupabaseConfigured();
+// The checkout simulation (Phase 17a) adds one section; off, nothing changes.
+const checkout = isCheckoutConfigured();
+/** When the checkout section was added; only shown while checkout is on. */
+const CHECKOUT_UPDATED = "2026-11-17";
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -30,7 +35,7 @@ export default function Page() {
           ? "CoreSpec works without an account and never sells data. Cookies are only set if you log in. Here is exactly what is stored and what leaves your browser."
           : "CoreSpec has no accounts, sets no cookies and never sells data. Here is exactly what is stored and what leaves your browser."
       }
-      updated={`Updated ${formatDate(LEGAL_UPDATED)}`}
+      updated={`Updated ${formatDate(checkout ? CHECKOUT_UPDATED : LEGAL_UPDATED)}`}
     >
       <DocSection title="Your builds stay in your browser">
         <p>
@@ -67,6 +72,22 @@ export default function Page() {
         </DocSection>
       ) : null}
 
+      {checkout ? (
+        <DocSection title="The checkout simulation">
+          <p>
+            Checkout is a payment simulation with Midtrans&apos;s sandbox: no
+            real money moves and nothing is sold or shipped. When you pay, we
+            send Midtrans the order number, the names and prices of the items,
+            the total and your display name. We never send your email address.
+            The payment page itself comes from Midtrans, so what you type there
+            (in the sandbox, only test card numbers) goes to Midtrans, not to
+            us. Your orders are stored in your account with their items, totals
+            and payment status; admins can see every order with its display
+            name. Receipts are made in your browser and aren&apos;t uploaded.
+          </p>
+        </DocSection>
+      ) : null}
+
       <DocSection title="Share links">
         <p>
           When you share a build, its part list and name are packed into the
@@ -99,6 +120,9 @@ export default function Page() {
         <p>
           Fonts, 3D models and the 3D decoder are served from CoreSpec itself.
           We don&apos;t load ads, trackers or social media widgets.
+          {checkout
+            ? " The one exception is Midtrans's payment script, loaded only when you press Pay or Continue payment."
+            : null}
         </p>
       </DocSection>
 

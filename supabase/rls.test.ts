@@ -233,6 +233,38 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     await db.close();
   });
 
+  // Orders (Phase 17a): the two rules that matter most.
+  it("catch a policy that shows other people's orders", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      drop policy "orders: read own" on public.orders;
+      create policy "orders: read all" on public.orders for select to authenticated using (true);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /user reads another user's order/,
+    );
+    await db.close();
+  });
+
+  it("catch the order functions accepting a wrong secret", async () => {
+    const db = await freshDb();
+    // The check without the comparison: any secret passes once a hash is set.
+    await db.exec(`
+      create or replace function public.check_order_secret(p_secret text)
+      returns void language plpgsql stable security definer set search_path = '' as $$
+      begin
+        if (select secret_hash from public.payment_config where id) is null then
+          raise exception 'Not allowed' using errcode = '42501';
+        end if;
+      end;
+      $$;
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /create_order accepts a wrong secret/,
+    );
+    await db.close();
+  });
+
   it("set search_path on every security definer function", async () => {
     const db = await freshDb();
     const { rows } = await db.query<{ name: string; config: string[] | null }>(`
@@ -244,11 +276,14 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
       "admin_list_users",
       "admin_stats",
       "audit_row",
+      "check_order_secret",
+      "create_order",
       "delete_my_account",
       "handle_new_user",
       "is_admin",
       "item_usage_count",
       "items_refuse_delete_in_use",
+      "set_order_payment",
       "set_role",
     ]);
     for (const r of rows) expect(r.config, r.name).toContain('search_path=""');
@@ -261,9 +296,18 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
         and r.rolname in ('anon', 'authenticated')
         and has_function_privilege(r.oid, p.oid, 'execute')
     `);
-    expect(grants.filter((g) => g.who === "anon")).toEqual([]);
+    // …except the two order functions: Midtrans's notification has no session,
+    // so they're open to anon and refuse everything without ORDER_WRITE_SECRET
+    // (rls.sql checks that).
+    expect(
+      grants
+        .filter((g) => g.who === "anon")
+        .map((g) => g.name)
+        .sort(),
+    ).toEqual(["create_order", "set_order_payment"]);
     // The trigger functions can't be called by anyone.
     for (const name of [
+      "check_order_secret",
       "handle_new_user",
       "audit_row",
       "items_refuse_delete_in_use",

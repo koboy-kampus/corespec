@@ -1,10 +1,6 @@
-# CoreSpec handoff report (session 3)
+# CoreSpec handoff report (session 4)
 
-_Written 12 November 2026, at the end of Phase 16c, on the branch `feat/phase-16-auth`. Every number below comes from a command run during this session, on Windows 11 with Node 26.13.0, unless marked otherwise. Earlier reports are in git history: session 1 `git show 3db675e:HANDOFF.md`, session 2 `git show df9628d:HANDOFF.md`._
-
-> **Update 14 November 2026: Phase 16 is live on production.** PR #3 (`feat/phase-16-auth` → `main`) was merged with merge commit `0325ad6`, and https://corespec-eight.vercel.app now has accounts and the admin panel (see §7, §8, §11). The rest of this report describes the state on 12 November.
->
-> **Update 15 November 2026: the part picker works on phones.** PR #4 (`fix/mobile-picker-filters` → `main`), merge commit `9b804b8`, fixes the picker on narrow screens (Rei saw it on an iPhone 13 Pro and a Galaxy A07). Below 768 px only: a full-height sheet (`100dvh`, safe-area padding), one row with search, a sort button and "Filters · N", a filter panel that is closed by default (Clear all, Done), removable filter chips with "N of M", and only the list scrolls. Escape closes the panel before the picker; the search box isn't focused on open, so the phone keyboard doesn't cover the list. Tablet and desktop render the same markup as before (screenshots identical). Checks: lint clean, 319 unit tests, **95 e2e passed** (20 new in `tests/e2e/mobile-picker.spec.ts`; at 375×667, 390×844 and 360×800, Monitor, Keyboard and Monitor arm show at least 4 whole items), axe 0 with the panel closed, open and with chips. Production deploy succeeded. 🔍 Not yet checked on a real phone.
+_Written 17 November 2026, at the end of Phase 17c, on the branch `feat/phase-17-checkout` (draft PR #6, not merged). Every number below comes from a command run during this session, on Windows 11 with Node 26.13.0, unless marked otherwise. Earlier reports are in git history: session 1 `git show 3db675e:HANDOFF.md`, session 2 `git show df9628d:HANDOFF.md`, session 3 (Phase 16, with the 14 and 15 Nov updates) `git show 7db6ce4:HANDOFF.md`. Sections that didn't change in this session (data, 3D, older Lighthouse runs) are shortened here; the session 3 report has the full tables._
 
 **Legend:** ✅ done · ⚠️ partial · ❌ not done · 🔍 not checked
 
@@ -15,257 +11,166 @@ _Written 12 November 2026, at the end of Phase 16c, on the branch `feat/phase-16
 ### What it does today
 
 - CoreSpec is a dark, spec-sheet styled **3D PC builder** for Indonesian buyers, with English UI and prices in Rupiah.
-- **PC:** 8 slots, **73 parts**, drawn in a 3D case at real size. 9 compatibility rules plus a "missing parts" reminder; errors glow coral in 3D.
-- **Setup:** 12 optional categories, **108 items**, drawn on a **3D desk**, with 5 setup rules (warnings and notes only).
-- **Prices:** every item has an estimate; some have listings checked by hand on Tokopedia or Shopee. Prices are never fetched or scraped.
-- **Builds** save in the browser and share as links (`/b/<code>`).
-- **Accounts (session 3, Phase 16, optional):** with the Supabase settings, visitors can register and log in. Builds then sync to the account, guest builds can be imported, and admins manage users, the catalogue, checked listings and site settings, with an audit log. **Without the settings the site is exactly as before**: no login, no cookies, catalogue from the JSON.
+- **PC:** 8 slots, **73 parts**, drawn in a 3D case at real size, with 10 PC rules. **Setup:** 12 categories, **108 items**, on a 3D desk, with 5 setup rules.
+- **Prices:** estimates for every item, and a few listings checked by hand on Tokopedia or Shopee. Prices are never fetched or scraped.
+- **Builds** save in the browser and share as links (`/b/<code>`). **Accounts (Phase 16, live on production):** login, sync, and an admin panel for users, catalogue, listings and settings.
+- **New in this session (Phase 17): a checkout _simulation_** with Midtrans **Sandbox**, orders, and a **PDF receipt** with 3D pictures of the build. No real money moves, nothing is sold or shipped, and every screen, the receipt's watermark and its footer say so ("SIMULASI — bukan bukti transaksi").
+- **Without the Midtrans settings the site is exactly as before:** no button, and the new pages and the notification URL are a 404. Production has no Midtrans settings today; the preview does.
 
 ### Stack
 
-| Area                | Package                                                           | Version                                          |
-| ------------------- | ----------------------------------------------------------------- | ------------------------------------------------ |
-| Framework           | next                                                              | 16.4.5 (App Router, Turbopack, Cache Components) |
-| UI runtime          | react / react-dom                                                 | 19.3.0 (React Compiler)                          |
-| Language            | typescript                                                        | 5.9 (`strict: true`)                             |
-| Styling             | tailwindcss                                                       | 4                                                |
-| 3D                  | three · @react-three/fiber · @react-three/drei                    | 0.187 · 9.8 · 10.7                               |
-| State               | zustand                                                           | 5.1 (persist to localStorage)                    |
-| Backend (new)       | @supabase/ssr · @supabase/supabase-js                             | 0.12.7 · 2.118                                   |
-| Tests               | vitest · @playwright/test · axe-core · @electric-sql/pglite (new) | 5.1 · 1.65 · 4.14 · 0.5.11                       |
-| Model tooling (dev) | @gltf-transform/* · draco3dgltf · sharp                           | 4.5 · 1.5 · 0.35                                 |
+As in session 3 (Next 16.4.5 with Cache Components, React 19.3, TypeScript 5.9, Tailwind 4, three 0.187 with react-three-fiber 9.8 and drei 10.7, zustand 5.1, `@supabase/ssr` 0.12.7, Vitest 5.1, Playwright 1.65, axe-core 4.14, PGlite 0.5.11). New, pinned exactly:
+
+| Area           | Package   | Version | Loaded                                         |
+| -------------- | --------- | ------- | ---------------------------------------------- |
+| PDF receipt    | `pdf-lib` | 1.17.1  | only when "Download receipt (PDF)" is clicked  |
+| QR code on PDF | `uqr`     | 0.1.3   | with pdf-lib                                   |
+| Midtrans       | none      | —       | `fetch` on the server; `snap.js` from Midtrans |
+
+There is no Midtrans npm package: the server calls the sandbox REST API with `fetch`, and the browser loads Midtrans's `snap.js` only when Pay (or Continue payment) is pressed.
 
 ---
 
 ## 2. What was built, phase by phase
 
-- **Session 1 (Phases 0–8)** ✅ Scaffold, design system, landing page, catalogue and PC rules, builder, 3D viewer, save and share, polish, launch pages. Commits `5d7aa2c` to `3db675e`.
-- **Session 2 (Phases 9–15)** ✅ Clean-up and performance, setup items and rules, 3D desk, tiers and checked prices, model pipeline v2, hero poster. Commits up to `df9628d`. The tag **`demo-stable-2026-11-11`** (`ac3689b`) is the known-good demo version.
+- **Session 1 (Phases 0–8)** ✅ Scaffold to launch pages. Commits `5d7aa2c` to `3db675e`.
+- **Session 2 (Phases 9–15)** ✅ Performance, setup items, 3D desk, tiers and checked prices, model pipeline v2, hero poster. Up to `df9628d`; tag **`demo-stable-2026-11-11`** (`ac3689b`).
+- **Session 3 (Phase 16)** ✅ Accounts, catalogue in the database, admin panel, diagrams. Merged 14 Nov (PR #3). Then on `main`: the phone picker (PR #4, 15 Nov) and "Share build" in the navbar plus deleting unused catalogue items (PR #5, `2c2e437`, 15 Nov).
 
-### Session 3: Phase 16, login and backend (branch `feat/phase-16-auth`, not merged)
+### Session 4: Phase 17, the checkout simulation (branch `feat/phase-17-checkout`, draft PR #6)
 
-| Part                              | What was built                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Commits              |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| Plan                              | `docs/phase-16-plan.md`, approved with Rei's 7 changes (all items readable, tombstones, `security definer` rules, column lock, sign-up trigger, token refresh in the sync, Later notes)                                                                                                                                                                                                                                                                                                                                                                       | `a1044f2`            |
-| **16a** Accounts                  | Supabase Auth with httpOnly cookies and Server Actions (no Supabase code in the browser). `/login`, `/register`, `/account` (name, password, builds, log out, delete), `/admin` and `/admin/users` (roles). Builds sync about a second after each edit; deletes leave a tombstone; guest builds can be imported. `proxy.ts` runs only on account routes, so public pages stay static. RLS on every table, no service-role key.                                                                                                                                | `8c6255f`, `f7d2888` |
-| **16b** Catalogue in the database | `items`, `listings`, `site_settings`, `audit_log`. The JSON stays the bundled base; pages get only the database's differences (none when they match), so they stay static and the same size, and fall back to the JSON when the database is off, unreachable or empty. `/admin/items` (filters, add, edit, deactivate), listings with "Mark checked today" and the 40% confirm, `/admin/settings`, totals and recent changes on `/admin`. `seed.sql` generated from the JSON; `npm run db:export` copies the database back. Listing rules as database checks. | `68397f0`            |
-| **16c** Diagrams and docs         | `npm run diagrams` draws the ERD and use case diagram (`docs/diagrams/`, English) and, for the PI write-up in Indonesian, the ERD, use case diagram and two activity diagrams as PNG (`docs/pi/`), plus `docs/pi/angka.md` with the numbers. `docs/accounts.md` finished; this report.                                                                                                                                                                                                                                                                        | the 16c commit       |
-
-Also fixed in Phase 16: the navbar scrolled sideways at exactly 768 px with accounts on (16a), and two flaky tests (`blob:` URLs counted as outside requests; a cold-start timeout).
+| Part                        | What was built                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Commits                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| **17a** Orders and checkout | `orders` and `payment_config` tables; trusted writes without a service-role key (`create_order` and `set_order_payment` only work with `ORDER_WRITE_SECRET`; the database keeps its SHA-256). Status rules in the database (paid is final, pending never replaces another status) and a cap of 5 unpaid orders per hour. Server-side repricing from the catalogue, Snap token, `refreshOrder` (status API, the main path), "Continue payment", and `POST /api/midtrans/notification` (signature, amount, then confirm with the status API). "Checkout (simulation)" in the build summary, gated by the compatibility errors; `/checkout`, `/orders`, `/orders/[id]`, `/admin/orders`. | `7e862c7`, `8df2cf2`, `97d057e` |
+| **17b** PDF receipt         | "Download receipt (PDF)" on `/orders/[id]`, any status. The PC and desk scenes are drawn off screen at a fixed 1200 × 900 (the same on a phone), then an A4 PDF is laid out in the browser: order facts, QR code to the share page, both pictures, the item snapshot with subtotals and total, "Compatibility (checked <date>): …", and the simulation watermark and footer on every page. Layout code in `lib/receipt/` (data in, bytes out).                                                                                                                                                                                                                                        | `7db6ce4`                       |
+| **17c** Docs, diagrams      | `npm run diagrams`: `orders` and `payment_config` in the ERD; "Checkout (simulation)", "Download receipt (PDF)" (User) and "View orders" (Admin) in the use case diagram; a new activity diagram `docs/pi/aktivitas-simulasi-pembayaran.png`. `docs/pi/angka.md` updated. `docs/accounts.md` setup status; a checkout segment in `docs/demo-script.md`; a checkout paragraph on `/privacy` (only when checkout is on); this report.                                                                                                                                                                                                                                                   | the 17c commit                  |
 
 ---
 
 ## 3. Checks
 
-| Check                                         | Command                                                | Result                                                                                                  |
-| --------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| Lint                                          | `npm run lint`                                         | ✅ no problems                                                                                          |
-| TypeScript                                    | `npx tsc --noEmit`                                     | ✅ 0 errors                                                                                             |
-| Formatting                                    | `npx prettier --check .`                               | ✅ clean                                                                                                |
-| Unit tests                                    | `npx vitest run`                                       | ✅ **319 passed** (25 files)                                                                            |
-| End-to-end, accounts off                      | `npm run test:e2e`                                     | ✅ **75 passed**, axe **0 violations**                                                                  |
-| End-to-end, accounts on, database unreachable | `E2E_SUPABASE_URL=http://127.0.0.1:9 npm run test:e2e` | ✅ **71 passed**, 4 skipped (accounts-off only)                                                         |
-| Build                                         | `npm run build`                                        | ✅ passes (run by the e2e suite); `/`, `/builder`, `/about`, `/prices` static, `/b/[code]` static shell |
+| Check                                    | Command                                                                                                  | Result                                                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Lint                                     | `npm run lint`                                                                                           | ✅ no problems                                                                                     |
+| TypeScript                               | `npx tsc --noEmit`                                                                                       | ✅ 0 errors                                                                                        |
+| Formatting                               | `npx prettier --check .`                                                                                 | ⚠️ clean except `tests/e2e/mobile-picker.spec.ts` (from `main`; fix separately, by Rei's decision) |
+| Unit tests                               | `npx vitest run`                                                                                         | ✅ **400 passed** (30 files)                                                                       |
+| End-to-end, checkout off                 | `npm run test:e2e`                                                                                       | ✅ **112 passed**, 6 skipped, axe 0                                                                |
+| End-to-end, checkout on (dummy settings) | `E2E_SUPABASE_URL=http://127.0.0.1:9 E2E_CHECKOUT=on npx playwright test checkout a11y receipt accounts` | ✅ **28 passed**, 6 skipped, axe 0                                                                 |
+| Build                                    | `npm run build` (run by the e2e suite)                                                                   | ✅ `/`, `/builder` static; `/b/[code]` partial prerender                                           |
 
-Session 2 ended at 238 unit and 70 e2e tests.
+Session 3 ended at 319 unit and 95 e2e tests.
 
-- **The database** is tested without a real project: `supabase/rls.test.ts` runs every migration (twice), `supabase/tests/rls.sql` (84 checks for anon, user and admin) on an empty database and on one already in use (an admin, a user with builds, the seeded catalogue; left exactly as it was), and 9 "mutation" tests (each loosens one rule and expects `rls.sql` to fail) in PGlite, a local Postgres. `supabase/seed.test.ts` checks the seed against the JSON item by item, and `scripts/db-export.test.ts` checks the export round trip byte for byte.
-- **On the real project:** the 16a migrations and `rls.sql` passed. The 16b migrations and the seed ran on 12 Nov 2026 (181 items in 20 categories, 4 listings). `rls.sql` then stopped at "an admin reads every profile": it assumed an empty database, and the project now has Rei's admin account. Fixed: every total is now relative to what the project already has, or counts only the test's own accounts. 🔍 It needs one more run there (§11).
+### 3a. End-to-end results
 
-### What the e2e suite covers (`tests/e2e/`)
+- 17b (17 Nov, before the docs): **112 passed**, 6 skipped (checkout-on only) with checkout off; **28 passed**, 6 skipped with dummy checkout settings. axe **0 violations** on every page, including the new ones.
+- 17c rerun (17 Nov, after the `/privacy` change): the same, **112 passed** and **28 passed**, axe 0. With checkout on, the a11y run covers `/privacy` with the new paragraph.
 
-| File                                                       | Covers                                                                                                                          |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `builder.spec.ts`                                          | Picking parts, incompatibilities, picker filters (including tiers), presets, saving, the replace-preset dialog, phone layout    |
-| `setup.spec.ts`, `setup-rules.spec.ts`                     | Setup tab, suggested setup, filter chips, totals, every setup rule from the UI                                                  |
-| `desk.spec.ts`                                             | Desk view switch, warnings in 3D, touch and wheel on the desk, chair fade                                                       |
-| `prices.spec.ts`                                           | Checked and estimate labels, shop links and their `rel`, the 14-day note (mocked clock), summary and shared page                |
-| `share.spec.ts`                                            | Storage migration, share links (old and new), My builds, touch and wheel on shared builds, phone widths                         |
-| `hero.spec.ts`                                             | The hero and the builder show the same build; the hero poster still matches the live scene                                      |
-| `visual.spec.ts`                                           | Screenshot baselines of the PC views, the hero and a full desk; models load once, and only when used                            |
-| `demo.spec.ts`                                             | `docs/demo-script.md`, click for click                                                                                          |
-| `keyboard.spec.ts`, `a11y.spec.ts`, `site.spec.ts`         | Keyboard-only run, axe on every page and dialog, site wording, no sideways scroll, poster first and no 3D with reduced motion   |
-| `accounts-off.spec.ts`, `catalogue-fallback.spec.ts` (new) | No account UI, cookies or outside requests without settings; the JSON catalogue with Supabase off or unreachable                |
-| `mobile-picker.spec.ts` (15 Nov)                           | Picker on three phone sizes: whole items visible, filter panel, chips, Clear all, Escape order, focus; tablet/desktop unchanged |
+### What the new tests cover
 
-### Lighthouse (mobile, median of 3 runs, local production build)
+- **Database** (`supabase/rls.test.ts`, `supabase/tests/rls.sql`, PGlite): anon reads no orders; users read only their own; admins read all; nobody inserts, updates or deletes orders directly; both functions refuse a wrong secret and a null hash; every status rule; the spam cap. Two new mutation tests (someone else's orders readable; a wrong secret accepted), 15 in all.
+- **Order logic** (`lib/checkout/order.test.ts`): a tampered price in the input changes nothing; an incompatible build is refused; the Midtrans items always add up to the total; the status mapping; the SHA-512 signature against a worked example.
+- **Server Actions and the notification route** with `fetch` mocked: wrong amount, bad signature, duplicate and out-of-order notifications, a 404 from the status API.
+- **Receipt** (`lib/receipt/*.test.ts`): the PDF is read back: order number, the stamp and footer on every page, totals, a 20-item order on two pages, the demo order on one page, characters the PDF font can't draw.
+- **e2e:** with checkout off, no button and the new pages are a 404; with dummy settings, the button's three states (empty, errors, ready), the guest redirect, and the receipt download at desktop and phone widths (both pictures 1200 × 900).
 
-Lighthouse 13.6, mobile preset, default simulated throttling, `next start` on this laptop. Phase 16 was measured with accounts on (dummy settings: the preview URL is behind Vercel's login). "16a" is before the catalogue moved into the database; "16b" is after, once with the database unreachable and once with a stand-in serving the seeded rows.
+### Lighthouse
 
-| Route       | Metric    |    16a | 16b, DB unreachable | 16b, DB seeded |
-| ----------- | --------- | -----: | ------------------: | -------------: |
-| `/`         | Score     |     89 |                  89 |             90 |
-|             | TBT       |  11 ms |               10 ms |           9 ms |
-|             | LCP       | 3.83 s |              3.83 s |         3.71 s |
-|             | JS (gzip) | 295 KB |              297 KB |         297 KB |
-| `/builder`  | Score     |     98 |                 100 |             99 |
-|             | TBT       | 171 ms |               91 ms |         113 ms |
-|             | LCP       | 0.76 s |              0.76 s |         0.76 s |
-|             | JS (gzip) | 581 KB |              583 KB |         583 KB |
-| `/b/[code]` | Score     |     86 |                  86 |             88 |
-|             | TBT       | 532 ms |              527 ms |         476 ms |
-|             | LCP       | 1.06 s |              1.06 s |         1.06 s |
-|             | JS (gzip) | 593 KB |              595 KB |         595 KB |
-
-CLS is 0 everywhere. The only real change is +2 KB of JavaScript (the code that applies database changes); the rest is run-to-run noise. Session 2's measurements (Phases 9–15, accounts didn't exist yet), for comparison:
-
-| Route       | Metric                | Phase 9 before | Phase 9 after | Phase 10 | Phase 15 | **Phase 15 + poster** |
-| ----------- | --------------------- | -------------- | ------------- | -------- | -------- | --------------------- |
-| `/`         | Score                 | 57             | 87            | 86       | 85       | **90**                |
-|             | TBT                   | 875 ms         | 514 ms        | 532 ms   | 578 ms¹  | **20 ms**¹            |
-|             | LCP (simulated)       | 6.5 s          | 0.9 s         | 0.9 s    | 0.9 s    | **3.7 s**²            |
-|             | LCP (observed)        | —              | —             | —        | 0.19 s   | **0.15 s**            |
-|             | CLS                   | 0              | 0             | 0        | 0        | **0**                 |
-|             | JS during load (gzip) | 589 KB         | 566 KB        | 564 KB   | 578 KB   | **290 KB**            |
-|             | Main-thread work      | —              | —             | 3.1 s    | 3.4 s    | **0.67 s**            |
-| `/builder`  | Score                 | 70             | 71            | 96       | 97       | **95**                |
-|             | TBT                   | 398 ms         | 356 ms        | 233 ms   | 203 ms   | **255 ms**            |
-|             | LCP                   | 5.5 s          | 5.5 s         | 0.75 s   | 0.76 s   | **0.75 s**            |
-|             | CLS                   | 0.023          | 0.023         | 0        | 0        | **0**                 |
-|             | JS (gzip)             | 589 KB         | 577 KB        | 564 KB   | 576 KB   | **575 KB**            |
-| `/b/[code]` | Score                 | 80             | 86            | 86       | 86       | **84**                |
-|             | TBT                   | 846 ms         | 543 ms        | 544 ms   | 562 ms   | **615 ms**³           |
-|             | LCP                   | 0.9 s          | 0.9 s         | 0.9 s    | 1.06 s   | **1.06 s**            |
-|             | CLS                   | 0              | 0             | 0        | 0        | **0**                 |
-|             | JS (gzip)             | 590 KB         | 567 KB        | 571 KB   | 585 KB   | **585 KB**            |
-
-¹ Median of 5 runs.
-² See "the LCP trade-off" below.
-³ This page didn't change in the last commit. Its runs have ranged 551–689 ms across today's measurements, so treat 560–615 as one band: at the 600 ms target, not clearly under it (§10).
+Not rerun in this session. The measured pages (`/`, `/builder`, `/b/[code]`) didn't change in a way that matters: no page's JavaScript grew, except about 0.7 KB (uncompressed) on `/builder` and `/b/[code]` for the capture hook in the shared 3D scene. The receipt click loads about **470 KB gzipped** (pdf-lib, layout and QR about 182 KB; three.js about 281 KB, the same file the builder uses; the two scenes about 16 KB). Session 3's numbers (§3 of its report) still stand.
 
 ---
 
 ## 4. Data and content
 
-| Group                       | Items   | Per tier (Budget / Mid / High-end) | Checked listings                                                                                          |
-| --------------------------- | ------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| PC parts (8 categories)     | **73**  | 3/3/3 each; coolers 4/3/3          | CPU: Ryzen 5 7600 (Shopee). GPU: RX 9060 XT (Tokopedia, Shopee). Storage: Crucial P3 Plus 1TB (Tokopedia) |
-| Setup items (12 categories) | **108** | exactly 3/3/3 each                 | none yet                                                                                                  |
+Unchanged from session 3: **181 items** (73 PC, 108 setup), estimates dated 8 Nov 2026, 4 checked listings (11 Nov 2026), 3 presets (Budget 1080p Rp 9.080.000; 1440p Sweet Spot Rp 23.445.294 shown; Creator Workstation Rp 35.268.000).
 
-- **Estimates** are dated `pricesAsOf` **8 November 2026** (`data/meta.json`). **Checked** prices are from 11 November 2026. Where both exist, the cheapest checked listing is shown and added up.
-- **Specs to double-check** (dimensions, a few compatibility facts) are listed in `docs/price-check.md`.
-
-### Presets
-
-| Preset              | Estimate total | Shown total (with checked prices) | Est. draw | PSU   | Compatible |
-| ------------------- | -------------- | --------------------------------- | --------- | ----- | ---------- |
-| Budget 1080p        | Rp 9.080.000   | **Rp 9.080.000**                  | 277 W     | 550 W | ✅         |
-| 1440p Sweet Spot    | Rp 17.618.000  | **Rp 23.445.294**                 | 305 W     | 650 W | ✅         |
-| Creator Workstation | Rp 35.268.000  | **Rp 35.268.000**                 | 500 W     | 750 W | ✅         |
-
-Suggested setups: Rp 4.530.000, Rp 15.330.000 and Rp 27.650.000. The estimates match the brief's targets (about Rp 9, 18 and 35 jt), and a unit test keeps them there. The 1440p Sweet Spot shows about Rp 23,4 jt because its GPU and SSD really cost about twice their estimates after the memory price surge (checked 11 Nov 2026). The presets are kept on purpose, and no page promises a fixed total.
+- **QRIS has a Rp 10.000.000 limit** per transaction (a Bank Indonesia rule). The Budget 1080p preset alone is below it; most builds with a setup are above it. `enabled_payments` isn't restricted, so Snap lists every method the sandbox account has. 🔍 What Snap does with QRIS above the limit hasn't been checked yet (§11).
 
 ---
 
 ## 5. 3D and assets
 
-| Item                                    | Rendering                                                                                                                             | File                         | Size    | Licence                      |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------- | ---------------------------- |
-| CPU                                     | Model (`defaultFor: cpu`)                                                                                                             | `public/models/cpu.glb`      | 6.6 KB  | CC0 1.0 · iPoly3D            |
-| Memory                                  | Model, one per stick                                                                                                                  | `public/models/ram.glb`      | 6.1 KB  | CC0 1.0 · iPoly3D            |
-| Graphics                                | Model                                                                                                                                 | `public/models/gpu.glb`      | 10.2 KB | **CC BY 3.0** · pgonarg      |
-| Keyboard (desk view)                    | Model, `fit: contain`                                                                                                                 | `public/models/keyboard.glb` | 55 KB   | **CC BY 3.0** · Alex Safayan |
-| Motherboard, cooler, PSU, storage, case | Procedural (PCB with socket/DIMM/PCIe/VRM; tower with fin ribs or radiator; vent ribs; M.2 label or 2.5"; smoked glass, shroud, fans) | —                            | —       | ours                         |
-| Other setup items                       | Procedural (monitor with lit screen and curve, arm, chair with 5-star base, speakers, lamp, etc.)                                     | —                            | —       | ours                         |
-
-- **Pipeline:** `docs/models.md` explains how to add a model with no code (allowed and forbidden sources, the Blender checklist, a real walkthrough). `npm run models` and the tests refuse:
-  - a missing credit;
-  - a licence that isn't CC0 1.0 or CC BY 3.0/4.0;
-  - a file over 400 KB;
-  - a heaviest possible build over 2.5 MB.
-- **Loading:** models load only when an item on screen uses them, and each file loads once. They're Draco-compressed with the decoder served from `public/draco/`. A model that fails falls back to the next step.
-- **Hero poster:** `public/hero/poster.webp` (22 KB), made by `npm run hero:poster` from `/styleguide/hero` (internal, `noindex`, disallowed in robots).
-- **Weight:** `public/` is about 355 KB in total: the Draco decoder is about 252 KB and the 4 models about 78 KB. `models-src/` (sources) is 268 KB, and `docs/screenshots/` is 1.8 MB (not served).
-- **Layout checks:** `partClashes()` (PC) and the desk overlap tests run over thousands of combinations. `viewFrame()` keeps the exploded view in frame from 0.46 (tall phone) to 1.8 (wide) aspect ratios.
-
----
+Unchanged models and procedural parts (session 3 §5). New: `components/viewer/capture-frame.tsx` renders a frame and reads the canvas straight after (no `preserveDrawingBuffer`, so the builder's canvases are untouched). The receipt's scenes run with reduced motion, no intro, no warning glow, assembled.
 
 ---
 
 ## 6. Security and secrets
 
-- **`.gitignore`:** `.env*` (except `.env.example`, all values empty), `node_modules`, `.next`, `.vercel`.
-- **Env vars (all optional):**
-  - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: public by design (the publishable key only allows what RLS allows). Set in Vercel as type **Config**, **Preview only**.
-  - `NEXT_PUBLIC_AUTH_EMAIL`: `on` once a real email sender exists.
-  - `NEXT_PUBLIC_SENTRY_DSN` (not secret), `SENTRY_AUTH_TOKEN` (**secret**, build-time only), `SENTRY_ORG`, `SENTRY_PROJECT`.
-- **No service-role or secret Supabase key** anywhere: every query runs as the visitor, under Row Level Security. Session cookies are httpOnly; the `cs-auth` hint cookie grants nothing.
-- **Database rules:** RLS on every table; `profiles.role` only changes through `set_role()` (admins only, never your own, never the last admin); every `security definer` function has `search_path = ''`, checks the caller and can't be run by anon. Details: `docs/accounts.md`.
-- **History scan of session 3** (`git log -p df9628d..HEAD`, added lines, the pattern from REI.md §7): **no secrets.** The matches are:
+- **Env vars (names only):** as session 3, plus three for checkout. All three and the Supabase settings must be present, or checkout stays off.
 
-| Match                                | What it actually is                                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `password` / `Password` (~100 lines) | The account forms: field names, `PASSWORD_MIN`, `PasswordForm`, messages like "Enter your password." No password values.              |
-| `token` (~40 lines)                  | Supabase session handling and its tests (`refresh_token`, `token_hash`, `/auth/v1/token`), and fake tokens the tests build themselves |
-| `secret`                             | "non-secret cookie", "no secret key", Vercel's "Secret" env type in the docs, and **Secretlab**                                       |
-| `sk-`                                | **`desk-`** ids and `desk-edge`, as before                                                                                            |
-| `abcdefgh.supabase.co`               | A made-up project URL in `lib/account/sync.test.ts`                                                                                   |
+| Name                              | Kind                                     | Notes                                                                      |
+| --------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------- |
+| `MIDTRANS_SERVER_KEY`             | **secret**, server only (Vercel: Secret) | Used only in `lib/checkout/` (`import "server-only"`)                      |
+| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | public by design (Vercel: Config)        | Goes in the `snap.js` tag                                                  |
+| `ORDER_WRITE_SECRET`              | **secret**, server only (Vercel: Secret) | 32 random bytes, made on Rei's laptop; only its SHA-256 is in the database |
 
-Sessions 1 and 2's known false positives (`mask-image`, design tokens, `SENTRY_AUTH_TOKEN` as a name, package names) still apply.
+- **Only the sandbox hosts are in the code** (`app.sandbox.midtrans.com`, `api.sandbox.midtrans.com`). There is no production switch, so even a production key couldn't charge anyone.
+- **Still no service-role key.** Order writes go through two `security definer` functions that refuse any call without the server's secret; `payment_config` has no grants and no policies.
+- **Never sent to Midtrans:** the user's email. Sent: order number, item ids, names and prices, total, display name.
+- **Prices never come from the browser:** the server reprices every item from the catalogue.
+- **History scan of session 4** (`git log -p main..HEAD`, added lines, the pattern from REI.md §7): **no secrets.** The matches are:
+
+| Match                                                                | What it actually is                                                                                                                                               |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MIDTRANS_SERVER_KEY`, `ORDER_WRITE_SECRET` (and `SECRET`, `Secret`) | Variable **names** in code, `.env.example` (empty), docs and the e2e config. Vercel's "Secret" type in the docs.                                                  |
+| `secret_hash`, `p_secret`, `check_order_secret`, `writeSecret`       | Column, parameter and function names in the migration, `rls.sql` and the server code                                                                              |
+| `snap_token`, `token`, `Token`                                       | The Snap token column and its handling (`createSnapToken`, `resumePayment`). Tokens are per-payment and short-lived, and never logged.                            |
+| `signature_key`                                                      | Midtrans's notification field name; the 128-hex value in `lib/checkout/order.test.ts` is a worked example for the made-up key `SB-Mid-server-TEST-not-a-real-key` |
+| `SB-Mid-server-…`, `SB-Mid-client-…`                                 | Made-up test keys: `…-e2e-dummy`, `…-ROUTE-TEST`, `…-UNIT-TEST`, `…-TEST-not-a-real-key`                                                                          |
+| `"route-test-secret"`, `"unit-test-secret"`, `"e2e-dummy-secret"`    | Made-up secrets in the tests and the e2e config                                                                                                                   |
+| `sk-`                                                                | **`desk-scene`** (as before, `desk-` ids)                                                                                                                         |
+
+Sessions 1–3's known false positives (`password` in the account forms, Supabase `refresh_token`, `mask-image`, design tokens, `SENTRY_AUTH_TOKEN` as a name, **Secretlab**, `desk-`) still apply.
 
 ---
 
 ## 7. Deploy
 
-- **Vercel:** every push to `main` deploys production; every push to `feat/phase-16-auth` deploys a **preview**. No `vercel.json`. Node: `engines >=20.9`, `.nvmrc` 24.
-- **Production has accounts on (14 November 2026).** Rei added both `NEXT_PUBLIC_SUPABASE_*` variables for Production in the Vercel dashboard (same values as Preview, the same Supabase project), and set the Supabase Site URL and redirect URLs to `https://corespec-eight.vercel.app`. Vercel reported the deploy of `0325ad6` as completed.
-- **Production smoke test (14 November 2026), on https://corespec-eight.vercel.app:** ✅ `/`, `/builder` and `/login` load (200) with no console errors. ✅ The navbar shows "Log in"; guests reach Register from the login page, not the navbar. ✅ `/account` redirects to `/login`. ✅ `/admin` gives logged-out visitors a 404, by design (§9 item 2). ✅ `/`, `/builder` and `/login` stay prerendered (`x-vercel-cache: PRERENDER`), and no page makes a Supabase request or loads Supabase client code.
-- **The preview has accounts on** too, against the same Supabase project (Singapore), set up from `docs/accounts.md`. Accounts made on either one are the same accounts.
-- 🔍 **Not checked in this session:** PageSpeed on the preview (it's behind Vercel's login) and a real phone.
+- **Production** (`main`, https://corespec-eight.vercel.app): accounts on, **checkout off** (no Midtrans variables). Unchanged by this session.
+- **Preview** (`feat/phase-17-checkout`, draft PR #6): accounts and **checkout on**. Done by Rei and the chat on 17 Nov 2026:
+  - ✅ The migration `supabase/migrations/20261117000100_orders.sql` ran on the real Supabase project.
+  - ✅ `supabase/tests/rls.sql` (the Phase 17 version) passed there.
+  - ✅ The SHA-256 of `ORDER_WRITE_SECRET` is stored in `payment_config`.
+  - ✅ `MIDTRANS_SERVER_KEY`, `ORDER_WRITE_SECRET` (Secret) and `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` (Config) are set for Vercel **Preview**, and the preview was redeployed.
+  - ✅ **A real sandbox card payment went through on the preview: two orders are Paid.**
+- **The webhook can't reach the preview** (it's behind Vercel's login), so on the preview status comes from `refreshOrder` (on load and "Check payment status"). The Payment Notification URL in the Midtrans dashboard is for production, once checkout is turned on there.
 
 ---
 
 ## 8. Git
 
-- `main`: production. Phase 16 was merged on 14 November 2026 through PR #3 (https://github.com/koboy-kampus/corespec/pull/3), merge commit `0325ad6` (not squashed). Before that, the only change since session 2 (`df9628d`) was the author line on `/about` (`ade170f`).
-- `feat/phase-16-auth`: kept on GitHub after the merge; it equals the second parent of `0325ad6`.
-- `fix/mobile-picker-filters`: merged on 15 November 2026 through PR #4 (https://github.com/koboy-kampus/corespec/pull/4), merge commit `9b804b8` (not squashed); kept on GitHub.
-- **Line endings:** `.gitattributes` keeps LF everywhere.
-- **Tags:** `demo-stable-2026-11-11` → `ac3689b`.
+- `main`: production, last merge `2c2e437` (PR #5, 15 Nov 2026). Phase 17 isn't on it.
+- `feat/phase-17-checkout`: commits `7e862c7`, `8df2cf2`, `97d057e` (17a), `7db6ce4` (17b), the 17c commit. **Draft PR #6** (https://github.com/koboy-kampus/corespec/pull/6). Don't merge until Rei says so.
+- Kept on GitHub: `feat/phase-16-auth`, `fix/mobile-picker-filters`, `feat/builder-share-and-item-delete`.
+- **Line endings:** LF everywhere (`.gitattributes`). **Tags:** `demo-stable-2026-11-11` → `ac3689b`.
 
 ---
 
 ## 9. Leftovers and known issues
 
-1. **Bad share links return HTTP 200** with 404 content and `noindex` (a streaming limitation). Kept by Rei's decision.
-2. **`/admin` for a logged-in non-admin** shows the 404 page with HTTP 200 (the same streaming limitation). Guests get a real 404 from `proxy.ts`.
-3. **The admin pages have no e2e tests:** they need a real login. Their form reading and the catalogue rules have unit tests; `docs/accounts.md` has a manual preview checklist.
-4. **Running `seed.sql` again resets** the seeded items to the JSON (admin edits lost). Run `npm run db:export` first if they should be kept.
-5. **Supabase returns at most 1,000 rows per request** by default: plenty for 181 items and 4 listings, but the loader would need paging past that.
-6. **Two builder tabs open at once** can overwrite each other's saved builds (true before accounts too).
-7. **Specs not confirmed online** for some items (list in `docs/price-check.md`). **Only 3 items have checked listings**, and those show "Price may have changed" from 26 November 2026.
-8. As in session 2: rare part overlaps that `partClashes()` still finds in some compatible builds (none in the presets), the `THREE.Clock` deprecation warning from React Three Fiber, and no physical-phone test of the 3D view.
+1. **Prettier warning in `tests/e2e/mobile-picker.spec.ts`**, from `main`. To be fixed separately, not on this branch.
+2. **Two sandbox checks are still open:** the status API's answer for an order whose pop-up was closed before a method was chosen (the code treats a 404 as "still pending"; tested with mocks only), and what Snap shows for **QRIS above Rp 10.000.000**.
+3. **The webhook is untested against Midtrans itself:** its logic has unit tests, but only production can receive it.
+4. **The receipt's compatibility line uses today's catalogue**, not the one at order time, so it says "checked <today's date>". The prices are the order's snapshot.
+5. **Receipt fonts are the PDF standard fonts** (Latin only): characters they can't draw become "?" (tested). Item names are all Latin today.
+6. **The admin and order pages have no logged-in e2e tests** (they need a real login and a real payment). Their logic has unit tests; `docs/accounts.md` has the manual checklist.
+7. As in session 3: bad share links and `/admin` for non-admins answer HTTP 200 with 404 content; running `seed.sql` again resets admin edits; two open builder tabs can overwrite each other; some specs unconfirmed (`docs/price-check.md`); rare part overlaps; the `THREE.Clock` deprecation warning.
 
 ---
 
 ## 10. Later
 
-- **Item delete in the admin:** only deactivation is offered (share links keep working). Deleting would need a check that no preset uses the item.
-- **`docs/pi/angka.md` is written by hand:** update its test counts and Lighthouse table when they change. `npm run diagrams` redraws the pictures from the data in `scripts/diagrams.mjs`.
-- **Keyboard proportions:** the keyboard model is roughly TKL-shaped, and `fit: contain` keeps that shape, so full-size keyboards draw a little narrower than their real width. Fix with a full-size model as the `modelId` of the full-size keyboards, or a per-layout model.
-- **Screenshot baselines are Windows-only** (`tests/e2e/visual.spec.ts-snapshots/*-win32.png`). If CI is added (Linux), regenerate them there with `npx playwright test visual --update-snapshots` and commit the `-linux` files.
-- **More 3D models per setup category:** monitor, chair, headset, mouse, desk. No CC0/CC BY ones that look right were found yet. Each one is now a data-only change (`docs/models.md`).
-- **More checked listings:** fill `data/price-check.csv` for the preset parts first, then the suggested setups.
-- **`/b/[code]` weight:** "Copy to my builds" pulls in the build store and the catalogue. Loading the store only when the button is clicked would save about 15 KB gzip and some main-thread time.
-- **The exploded toggle changes its label** ("Exploded view" ↔ "Assemble") as well as `aria-pressed`. Screen readers may announce that oddly. A fixed label with `aria-pressed` alone is the textbook pattern.
-- **Footer links** "Presets", "Compatibility rules" and "Feedback" were removed in Phase 9. A public `/rules` page built from `docs/rules.md` would be a good addition for the write-up.
-- **`/parts` catalogue page** is still a placeholder (unlinked, `noindex`). It could reuse the picker with tiers and shop links.
-- **PageSpeed on the live URL** and a real-phone pass before any big demo. The demo script assumes a laptop.
-- **Hero LCP (simulated 3.7 s):**
-  - An option is a vector (SVG) poster, which is never an LCP candidate. It would need its own drawing of the scene, and matching the 3D render exactly would be hard.
-  - Another is to make the hero image smaller than the heading on phones.
-  - Re-run `npm run hero:poster` whenever the showcase build or the 3D look changes; the e2e test will say so.
-- **Builder PageSpeed (mobile) is about 84 live** after Phases 13–15, down from 97 (Rei's measurement): there's more catalogue data. Look at loading catalogue data per category (the picker only needs the open category; the slot list and checks need only the chosen items).
-- **`/b/[code]` TBT** sits at the 600 ms target (560–615 ms). The same deferral as the hero (mount the 3D after the first interaction) would help, but there the 3D view is the point of the page, so it's a judgement call.
-- **Email confirmation with a real sender (Phase 16):** accounts start with confirmation off, because Supabase's built-in email only reaches the project's own team. To turn it on, set up a custom SMTP sender (e.g. Resend) in Supabase → Authentication → Emails → SMTP, switch "Confirm email" on, update the email templates (`docs/accounts.md`) and set `NEXT_PUBLIC_AUTH_EMAIL=on` (which also enables "Forgot password?"). The code for both paths is already there.
-- **CAPTCHA on register:** Supabase Auth supports hCaptcha and Cloudflare Turnstile (Authentication → Attack Protection). It needs a widget on `/register` (and `/login`) and the token passed to `signUp` / `signInWithPassword` as `options.captchaToken`.
-- **Rate limits:** Supabase Auth's built-in limits apply to sign-up, login and emails (Authentication → Rate Limits); review them before a public launch. The build sync Server Action has no rate limit of its own beyond the 200-builds-per-account cap in the database.
+- **Checkout on production:** add the three variables for Production, set the Payment Notification URL (`docs/accounts.md` step 5) and walk the checklist there. Only after the supervisor agrees that the simulation wording is clear enough.
+- **Phase 18, live chat** (REI.md §9): after the 19 Nov bimbingan, and not before Rei says so.
+- **Order expiry clean-up:** pending orders whose Snap token expired stay pending until someone opens them (then the status API says expired). A scheduled check isn't needed for a simulation.
+- Everything in session 3's §10 still applies (email confirmation with a real sender, CAPTCHA, `/b/[code]` weight and TBT, builder PageSpeed, more models and checked listings, a public `/rules` page).
 
 ---
 
-## 11. Finishing Phase 16
+## 11. Finishing Phase 17
 
-1. ✅ **`rls.sql` on the real project:** the fixed version was rerun and ended with "All RLS tests passed" (reported by Rei, 14 Nov 2026). The 16b SQL had already run on 12 Nov (181 items in 20 categories, 4 listings). With Rei's admin account present, the "last admin can't delete their account" check is skipped with a notice; the unit tests run it on an empty database.
-2. 🔍 **Walk the checklist** in `docs/accounts.md` (accounts, sync, delete, admin, catalogue, listing, deactivate, audit), now on production. Only the logged-out smoke test in §7 was run there.
-3. ✅ **Merged** into `main` on 14 Nov 2026 (PR #3, `0325ad6`).
-4. **For the PI:** the pictures and numbers are in `docs/pi/`; English versions of the ERD and use case diagram are in `docs/diagrams/`.
+1. ✅ **Setup on the real project and the preview** (§7), including two paid sandbox orders.
+2. 🔍 **Walk the rest of the checklist** in `docs/accounts.md` on the preview: closing the pop-up, Continue payment with QRIS or VA, the QRIS limit, the spam cap, Admin → Orders, and the receipt from a phone.
+3. 🔍 **Rehearse the demo's checkout segment** (`docs/demo-script.md`, "Optional: the checkout simulation") on the preview before 19 Nov.
+4. **For the PI:** the updated ERD and use case diagram and the new activity diagram are in `docs/pi/`, the numbers in `docs/pi/angka.md`.
+5. **Merge** PR #6 when Rei decides; it changes nothing on production until the Midtrans variables are added there.
