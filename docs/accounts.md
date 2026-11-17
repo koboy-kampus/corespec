@@ -251,6 +251,103 @@ To turn it on later:
 3. **Switch on "Confirm email"** (step 2 of the setup above).
 4. **Set `NEXT_PUBLIC_AUTH_EMAIL=on`**, which also shows "Forgot password?".
 
+## Checkout simulation (Phase 17a)
+
+A **payment simulation** with Midtrans's **Sandbox**: no real money moves,
+nothing is sold, stocked or shipped, and every checkout and order screen says
+so. Only the sandbox hosts are in the code (`app.sandbox.midtrans.com`,
+`api.sandbox.midtrans.com`), so even a production key couldn't charge anyone.
+
+### How it works
+
+1. The builder's **Checkout (simulation)** button is disabled while the build is
+   empty or has compatibility **errors** (warnings are fine). Guests log in
+   first.
+2. `/checkout` shows the order. **Pay with Midtrans (sandbox)** calls
+   `startCheckout`: the server reprices every item from the catalogue (prices
+   never come from the browser), creates the order with `create_order`, asks
+   Snap for a token (60-minute expiry; the buyer's **display name only**, never
+   the email) and stores it. Only then does the browser load `snap.js` and open
+   the pop-up.
+3. `/orders/<id>` asks Midtrans for the status once on load (`refreshOrder`),
+   and has **Check payment status** and **Continue payment**. This is the main
+   path: it works on localhost and previews.
+4. The **notification URL** `/api/midtrans/notification` checks the signature,
+   the amount, then confirms with the status API. A Vercel preview is behind
+   Vercel's login, so Midtrans can only reach it on production.
+
+**Trusted writes without a service-role key.** Nobody can insert, update or
+delete orders directly. The server writes them through `create_order` and
+`set_order_payment` (`security definer`), which refuse every call unless the
+caller passes `ORDER_WRITE_SECRET`. The database keeps only the secret's
+SHA-256 in `payment_config` (no grants, no policies), and refuses everything
+while that hash is empty. `set_order_payment` holds the status rules: `paid` is
+final, `pending` never replaces another status, `paid_at` is set once. A
+spam cap allows 5 pending orders per account per hour.
+
+### Environment variables (names only)
+
+| Name                              | Kind                                  | Where                                                 |
+| --------------------------------- | ------------------------------------- | ----------------------------------------------------- |
+| `MIDTRANS_SERVER_KEY`             | **secret**, server only (type Secret) | Midtrans dashboard (sandbox) → Settings → Access Keys |
+| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | public by design (type Config)        | Same page, Client Key                                 |
+| `ORDER_WRITE_SECRET`              | **secret**, server only (type Secret) | Made locally, below. 32 random bytes.                 |
+
+All three, plus the two Supabase settings, or checkout stays off.
+
+### Setting it up
+
+1. **Migration:** run `supabase/migrations/20261117000100_orders.sql` in the
+   SQL editor, then rerun `supabase/tests/rls.sql` (it must end with "All RLS
+   tests passed").
+2. **The secret and its hash**, in the repo folder on your laptop. This adds
+   the secret to `.env.local` without printing it, and prints only its SHA-256:
+
+   ```sh
+   node -e "const c=require('crypto');const s=c.randomBytes(32).toString('base64url');require('fs').appendFileSync('.env.local','\nORDER_WRITE_SECRET='+s+'\n');console.log(c.createHash('sha256').update(s,'utf8').digest('hex'))"
+   ```
+
+   The printed hash (64 hex characters) is safe to share; the secret is not.
+
+3. **Store the hash** (SQL editor), with the printed value:
+
+   ```sql
+   update public.payment_config set secret_hash = '<the 64-character hash>' where id;
+   ```
+
+4. **Vercel → Settings → Environment Variables**, environment **Preview**:
+   `MIDTRANS_SERVER_KEY` and `ORDER_WRITE_SECRET` as **Secret** (copy the
+   secret from `.env.local`), `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` as **Config**.
+   Then redeploy the preview (the checkout switch is read at build time).
+5. **Production only, later:** Midtrans dashboard → Settings → Configuration →
+   Payment Notification URL = `https://corespec-eight.vercel.app/api/midtrans/notification`.
+
+To turn it off again, remove any one of the three variables and redeploy. To
+lock the database side at once: `update public.payment_config set secret_hash = null where id;`.
+
+### Checking a payment by hand (it can't run in CI)
+
+- [ ] Builder, empty build: the button is disabled, "Add a part to check out."
+- [ ] Two incompatible parts: "Fix 1 compatibility error to check out."
+- [ ] Logged out, Budget 1080p: Checkout goes to the login page, then `/checkout`.
+- [ ] `/checkout` shows the banner, "SIMULASI — bukan bukti transaksi", the
+      items with Checked/Estimate, both subtotals and the total.
+- [ ] Pay → the Snap pop-up opens. Card `4811 1111 1111 1114`, any future
+      expiry, CVV `123`, OTP `112233` → the order page shows **Paid**, the
+      method and the Midtrans transaction id.
+- [ ] Another order, close the pop-up before choosing a method → the order
+      page says **Pending**; "Check payment status" keeps it pending (Midtrans
+      has no transaction yet: a 404, handled).
+- [ ] "Continue payment" reopens the same payment; pay with QRIS (copy the QR
+      image address into the QRIS simulator) or BCA VA (VA simulator).
+- [ ] Note what Snap does with **QRIS above Rp 10.000.000** (the Budget 1080p
+      total is Rp 9.080.000; the 1440p preset is above the limit).
+- [ ] `/orders` lists both; another account can't open them (404).
+- [ ] Admin → Orders lists every order with the account name; the status
+      filter works.
+- [ ] Six checkouts within an hour without paying: the sixth says "5 unpaid
+      orders".
+
 ## Checking the preview by hand
 
 - [ ] **As a guest:** the builder, presets, sharing and My builds all work.
@@ -290,6 +387,10 @@ To turn it on later:
   `store/build.ts` (`account`, `tombstones`, `owner`).
 - **UI:** `components/account/`, `app/login`, `app/register`, `app/account`,
   `app/admin`, `app/auth/confirm`, `app/forgot-password`.
+- **Checkout (17a):** `supabase/migrations/20261117000100_orders.sql`,
+  `lib/checkout/` (order rules, Midtrans client, Server Actions, the
+  notification logic), `app/api/midtrans/notification`, `components/checkout/`,
+  `app/checkout`, `app/orders`, `app/admin/orders`.
 - **Catalogue (16b):**
   - `lib/catalogue/` (fields per category, listing rules, rows ↔ items, the
     loader and its fallback, the seed generator);

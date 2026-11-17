@@ -1,4 +1,3 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { ALL_CATEGORIES, isPcCategory } from "@/lib/categories";
 import { check } from "@/lib/compat/check";
 import { getItem } from "@/lib/parts";
@@ -8,7 +7,9 @@ import type { Category } from "@/types/parts";
 import type { OrderItem, OrderStatus } from "@/types/supabase";
 
 /**
- * The checkout simulation's rules (Phase 17a), as pure functions.
+ * The checkout simulation's rules (Phase 17a), as pure functions. Safe in the
+ * browser too (/checkout shows the same summary); the notification signature
+ * check, which needs Node's crypto, is in signature.ts.
  *
  * The browser only ever sends *which* items are in the build. Every price,
  * name and total here comes from the catalogue on the server, so a tampered
@@ -40,7 +41,6 @@ const DEFAULT_NAME = "My build";
 export function cleanBuildName(name: unknown): string {
   if (typeof name !== "string") return DEFAULT_NAME;
   const clean = name
-    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]/g, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -183,39 +183,6 @@ export function mapMidtransStatus(s: MidtransStatus): OrderStatus | null {
     default:
       return null;
   }
-}
-
-/** The fields Midtrans signs in a notification. */
-export interface SignedNotification {
-  order_id?: unknown;
-  status_code?: unknown;
-  gross_amount?: unknown;
-  signature_key?: unknown;
-}
-
-/**
- * Checks a notification's signature_key: SHA-512 hex of order_id +
- * status_code + gross_amount + server key, with gross_amount exactly as the
- * string in the body. Constant-time comparison.
- */
-export function verifySignature(
-  n: SignedNotification,
-  serverKey: string,
-): boolean {
-  const { order_id, status_code, gross_amount, signature_key } = n;
-  if (
-    typeof order_id !== "string" ||
-    typeof status_code !== "string" ||
-    typeof gross_amount !== "string" ||
-    typeof signature_key !== "string" ||
-    !serverKey
-  )
-    return false;
-  const expected = createHash("sha512")
-    .update(order_id + status_code + gross_amount + serverKey, "utf8")
-    .digest();
-  if (!/^[0-9a-fA-F]{128}$/.test(signature_key)) return false;
-  return timingSafeEqual(expected, Buffer.from(signature_key, "hex"));
 }
 
 /** Midtrans's gross_amount ("9080000.00") is exactly this many rupiah. */

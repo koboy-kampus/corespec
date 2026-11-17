@@ -11,9 +11,9 @@ import {
   mapMidtransStatus,
   newOrderNo,
   toMidtransItems,
-  verifySignature,
   type OrderDraft,
 } from "./order";
+import { verifySignature } from "./signature";
 
 const budget = getPreset("budget-1080p")!;
 const withSetup = presets.find((p) => p.setup)!;

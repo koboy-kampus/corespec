@@ -12,8 +12,8 @@ import {
   buildOrderDraft,
   mapMidtransStatus,
   newOrderNo,
-  verifySignature,
 } from "./order";
+import { verifySignature } from "./signature";
 
 /**
  * The checkout's server-side steps (Phase 17a), with the database and the

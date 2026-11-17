@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { isStaleCheck, readAdminCatalogue } from "@/lib/admin/catalogue-data";
 import { requireAdmin } from "@/lib/auth/dal";
 import { getCatalogue } from "@/lib/catalogue/load";
+import { isCheckoutConfigured } from "@/lib/checkout/config";
 import { formatShortDate } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AdminSkeleton } from "./skeleton";
@@ -48,6 +49,13 @@ const LINKS = [
     text: "“Estimates as of” and other site values.",
   },
 ] as const;
+
+/** Only when the checkout simulation is configured (Phase 17a). */
+const ORDERS_LINK = {
+  href: "/admin/orders",
+  title: "Orders",
+  text: "Every payment simulation, read-only.",
+} as const;
 
 const ACTION_LABEL = { insert: "Added", update: "Changed", delete: "Deleted" };
 const TABLE_LABEL: Record<string, string> = {
@@ -119,25 +127,27 @@ async function Overview() {
         ))}
       </dl>
       <div className="grid gap-3 sm:grid-cols-3">
-        {LINKS.map((l) => (
-          <Card key={l.href} padding="none" interactive>
-            <Link
-              href={l.href}
-              className="flex items-center justify-between gap-3 p-5"
-            >
-              <span className="flex flex-col gap-1">
-                <span className="text-h3 text-fg">{l.title}</span>
-                <span className="text-[14px] leading-5 text-fg-2">
-                  {l.text}
+        {[...LINKS, ...(isCheckoutConfigured() ? [ORDERS_LINK] : [])].map(
+          (l) => (
+            <Card key={l.href} padding="none" interactive>
+              <Link
+                href={l.href}
+                className="flex items-center justify-between gap-3 p-5"
+              >
+                <span className="flex flex-col gap-1">
+                  <span className="text-h3 text-fg">{l.title}</span>
+                  <span className="text-[14px] leading-5 text-fg-2">
+                    {l.text}
+                  </span>
                 </span>
-              </span>
-              <ArrowRight
-                className="size-4 text-fg-3 transition-colors group-hover/card:text-accent"
-                aria-hidden
-              />
-            </Link>
-          </Card>
-        ))}
+                <ArrowRight
+                  className="size-4 text-fg-3 transition-colors group-hover/card:text-accent"
+                  aria-hidden
+                />
+              </Link>
+            </Card>
+          ),
+        )}
       </div>
       <section aria-labelledby="recent" className="flex flex-col gap-3">
         <h2 id="recent" className="text-h3 text-fg">
