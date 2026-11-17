@@ -11,7 +11,7 @@ the Supabase settings the site has no login at all and works exactly as before.
   finished these docs.
 - **The plan:** [`phase-16-plan.md`](phase-16-plan.md).
 - **Diagrams:** [ERD](diagrams/erd.svg) and [use cases](diagrams/use-cases.svg)
-  (English); the PI versions in Indonesian, with two activity diagrams and the
+  (English); the PI versions in Indonesian, with four activity diagrams and the
   numbers, are in [`pi/`](pi/angka.md). Redraw them all with
   `npm run diagrams` (`scripts/diagrams.mjs`).
 
@@ -440,6 +440,11 @@ code ran there and the session stayed in httpOnly cookies. Now:
   or Reconnecting.
 
 ### Setting it up
+
+**Status (18 Nov 2026):** done on the real Supabase project. The migration ran
+and `rls.sql` (191 checks) passed there. The functions run in Vercel's
+Singapore region (`sin1`, set in `vercel.json`), next to the database. The
+two-browser checklist below passed on the preview (an iPhone and a laptop).
 
 1. **Migration:** run `supabase/migrations/20261118000100_chat.sql` in the SQL
    editor (after the orders migration: it reuses `check_order_secret`), then

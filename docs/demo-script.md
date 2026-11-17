@@ -45,6 +45,24 @@ Only where checkout is switched on (the **preview** as of 17 Nov 2026; productio
 
 **If Snap doesn't open or the payment fails:** say so, open **My orders** and show an order that was already paid on the preview (two exist from 17 Nov) and its receipt. Nothing else depends on this part.
 
+## Optional: live chat (about 2 minutes, two devices)
+
+Only where accounts are on (the **Phase 18 preview** and, once merged, production). Two devices side by side: a **phone as the user** and the **laptop as the admin**. It needs two logins and Supabase Realtime, so `tests/e2e/demo.spec.ts` doesn't run this part: walk it once by hand before the demo.
+
+**Before:** on the phone, log in as a normal user. On the laptop, log in as an admin in a second browser (or a private window) and open **Admin → Chat** (`/admin/chat`). Both on the same wifi as the demo if you can. The laptop's inbox header should say **Live**.
+
+| #   | Time | Do this (exact clicks)                                                                                                                                                          | Say this                                                                                                                         |
+| --- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| H1  | 0:00 | On the phone, tap the **chat button** (bottom right). The panel opens with the quick questions. Tap **Are the prices real?**                                                    | "Logged-in users can chat. A rule-based bot answers the common questions straight away: no AI, just keywords in both languages." |
+| H2  | 0:15 | The bot's answer appears at once on the phone. On the laptop, the conversation jumps to the top of the inbox without a refresh.                                                 | "The admin sees every message live, through Supabase Realtime."                                                                  |
+| H3  | 0:30 | On the phone, type **bagaimana cara share build?** and send. The bot answers how share links work.                                                                              | "It understands Indonesian too, and it picks the most specific rule."                                                            |
+| H4  | 0:45 | On the phone, tap **Talk to admin**. The bot says the admin will reply soon; on the laptop the conversation shows **Needs admin**.                                              | "When the bot can't help, or someone asks for a person, the inbox marks it so the admin knows where to look."                    |
+| H5  | 1:05 | On the laptop, open the conversation and reply: **Hi! I'll check that build for you.** Press Enter. The reply appears on the phone at once; **Needs admin** goes away.          | "Both sides update live, without reloading."                                                                                     |
+| H6  | 1:25 | On the phone, type **halo** and send: the bot stays quiet, because the admin is now in the conversation. Then ask **harganya asli?**: the bot still answers the price question. | "While the admin is talking, the bot skips greetings, but it still answers real questions."                                      |
+| H7  | 1:45 | Point at the header: **Live**. (If the wifi drops it says **Reconnecting** and checks every 5 seconds, so nothing is lost.)                                                     | "If the live connection drops on campus wifi, the chat falls back to checking every few seconds."                                |
+
+**If the inbox doesn't update live:** wait 5 seconds (the fallback picks it up) or reload `/admin/chat`. **If a message says "Not sent — Retry":** tap Retry. **If the bot is quiet on a question:** it was a greeting or "talk to admin" within 10 minutes of the admin's last reply; that's by design. Sending more than 5 messages in 30 seconds is refused on purpose ("You're sending messages too fast…").
+
 ## If the 3D view is slow to load
 
 - **Nothing breaks without it.** The page first shows a technical drawing of the case, and every list, check, price and link works before (and without) the 3D view. Carry on talking and point at the summary; the 3D view fades in when it's ready.

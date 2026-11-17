@@ -1,6 +1,6 @@
 # CoreSpec dalam angka
 
-Keadaan per **18 November 2026**, cabang `feat/phase-18-chat` (Fase 18a).
+Keadaan per **18 November 2026**, cabang `feat/phase-18-chat` (Fase 18c).
 Angka katalog dan aturan diambil dari `data/` dan `lib/compat/`; angka
 pengujian dari pengukuran pada tanggal yang sama. Angka Lighthouse masih dari
 Fase 16 (12 November 2026); halaman yang diukur tidak berubah di Fase 17
@@ -16,6 +16,7 @@ lebar, tetap tajam pada lebar halaman Word 16 cm):
 | `aktivitas-cek-kompatibilitas.png`  | Diagram aktivitas: mengecek kompatibilitas                    |
 | `aktivitas-admin-ubah-listing.png`  | Diagram aktivitas: admin mengubah listing harga marketplace   |
 | `aktivitas-simulasi-pembayaran.png` | Diagram aktivitas: checkout dan simulasi pembayaran (Fase 17) |
+| `aktivitas-live-chat.png`           | Diagram aktivitas: live chat dengan bot dan admin (Fase 18)   |
 
 ## Katalog
 
@@ -79,12 +80,12 @@ bisa dirakit), **warning** (bisa, tetapi kurang baik), **info** (catatan).
 Ringkasan tingkat: 8 aturan hanya error, 1 aturan error atau warning, 3 aturan
 warning, 3 aturan info.
 
-## Basis data (Fase 16 dan 17)
+## Basis data (Fase 16, 17 dan 18)
 
 - **11 tabel**: `auth.users` (dikelola Supabase Auth), `profiles`, `builds`,
   `items`, `listings`, `site_settings`, `audit_log`, sejak Fase 17 `orders`
   dan `payment_config`, dan sejak Fase 18 `conversations` dan
-  `chat_messages`. Lihat `erd.png` (tabel chat menyusul di Fase 18c).
+  `chat_messages`. Lihat `erd.png`.
 - **8 berkas migrasi** SQL dan `seed.sql` (katalog dari JSON, aman dijalankan
   ulang).
 - **Row Level Security** aktif di semua tabel. `supabase/tests/rls.sql` berisi
@@ -103,7 +104,9 @@ warning, 3 aturan info.
 - **Di proyek Supabase asli:** migrasi Fase 16 dan `seed.sql` dijalankan
   12 November 2026 (181 item dalam 20 kategori, 4 listing); `rls.sql` lolos
   14 November. Migrasi pesanan (Fase 17) dijalankan 17 November 2026 dan
-  `rls.sql` versi terbaru lolos di sana.
+  `rls.sql` versi saat itu lolos di sana. Migrasi chat (Fase 18,
+  `20261118000100_chat.sql`) dijalankan 18 November 2026, dan `rls.sql`
+  dengan **191 pemeriksaan** lolos di proyek asli.
 - **18 fungsi `security definer`**, semuanya dengan `search_path` kosong
   (6 di antaranya untuk chat). Enam belas tidak bisa dipanggil tamu. Dua (`create_order`,
   `set_order_payment`) memang bisa dipanggil siapa saja, karena notifikasi
@@ -133,14 +136,73 @@ warning, 3 aturan info.
 - **Uji nyata di preview** (17 November 2026): dua pesanan dibayar dengan kartu
   uji sandbox dan berstatus Paid.
 
+## Live chat (Fase 18)
+
+- **Pengguna yang login** bisa chat dengan admin; tamu tidak melihat tombol
+  chat. Admin menjawab dari inbox `/admin/chat` (filter All, Needs admin,
+  Open, Closed; tanda belum dibaca).
+- **2 tabel** (`conversations`, satu per pengguna; `chat_messages`),
+  **7 fungsi** (6 `security definer`, 1 untuk izin topik Realtime) dan
+  **1 kebijakan** di `realtime.messages`.
+- **Batas di basis data:** pesan 1–1000 karakter (setelah dipangkas);
+  maksimal **5 pesan per 30 detik** dan **60 per hari** per pengguna; pesan
+  bot hanya bisa ditulis dengan rahasia server.
+- **Seketika:** Supabase Realtime (Broadcast dari basis data) ke topik privat
+  `chat:<id>` (pemilik dan admin) dan `chat:admin` (admin saja). Jika belum
+  tersambung dalam **10 detik** atau terputus, panel memeriksa pesan baru
+  setiap **5 detik** sampai tersambung lagi.
+- **Server di Singapura:** sejak 18 November 2026 fungsi Vercel berjalan di
+  region `sin1` (`vercel.json`), dekat basis data Supabase di Singapura.
+  Sebelumnya fungsi berjalan di region bawaan Vercel di Amerika Serikat dan
+  satu pengiriman pesan terasa 1–2 detik; sesudahnya pesan langsung tampil
+  (diuji di iPhone pada preview). Waktunya tidak diukur dengan angka.
+- **Ukuran halaman:** setiap halaman +0,9 KB JavaScript (1,3 KB gzip). Tombol
+  chat (1,4 KB gzip) hanya dimuat untuk browser yang login; panel 4,9 KB dan
+  Realtime 16,5 KB (gzip) hanya saat chat dibuka; inbox admin sekitar 14 KB.
+- **Uji nyata** (18 November 2026, iPhone dan laptop pada preview): pesan
+  tampil seketika dua arah, tanda Needs admin, sambung ulang setelah wifi
+  mati, batas kirim, tombol Retry, dan bot tetap menjawab pertanyaan setelah
+  admin membalas.
+
+### Aturan bot (8 + fallback)
+
+Bot tanpa AI: kata kunci bahasa Inggris dan Indonesia, dicocokkan setelah
+huruf kecil, aksen dan tanda baca dibuang. Kata kunci 5 huruf atau lebih juga
+cocok dengan awal kata ("harga" → "harganya"); yang lebih pendek harus utuh.
+Aturan dicek berurutan; yang pertama cocok menjawab. Setiap balasan paling
+panjang 300 karakter, tanpa tautan ke luar CoreSpec dan tanpa kontak.
+
+|  No | Aturan          | Kata kunci                                                                                                  | Saat admin aktif¹ |
+| --: | --------------- | ----------------------------------------------------------------------------------------------------------- | ----------------- |
+|   1 | `human`         | admin, human, manusia, cs, operator                                                                         | diam              |
+|   2 | `prices`        | price, prices, harga, mahal, murah, real, asli                                                              | menjawab          |
+|   3 | `compatibility` | compatible, compatibility, incompatible, kompatibel, kompatibilitas, error, cocok, socket, soket, psu, watt | menjawab          |
+|   4 | `receipt`       | struk, receipt, pdf, nota, invoice                                                                          | menjawab          |
+|   5 | `checkout`      | checkout, bayar, pay, payment, pembayaran, midtrans, simulasi, simulation                                   | menjawab          |
+|   6 | `share`         | share, sharing, bagikan, link, kirim                                                                        | menjawab          |
+|   7 | `account`       | login, akun, account, password, daftar, register                                                            | menjawab          |
+|   8 | `greeting`      | halo, hallo, hai, hi, hello, hey, pagi, siang, sore, malam, p                                               | diam              |
+|   — | fallback        | (tidak ada yang cocok): "Thanks! An admin will reply soon (Admin akan membalas segera)."                    | diam²             |
+
+¹ Admin aktif: admin menulis di percakapan itu dalam 10 menit terakhir. Bila
+aturan yang diam cocok lebih dulu, aturan pertanyaan berikutnya yang cocok
+tetap menjawab ("halo admin, harga?" → `prices`).
+² Fallback juga paling banyak sekali per 10 menit. Needs admin di inbox: balasan
+bot terakhir memakai `human` atau fallback dan belum ada balasan admin
+sesudahnya (dihitung dari pesan, tidak disimpan).
+
+Lima pertanyaan cepat (chip): "Are the prices real?", "Why is my build
+incompatible?", "How does checkout work?", "Download receipt", "Talk to
+admin"; masing-masing mengenai satu aturan.
+
 ## Pengujian
 
-| Jenis                                          | Jumlah                                           | Hasil         |
-| ---------------------------------------------- | ------------------------------------------------ | ------------- |
-| Unit (Vitest)                                  | 480 tes dalam 32 berkas                          | lolos         |
-| End-to-end (Playwright), akun nonaktif         | 112 tes (6 dilewati: khusus mode checkout aktif) | lolos         |
-| End-to-end, checkout aktif (pengaturan tiruan) | 28 tes (6 dilewati)                              | lolos         |
-| Aksesibilitas (axe, di dalam e2e)              | semua halaman dan dialog utama                   | 0 pelanggaran |
+| Jenis                                        | Jumlah                                        | Hasil         |
+| -------------------------------------------- | --------------------------------------------- | ------------- |
+| Unit (Vitest)                                | 515 tes dalam 35 berkas                       | lolos         |
+| End-to-end (Playwright), akun nonaktif       | 118 tes (10 dilewati: khusus mode akun aktif) | lolos         |
+| End-to-end, akun dan checkout aktif (tiruan) | 38 tes (7 dilewati)                           | lolos         |
+| Aksesibilitas (axe, di dalam e2e)            | semua halaman dan dialog utama                | 0 pelanggaran |
 
 Pengujian unit juga menjalankan semua migrasi, `rls.sql` dan `seed.sql` di
 Postgres lokal (PGlite), termasuk 17 uji "mutasi" yang sengaja melonggarkan

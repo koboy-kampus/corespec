@@ -3,7 +3,8 @@
 //   docs/diagrams/  English, for the repo docs: erd, use-cases
 //   docs/pi/        Indonesian, for the PI write-up (PNG, sized for a Word
 //                   page): erd, use-case, aktivitas-cek-kompatibilitas,
-//                   aktivitas-admin-ubah-listing, aktivitas-simulasi-pembayaran
+//                   aktivitas-admin-ubah-listing, aktivitas-simulasi-pembayaran,
+//                   aktivitas-live-chat
 //
 // Everything is drawn here as plain SVG (UML notation: crow's feet in the ERD,
 // actors and «include»/«extend» in the use case diagram, swimlanes in the
@@ -232,6 +233,37 @@ const ERD_TABLES = [
     ],
     380,
   ],
+  // Phase 18a: the live chat.
+  [
+    "conversations",
+    4,
+    210,
+    [
+      ["id", "uuid", "PK"],
+      ["owner", "uuid", "FK, UK"],
+      ["status", "text", ""],
+      ["last_message_at", "timestamptz", ""],
+      ["user_last_read_at", "timestamptz", ""],
+      ["admin_last_read_at", "timestamptz", ""],
+      ["created_at", "timestamptz", ""],
+    ],
+    380,
+  ],
+  [
+    "chat_messages",
+    4,
+    560,
+    [
+      ["id", "uuid", "PK"],
+      ["conversation_id", "uuid", "FK"],
+      ["sender_role", "text", ""],
+      ["sender_id", "uuid", ""],
+      ["body", "text", ""],
+      ["bot_rule", "text", ""],
+      ["created_at", "timestamptz", ""],
+    ],
+    380,
+  ],
 ];
 
 const ERD_TEXT = {
@@ -243,11 +275,14 @@ const ERD_TEXT = {
     made: "made",
     contains: "has",
     orders: "places",
+    chats: "has",
+    holds: "holds",
     legend: [
       "PK primary key · FK foreign key · UK unique (in listings: together with item_id)",
       "Crow's foot notation: bar = one, circle = zero, three-way fork = many.",
       "Dashed line: no foreign key (the audit log outlives deleted accounts).",
       "payment_config: one row, linked to nothing; it holds only the SHA-256 of the server's ORDER_WRITE_SECRET.",
+      "chat_messages.sender_id: the user or admin who wrote it (null for the bot); no foreign key, so a thread survives a deleted admin account.",
     ],
   },
   id: {
@@ -258,16 +293,19 @@ const ERD_TEXT = {
     made: "melakukan",
     contains: "memiliki",
     orders: "memesan",
+    chats: "memiliki",
+    holds: "berisi",
     legend: [
       "PK kunci primer · FK kunci tamu · UK unik (di listings: bersama item_id)",
       "Notasi kaki gagak: garis tegak = satu, lingkaran = nol, cabang tiga = banyak.",
       "Garis putus-putus: tanpa kunci tamu (log audit tetap ada setelah akun dihapus).",
       "payment_config: satu baris, tanpa relasi; hanya berisi SHA-256 dari ORDER_WRITE_SECRET milik server.",
+      "chat_messages.sender_id: pengguna atau admin penulisnya (kosong untuk bot); tanpa kunci tamu, jadi percakapan tetap utuh bila akun admin dihapus.",
     ],
   },
 };
 
-const COL_X = [40, 480, 920, 1360];
+const COL_X = [40, 480, 920, 1360, 1820];
 const TABLE_W = 320;
 const HEAD = 40;
 const ROW_H = 31;
@@ -394,7 +432,8 @@ function erdSvg(lang) {
       "0n",
       t.contains,
     ],
-    // Over the top of audit_log, through the gap under auth.users.
+    // Over the top of audit_log, through the gap under auth.users. The
+    // chat line runs above the orders line, so the two never cross.
     [
       "profiles",
       "t",
@@ -406,7 +445,31 @@ function erdSvg(lang) {
       "0n",
       t.orders,
       false,
-      160,
+      178,
+    ],
+    [
+      "profiles",
+      "t",
+      COL_X[1] + TABLE_W - 70,
+      "conversations",
+      "t",
+      null,
+      "1",
+      "01",
+      t.chats,
+      false,
+      152,
+    ],
+    [
+      "conversations",
+      "b",
+      null,
+      "chat_messages",
+      "t",
+      null,
+      "1",
+      "0n",
+      t.holds,
     ],
   ];
   const at = (bx, side, v) => {
@@ -486,6 +549,7 @@ const USE_CASES = {
         ["delete", "Delete the account"],
         ["checkout", "Checkout (simulation)"],
         ["receipt", "Download receipt (PDF)"],
+        ["chat", "Chat with the admin / bot"],
       ],
       admin: [
         ["orders", "View orders"],
@@ -494,6 +558,7 @@ const USE_CASES = {
         ["users", "Manage users and roles"],
         ["settings", "Change site settings"],
         ["stats", "See totals and the audit log"],
+        ["reply", "Reply to chats"],
       ],
     },
   },
@@ -517,6 +582,7 @@ const USE_CASES = {
         ["delete", "Menghapus akun"],
         ["checkout", "Checkout (simulasi pembayaran)"],
         ["receipt", "Mengunduh struk (PDF)"],
+        ["chat", "Chat dengan admin / bot"],
       ],
       admin: [
         ["orders", "Melihat semua pesanan"],
@@ -525,6 +591,7 @@ const USE_CASES = {
         ["users", "Mengelola pengguna & peran"],
         ["settings", "Mengubah pengaturan situs"],
         ["stats", "Melihat statistik & log audit"],
+        ["reply", "Membalas chat"],
       ],
     },
   },
@@ -1000,6 +1067,110 @@ const ACT_CHECKOUT = {
   ],
 };
 
+/** The live chat (Phase 18): a message, the bot's rules, the admin's reply. */
+const ACT_CHAT = {
+  width: 1400,
+  lanes: [
+    ["Pengguna", 10, 330],
+    ["Server (Next.js)", 330, 760],
+    ["Basis data (Supabase)", 760, 1090],
+    ["Admin", 1090, 1390],
+  ],
+  nodes: [
+    ["start", "start", 170, 0, ""],
+    [
+      "type",
+      "action",
+      170,
+      1,
+      "Membuka panel chat;\nmengetik pesan atau\nmemilih pertanyaan cepat",
+      280,
+    ],
+    ["valid", "decision", 555, 2, "Login, dan pesan\n1–1000 karakter?", 260],
+    ["err", "action", 170, 3, "Melihat pesan galat\n(Not sent — Retry)", 260],
+    ["limit", "decision", 935, 3, "Lolos batas\nkirim?¹", 200],
+    [
+      "save",
+      "action",
+      935,
+      4,
+      "Menyimpan pesan;\nmenyiarkannya ke\nchat:<id> dan chat:admin²",
+      280,
+    ],
+    ["match", "decision", 555, 5, "Cocok dengan aturan\npertanyaan bot?³", 280],
+    [
+      "admin",
+      "decision",
+      555,
+      6,
+      "Admin menulis dalam\n10 menit terakhir?⁴",
+      280,
+    ],
+    [
+      "bot",
+      "action",
+      935,
+      6,
+      "post_bot_reply⁵: menyimpan\ndan menyiarkan balasan bot;\npengguna melihatnya seketika",
+      290,
+    ],
+    [
+      "inbox",
+      "action",
+      1240,
+      7,
+      "Inbox /admin/chat\nmenampilkan pesan\nseketika; tanda\nNeeds admin⁶",
+      260,
+    ],
+    ["reply", "action", 1240, 8, "Membalas dari inbox", 260],
+    [
+      "asave",
+      "action",
+      935,
+      9,
+      "Menyimpan balasan\nadmin; menyiarkannya²",
+      280,
+    ],
+    [
+      "see",
+      "action",
+      170,
+      10,
+      "Melihat balasan admin\nseketika, tanpa\nmemuat ulang",
+      280,
+    ],
+    ["end", "end", 170, 11, ""],
+  ],
+  edges: [
+    ["start", "b", "type", "t"],
+    ["type", "r", "valid", "t"],
+    ["valid", "l", "err", "t", "tidak"],
+    ["valid", "r", "limit", "t", "ya"],
+    ["limit", "l", "err", "r", "tidak", undefined, [-10, -12]],
+    ["err", "l", "type", "l", undefined, 30],
+    ["limit", "b", "save", "t", "ya"],
+    ["save", "l", "match", "t"],
+    ["match", "r", "bot", "t", "ya"],
+    ["match", "b", "admin", "t", "tidak"],
+    ["admin", "r", "bot", "l", "tidak", undefined, [10, -12]],
+    ["admin", "b", "inbox", "l", "ya (bot diam)"],
+    ["bot", "r", "inbox", "t"],
+    ["inbox", "b", "reply", "t"],
+    ["reply", "l", "asave", "t"],
+    ["asave", "l", "see", "t"],
+    ["see", "b", "end", "t"],
+  ],
+  notes: [
+    "¹ Trigger security definer: maksimal 5 pesan per 30 detik dan 60 per hari per pengguna; teks dipangkas, 1–1000 karakter.",
+    "² realtime.send ke topik privat: chat:<id> (pemilik dan admin) dan chat:admin (admin saja). Jika Realtime gagal, pesan tetap",
+    "   tersimpan dan panel beralih ke polling setiap 5 detik sampai Realtime tersambung lagi.",
+    "³ Aturan pertanyaan (prices, compatibility, receipt, checkout, share, account) selalu menjawab, dengan kata kunci Inggris dan Indonesia.",
+    "⁴ Sapaan (greeting), minta admin (human) dan pesan tanpa kecocokan (fallback) diam selama admin aktif; fallback maksimal sekali per 10 menit.",
+    "⁵ Hanya jalan dengan ORDER_WRITE_SECRET milik server, jadi tidak ada yang bisa memalsukan pesan bot.",
+    "⁶ Needs admin: balasan bot terakhir memakai aturan human atau fallback dan belum ada balasan admin sesudahnya (dihitung, tidak disimpan).",
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------
@@ -1018,6 +1189,7 @@ const jobs = [
     svg: activitySvg(ACT_CHECKOUT),
     out: "docs/pi/aktivitas-simulasi-pembayaran",
   },
+  { svg: activitySvg(ACT_CHAT), out: "docs/pi/aktivitas-live-chat" },
 ];
 
 const browser = await chromium.launch();

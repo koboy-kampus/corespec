@@ -17,6 +17,8 @@ const accounts = isSupabaseConfigured();
 const checkout = isCheckoutConfigured();
 /** When the checkout section was added; only shown while checkout is on. */
 const CHECKOUT_UPDATED = "2026-11-17";
+/** When the chat section (Phase 18) was added; shown while accounts are on. */
+const CHAT_UPDATED = "2026-11-18";
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -35,7 +37,7 @@ export default function Page() {
           ? "CoreSpec works without an account and never sells data. Cookies are only set if you log in. Here is exactly what is stored and what leaves your browser."
           : "CoreSpec has no accounts, sets no cookies and never sells data. Here is exactly what is stored and what leaves your browser."
       }
-      updated={`Updated ${formatDate(checkout ? CHECKOUT_UPDATED : LEGAL_UPDATED)}`}
+      updated={`Updated ${formatDate(accounts ? CHAT_UPDATED : checkout ? CHECKOUT_UPDATED : LEGAL_UPDATED)}`}
     >
       <DocSection title="Your builds stay in your browser">
         <p>
@@ -68,6 +70,22 @@ export default function Page() {
           <p>
             You can delete your account at any time from My account. That
             deletes your profile and every build in it straight away.
+          </p>
+        </DocSection>
+      ) : null}
+
+      {accounts ? (
+        <DocSection title="Chat">
+          <p>
+            Logged-in users can chat with the admin. Your messages, the
+            bot&apos;s automatic answers and the admin&apos;s replies are stored
+            in our database (Supabase, in Singapore) with the time they were
+            sent, and the admins can read every conversation. The bot only
+            matches keywords: your messages aren&apos;t sent to any AI service
+            or anyone else. While the chat is open, your browser keeps a live
+            connection to Supabase so new messages appear straight away. Please
+            don&apos;t send passwords or other personal details in the chat.
+            Deleting your account deletes your conversation with it.
           </p>
         </DocSection>
       ) : null}
@@ -122,6 +140,9 @@ export default function Page() {
           We don&apos;t load ads, trackers or social media widgets.
           {checkout
             ? " The one exception is Midtrans's payment script, loaded only when you press Pay or Continue payment."
+            : null}
+          {accounts
+            ? " The chat's live connection goes to Supabase, our database provider, and only while the chat is open."
             : null}
         </p>
       </DocSection>
