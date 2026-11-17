@@ -28,6 +28,23 @@ A walkthrough of CoreSpec for a supervisor, with the exact clicks. Each step has
 
 Keep step 7's desk and speakers for the end: they're the easiest warnings to see in 3D.
 
+## Optional: the checkout simulation (about 2 minutes)
+
+Only where checkout is switched on (the **preview** as of 17 Nov 2026; production has no Midtrans settings). It needs a login and Midtrans's sandbox, so `tests/e2e/demo.spec.ts` doesn't run this part: walk it once by hand before the demo.
+
+**Before:** log in on the preview in the main window (not the private one) and open the preview's builder once. Keep the test card ready: `4811 1111 1111 1114`, any future expiry, CVV `123`, OTP `112233`.
+
+| #   | Time | Do this (exact clicks)                                                                                                                                                                                                 | Say this                                                                                                                                          |
+| --- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | 0:00 | Back in the main window, click **Load preset → Budget 1080p**, then **Replace**. The PC parts change and the desk setup stays. The summary says **All checks passed** (the setup warnings may stay: they don't block). | "Now the order side. The checkout is a simulation with Midtrans's sandbox: no real money and nothing is shipped."                                 |
+| C2  | 0:15 | Point at **Checkout (simulation)** in the summary. (At step 3, with the Intel CPU, it was disabled with "Fix 1 compatibility error to check out.") Click it.                                                           | "The same compatibility rules decide whether you can check out: a build with an error can't be ordered."                                          |
+| C3  | 0:30 | On `/checkout`: point at the banner and **SIMULASI — bukan bukti transaksi**, the items with Checked or Estimate, the subtotals and the total. Click **Pay with Midtrans (sandbox)**.                                  | "The server prices every item again from the catalogue. The browser only sends which parts, never the prices."                                    |
+| C4  | 0:50 | In the Snap pop-up choose the card option, enter the test card, then OTP `112233`.                                                                                                                                     | "This is Midtrans's real payment page, in sandbox mode, with their test card."                                                                    |
+| C5  | 1:20 | The order page opens and shows **Paid**, the method and the Midtrans transaction id. (If it still says Pending, click **Check payment status**.)                                                                       | "The server asks Midtrans for the status and checks that the amount matches before it marks the order paid."                                      |
+| C6  | 1:40 | Click **Download receipt (PDF)** and open the file: the PC and desk pictures, the items, the dated compatibility line, the QR code and **SIMULASI** on every page.                                                     | "The receipt is made in the browser, with pictures of this exact build. It's marked as a simulation everywhere, so it can't pass for a real one." |
+
+**If Snap doesn't open or the payment fails:** say so, open **My orders** and show an order that was already paid on the preview (two exist from 17 Nov) and its receipt. Nothing else depends on this part.
+
 ## If the 3D view is slow to load
 
 - **Nothing breaks without it.** The page first shows a technical drawing of the case, and every list, check, price and link works before (and without) the 3D view. Carry on talking and point at the summary; the 3D view fades in when it's ready.

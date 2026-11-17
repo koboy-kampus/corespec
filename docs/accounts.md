@@ -297,6 +297,12 @@ All three, plus the two Supabase settings, or checkout stays off.
 
 ### Setting it up
 
+**Status (17 Nov 2026):** steps 1–4 are done for the Supabase project and the
+Vercel **Preview** environment. The migration ran, `rls.sql` passed, the hash
+is stored, the three variables are set, and a sandbox card payment went through
+on the preview (two orders **Paid**). Production has no Midtrans variables, so
+checkout is off there. Step 5 waits until it's turned on.
+
 1. **Migration:** run `supabase/migrations/20261117000100_orders.sql` in the
    SQL editor, then rerun `supabase/tests/rls.sql` (it must end with "All RLS
    tests passed").
