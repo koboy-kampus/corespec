@@ -6,6 +6,38 @@
 
 export type Role = "user" | "admin";
 
+export type OrderStatus =
+  "pending" | "paid" | "failed" | "expired" | "cancelled";
+
+/** One line of an order's price snapshot (orders.items). */
+export type OrderItem = {
+  id: string;
+  category: string;
+  brand: string;
+  name: string;
+  priceIDR: number;
+  priceKind: "checked" | "estimate";
+};
+
+export type OrderRow = {
+  id: string;
+  order_no: string;
+  owner: string;
+  build_name: string;
+  parts: Record<string, string>;
+  items: OrderItem[];
+  pc_idr: number;
+  setup_idr: number;
+  total_idr: number;
+  status: OrderStatus;
+  payment_type: string | null;
+  midtrans_transaction_id: string | null;
+  snap_token: string | null;
+  created_at: string;
+  updated_at: string;
+  paid_at: string | null;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -143,6 +175,12 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      orders: {
+        Row: OrderRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -173,6 +211,31 @@ export interface Database {
           created_at: string;
           build_count: number;
         }[];
+      };
+      create_order: {
+        Args: {
+          p_secret: string;
+          p_owner: string;
+          p_order_no: string;
+          p_build_name: string;
+          p_parts: Record<string, string>;
+          p_items: OrderItem[];
+          p_pc_idr: number;
+          p_setup_idr: number;
+          p_total_idr: number;
+        };
+        Returns: OrderRow;
+      };
+      set_order_payment: {
+        Args: {
+          p_secret: string;
+          p_order_no: string;
+          p_status: OrderStatus | null;
+          p_payment_type: string | null;
+          p_transaction_id: string | null;
+          p_snap_token: string | null;
+        };
+        Returns: OrderRow[];
       };
     };
     Enums: { [_ in never]: never };
