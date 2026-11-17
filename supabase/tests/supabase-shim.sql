@@ -37,3 +37,39 @@ alter default privileges in schema public
   grant all on functions to anon, authenticated, service_role;
 alter default privileges in schema public
   grant all on sequences to anon, authenticated, service_role;
+
+-- Realtime (Phase 18a). A stand-in for the parts of Supabase's realtime schema
+-- the chat migration uses: realtime.messages (with RLS, where the migration's
+-- join policies go), realtime.topic() (the topic a client is joining, which
+-- Realtime sets as `realtime.topic` while it checks the policies) and
+-- realtime.send() (which writes the broadcast as a row). It can't reproduce
+-- Realtime's own connection and policy caching; docs/accounts.md has a manual
+-- two-browser check for that.
+create schema realtime;
+
+create table realtime.messages (
+  id bigint generated always as identity primary key,
+  topic text not null,
+  extension text not null,
+  payload jsonb,
+  event text,
+  private boolean default false,
+  inserted_at timestamptz not null default now()
+);
+
+alter table realtime.messages enable row level security;
+
+create function realtime.topic() returns text
+language sql stable
+as $$ select nullif(current_setting('realtime.topic', true), '')::text $$;
+
+create function realtime.send(payload jsonb, event text, topic text, private boolean default true)
+returns void
+language sql
+as $$
+  insert into realtime.messages (topic, extension, payload, event, private)
+  values (topic, 'broadcast', payload, event, private);
+$$;
+
+grant usage on schema realtime to anon, authenticated, service_role;
+grant select on realtime.messages to anon, authenticated;

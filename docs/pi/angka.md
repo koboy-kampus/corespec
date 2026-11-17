@@ -1,6 +1,6 @@
 # CoreSpec dalam angka
 
-Keadaan per **17 November 2026**, cabang `feat/phase-17-checkout` (Fase 17c).
+Keadaan per **18 November 2026**, cabang `feat/phase-18-chat` (Fase 18a).
 Angka katalog dan aturan diambil dari `data/` dan `lib/compat/`; angka
 pengujian dari pengukuran pada tanggal yang sama. Angka Lighthouse masih dari
 Fase 16 (12 November 2026); halaman yang diukur tidak berubah di Fase 17
@@ -81,16 +81,18 @@ warning, 3 aturan info.
 
 ## Basis data (Fase 16 dan 17)
 
-- **9 tabel**: `auth.users` (dikelola Supabase Auth), `profiles`, `builds`,
-  `items`, `listings`, `site_settings`, `audit_log`, dan sejak Fase 17
-  `orders` dan `payment_config`. Lihat `erd.png`.
-- **7 berkas migrasi** SQL dan `seed.sql` (katalog dari JSON, aman dijalankan
+- **11 tabel**: `auth.users` (dikelola Supabase Auth), `profiles`, `builds`,
+  `items`, `listings`, `site_settings`, `audit_log`, sejak Fase 17 `orders`
+  dan `payment_config`, dan sejak Fase 18 `conversations` dan
+  `chat_messages`. Lihat `erd.png` (tabel chat menyusul di Fase 18c).
+- **8 berkas migrasi** SQL dan `seed.sql` (katalog dari JSON, aman dijalankan
   ulang).
 - **Row Level Security** aktif di semua tabel. `supabase/tests/rls.sql` berisi
-  **145 pemeriksaan** (tamu, pengguna, admin): misalnya pengguna tidak bisa
+  **191 pemeriksaan** (tamu, pengguna, admin): misalnya pengguna tidak bisa
   menjadikan dirinya admin, tidak bisa membaca build atau pesanan orang lain,
   bukan admin tidak bisa mengubah item atau listing, dan tidak ada yang bisa
-  menulis pesanan tanpa rahasia server. Cara hitung: setiap `assert` dan
+  menulis pesanan tanpa rahasia server, dan pengguna tidak bisa membaca chat
+  orang lain atau menulis sebagai admin atau bot. Cara hitung: setiap `assert` dan
   setiap `raise exception 'FAIL: …'` dihitung satu. Dengan cara yang sama,
   versi Fase 16c berisi 97; angka 84 yang tertulis sebelumnya memakai cara
   hitung lain yang tidak tercatat. Pemeriksaan ini hanya menghitung akun
@@ -102,8 +104,8 @@ warning, 3 aturan info.
   12 November 2026 (181 item dalam 20 kategori, 4 listing); `rls.sql` lolos
   14 November. Migrasi pesanan (Fase 17) dijalankan 17 November 2026 dan
   `rls.sql` versi terbaru lolos di sana.
-- **12 fungsi `security definer`**, semuanya dengan `search_path` kosong.
-  Sepuluh tidak bisa dipanggil tamu. Dua (`create_order`,
+- **18 fungsi `security definer`**, semuanya dengan `search_path` kosong
+  (6 di antaranya untuk chat). Enam belas tidak bisa dipanggil tamu. Dua (`create_order`,
   `set_order_payment`) memang bisa dipanggil siapa saja, karena notifikasi
   Midtrans datang tanpa sesi, tetapi keduanya menolak setiap panggilan tanpa
   `ORDER_WRITE_SECRET` yang hanya ada di server (basis data hanya menyimpan
@@ -135,15 +137,17 @@ warning, 3 aturan info.
 
 | Jenis                                          | Jumlah                                           | Hasil         |
 | ---------------------------------------------- | ------------------------------------------------ | ------------- |
-| Unit (Vitest)                                  | 400 tes dalam 30 berkas                          | lolos         |
+| Unit (Vitest)                                  | 480 tes dalam 32 berkas                          | lolos         |
 | End-to-end (Playwright), akun nonaktif         | 112 tes (6 dilewati: khusus mode checkout aktif) | lolos         |
 | End-to-end, checkout aktif (pengaturan tiruan) | 28 tes (6 dilewati)                              | lolos         |
 | Aksesibilitas (axe, di dalam e2e)              | semua halaman dan dialog utama                   | 0 pelanggaran |
 
 Pengujian unit juga menjalankan semua migrasi, `rls.sql` dan `seed.sql` di
-Postgres lokal (PGlite), termasuk 15 uji "mutasi" yang sengaja melonggarkan
+Postgres lokal (PGlite), termasuk 17 uji "mutasi" yang sengaja melonggarkan
 satu aturan keamanan dan memastikan `rls.sql` mendeteksinya (2 di antaranya
-untuk pesanan: pesanan orang lain terbaca, dan rahasia yang salah diterima).
+untuk pesanan: pesanan orang lain terbaca, dan rahasia yang salah diterima;
+2 untuk chat: pesan orang lain terbaca, dan balasan bot tanpa rahasia
+diterima).
 Pembayaran sungguhan tidak bisa dijalankan otomatis; daftar cek manualnya ada
 di `docs/accounts.md`.
 

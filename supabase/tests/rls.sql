@@ -1,7 +1,8 @@
 -- Row Level Security tests for CoreSpec: profiles, builds and the account/admin
 -- functions (Phase 16a), then the catalogue, listings, settings and the audit
 -- log (Phase 16b), then deleting items (20261115000100_item_delete.sql), then
--- orders and the checkout simulation (20261117000100_orders.sql).
+-- orders and the checkout simulation (20261117000100_orders.sql), then the live
+-- chat (20261118000100_chat.sql).
 --
 -- How to run: Supabase dashboard → SQL Editor → paste this whole file → Run.
 -- It creates three throwaway accounts, acts as anon, as each of them and as an
@@ -1132,6 +1133,342 @@ select public.create_order('rls-order-secret', '00000000-0000-4000-8000-00000000
 
 reset role;
 
+-- ===========================================================================
+-- Live chat (20261118000100_chat.sql). The order secret above is still set:
+-- post_bot_reply uses the same one.
+-- ===========================================================================
+
+-- anon: reads nothing and can't call any chat function.
+set local role anon;
+select set_config('request.jwt.claims', '{"role": "anon"}', true);
+
+do $$
+begin
+  begin
+    perform 1 from public.conversations;
+    raise exception 'FAIL: anon reads conversations';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform 1 from public.chat_messages;
+    raise exception 'FAIL: anon reads chat messages';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.get_or_create_conversation();
+    raise exception 'FAIL: anon calls get_or_create_conversation';
+  exception when insufficient_privilege then
+    if sqlerrm not like 'permission denied for function%' then
+      raise exception 'FAIL: anon calls get_or_create_conversation (reached the function: %)', sqlerrm;
+    end if;
+  end;
+  begin
+    perform public.post_bot_reply('rls-order-secret', gen_random_uuid(), 'Hi', 'greeting');
+    raise exception 'FAIL: anon calls post_bot_reply';
+  exception when insufficient_privilege then
+    if sqlerrm not like 'permission denied for function%' then
+      raise exception 'FAIL: anon calls post_bot_reply (reached the function: %)', sqlerrm;
+    end if;
+  end;
+  begin
+    perform public.can_join_chat_topic('chat:admin');
+    raise exception 'FAIL: anon may join a chat topic';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$$;
+
+reset role;
+
+-- alice (a user): her own conversation, her own messages, nothing else.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000a", "role": "authenticated"}', true);
+
+do $$
+declare
+  c public.conversations;
+  again public.conversations;
+  m public.chat_messages;
+  bot public.chat_messages;
+begin
+  c := public.get_or_create_conversation();
+  assert c.owner = '00000000-0000-4000-8000-00000000000a' and c.status = 'open',
+    'FAIL: get_or_create_conversation makes the caller''s own open conversation';
+  again := public.get_or_create_conversation();
+  assert again.id = c.id, 'FAIL: one conversation per user';
+  perform set_config('rls.conv_a', c.id::text, true);
+
+  -- Her own message: the server's clock and trimmed text, whatever she sends.
+  insert into public.chat_messages (conversation_id, sender_role, sender_id, body, created_at)
+  values (c.id, 'user', '00000000-0000-4000-8000-00000000000a', '  Are the prices real?  ',
+    '2000-01-01')
+  returning * into m;
+  assert m.body = 'Are the prices real?'
+     and m.created_at between now() and clock_timestamp(),
+    'FAIL: a message gets the server''s time and trimmed text';
+  assert (select last_message_at from public.conversations where id = c.id) = m.created_at,
+    'FAIL: a new message updates last_message_at';
+
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (c.id, 'admin', '00000000-0000-4000-8000-00000000000a', 'I am the admin');
+    raise exception 'FAIL: a user posts as admin';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body, bot_rule)
+    values (c.id, 'bot', null, 'I am the bot', 'greeting');
+    raise exception 'FAIL: a user posts as the bot';
+  exception when insufficient_privilege or check_violation then null;
+  end;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (c.id, 'user', '00000000-0000-4000-8000-00000000000b', 'Signed as Bob');
+    raise exception 'FAIL: a user posts under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body, bot_rule)
+    values (c.id, 'user', '00000000-0000-4000-8000-00000000000a', 'Tagged', 'prices');
+    raise exception 'FAIL: a user''s message carries a bot rule';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (c.id, 'user', '00000000-0000-4000-8000-00000000000a', E'  \t ');
+    raise exception 'FAIL: an empty message is refused';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (c.id, 'user', '00000000-0000-4000-8000-00000000000a', repeat('x', 1001));
+    raise exception 'FAIL: a message over 1000 characters is refused';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.chat_messages set body = 'edited' where conversation_id = c.id;
+    raise exception 'FAIL: a user edits a chat message';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    delete from public.chat_messages where conversation_id = c.id;
+    raise exception 'FAIL: a user deletes a chat message';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.conversations set status = 'closed' where id = c.id;
+    raise exception 'FAIL: a user updates a conversation directly';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.set_conversation_status(c.id, 'closed');
+    raise exception 'FAIL: a user closes a conversation';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- The bot: only with the secret, and only straight after a user's message.
+  begin
+    perform public.post_bot_reply('wrong-secret', c.id, 'Fake bot', 'prices');
+    raise exception 'FAIL: post_bot_reply accepts a wrong secret';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.post_bot_reply(null, c.id, 'Fake bot', 'prices');
+    raise exception 'FAIL: post_bot_reply accepts a wrong secret (null)';
+  exception when insufficient_privilege then null;
+  end;
+  bot := public.post_bot_reply('rls-order-secret', c.id, 'Prices marked Checked were checked by hand.', 'prices');
+  assert bot.sender_role = 'bot' and bot.sender_id is null and bot.bot_rule = 'prices',
+    'FAIL: post_bot_reply writes a bot message';
+  begin
+    perform public.post_bot_reply('rls-order-secret', c.id, 'Twice', 'prices');
+    raise exception 'FAIL: the bot replies twice to one message';
+  exception when raise_exception then
+    if sqlerrm not like 'The bot only answers%' then raise exception '%', sqlerrm; end if;
+  end;
+
+  perform public.mark_chat_read(c.id);
+  assert (select user_last_read_at from public.conversations where id = c.id) = now()
+     and (select admin_last_read_at from public.conversations where id = c.id) is null,
+    'FAIL: mark_chat_read sets the owner''s read time only';
+
+  assert (select count(*) from public.chat_messages where conversation_id = c.id) = 2,
+    'FAIL: a user reads her own chat messages';
+  assert public.can_join_chat_topic('chat:' || c.id::text),
+    'FAIL: a user may join her own chat topic';
+  assert not public.can_join_chat_topic('chat:admin'),
+    'FAIL: a user may join chat:admin';
+end;
+$$;
+
+reset role;
+
+-- bob (another user): can't see or touch alice's conversation. The rate limit.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000b", "role": "authenticated"}', true);
+
+do $$
+declare
+  conv_a uuid := current_setting('rls.conv_a')::uuid;
+  c public.conversations;
+  i integer;
+begin
+  c := public.get_or_create_conversation();
+  perform set_config('rls.conv_b', c.id::text, true);
+
+  assert not exists (select 1 from public.conversations
+                     where owner <> '00000000-0000-4000-8000-00000000000b'),
+    'FAIL: user reads another user''s conversation';
+  assert not exists (select 1 from public.chat_messages where conversation_id = conv_a),
+    'FAIL: user reads another user''s chat messages';
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (conv_a, 'user', '00000000-0000-4000-8000-00000000000b', 'Hello Alice');
+    raise exception 'FAIL: a user posts into another user''s conversation';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.mark_chat_read(conv_a);
+    raise exception 'FAIL: a user marks another user''s conversation read';
+  exception when insufficient_privilege then null;
+  end;
+  assert not public.can_join_chat_topic('chat:' || conv_a::text),
+    'FAIL: a user may join another user''s chat topic';
+  assert public.can_join_chat_topic('chat:' || c.id::text)
+     and not public.can_join_chat_topic('chat:not-a-uuid')
+     and not public.can_join_chat_topic('orders:' || c.id::text),
+    'FAIL: chat topic names are matched exactly';
+
+  -- Rate limit: 5 messages in 30 seconds, then the 6th is refused.
+  for i in 1..5 loop
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (c.id, 'user', '00000000-0000-4000-8000-00000000000b', 'Fast ' || i);
+  end loop;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (c.id, 'user', '00000000-0000-4000-8000-00000000000b', 'Fast 6');
+    raise exception 'FAIL: a sixth message in 30 seconds is refused';
+  exception when raise_exception then
+    if sqlerrm not like 'You''re sending messages too fast%' then raise exception '%', sqlerrm; end if;
+  end;
+end;
+$$;
+
+reset role;
+
+-- The daily limit: as the database owner (with bob's claims still set, so the
+-- trigger sees him as the sender), add his messages 5 at a time and age each
+-- batch past the 30-second window, up to 60 today. The 61st is refused.
+do $$
+declare
+  conv_b uuid := current_setting('rls.conv_b')::uuid;
+  i integer;
+begin
+  update public.chat_messages set created_at = now() - interval '1 minute'
+  where conversation_id = conv_b;
+  for i in 6..60 loop
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (conv_b, 'user', '00000000-0000-4000-8000-00000000000b', 'Msg ' || i);
+    if i % 5 = 0 then
+      update public.chat_messages set created_at = now() - interval '1 minute'
+      where conversation_id = conv_b;
+    end if;
+  end loop;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (conv_b, 'user', '00000000-0000-4000-8000-00000000000b', 'Msg 61');
+    raise exception 'FAIL: a 61st message in a day is refused';
+  exception when raise_exception then
+    if sqlerrm not like 'You''ve sent 60 messages today%' then raise exception '%', sqlerrm; end if;
+  end;
+  -- Yesterday's messages don't count.
+  update public.chat_messages set created_at = now() - interval '25 hours'
+  where conversation_id = conv_b;
+  insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+  values (conv_b, 'user', '00000000-0000-4000-8000-00000000000b', 'Next day');
+end;
+$$;
+
+-- carol (the admin): reads every conversation, replies anywhere without a
+-- limit, can't post as a user or the bot, closes and reopens.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000c", "role": "authenticated"}', true);
+
+do $$
+declare
+  conv_a uuid := current_setting('rls.conv_a')::uuid;
+  conv_b uuid := current_setting('rls.conv_b')::uuid;
+  c public.conversations;
+  i integer;
+begin
+  assert (select count(*) from public.conversations where id in (conv_a, conv_b)) = 2,
+    'FAIL: an admin reads every conversation';
+  assert (select count(*) from public.chat_messages where conversation_id = conv_a) = 2,
+    'FAIL: an admin reads every chat message';
+
+  for i in 1..7 loop
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (conv_a, 'admin', '00000000-0000-4000-8000-00000000000c', 'Admin reply ' || i);
+  end loop;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (conv_a, 'user', '00000000-0000-4000-8000-00000000000a', 'As Alice');
+    raise exception 'FAIL: an admin posts as a user';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+    values (conv_a, 'admin', '00000000-0000-4000-8000-00000000000a', 'Under Alice''s id');
+    raise exception 'FAIL: an admin posts under another id';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.post_bot_reply('rls-order-secret', conv_a, 'After the admin', 'prices');
+    raise exception 'FAIL: the bot answers an admin''s message';
+  exception when raise_exception then
+    if sqlerrm not like 'The bot only answers%' then raise exception '%', sqlerrm; end if;
+  end;
+
+  perform public.mark_chat_read(conv_a);
+  assert (select admin_last_read_at from public.conversations where id = conv_a) = now(),
+    'FAIL: mark_chat_read sets the admins'' read time';
+
+  c := public.set_conversation_status(conv_a, 'closed');
+  assert c.status = 'closed', 'FAIL: an admin closes a conversation';
+  begin
+    perform public.set_conversation_status(conv_a, 'archived');
+    raise exception 'FAIL: an unknown conversation status is refused';
+  exception when invalid_parameter_value then null;
+  end;
+
+  assert public.can_join_chat_topic('chat:admin')
+     and public.can_join_chat_topic('chat:' || conv_a::text)
+     and public.can_join_chat_topic('chat:' || conv_b::text),
+    'FAIL: an admin may join chat:admin and every conversation''s topic';
+end;
+$$;
+
+reset role;
+
+-- alice opens the chat again: her closed conversation reopens.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000a", "role": "authenticated"}', true);
+
+do $$
+declare
+  c public.conversations := public.get_or_create_conversation();
+begin
+  assert c.id = current_setting('rls.conv_a')::uuid and c.status = 'open',
+    'FAIL: get_or_create_conversation reopens a closed conversation';
+end;
+$$;
+
+reset role;
+
 -- ---------------------------------------------------------------------------
 -- bob deletes his account: auth user, profile and builds all go.
 -- ---------------------------------------------------------------------------
@@ -1158,6 +1495,9 @@ begin
   assert not exists (select 1 from public.orders
                      where owner = '00000000-0000-4000-8000-00000000000b'),
     'FAIL: deleting an account removes its orders';
+  assert not exists (select 1 from public.conversations
+                     where owner = '00000000-0000-4000-8000-00000000000b'),
+    'FAIL: deleting an account removes its conversation and messages';
   assert exists (select 1 from public.builds where id = 'alice-1'),
     'FAIL: deleting one account leaves other accounts alone';
 end;

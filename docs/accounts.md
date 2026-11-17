@@ -360,6 +360,58 @@ lock the database side at once: `update public.payment_config set secret_hash = 
       "SIMULASI — bukan bukti transaksi" on every page.
 - [ ] The same from a phone: the pictures look the same as from the laptop.
 
+## Live chat (Phase 18)
+
+A logged-in user chats with the admin; a **rule-based bot** (no AI) answers
+common questions first. Chat needs accounts on: without the Supabase settings
+there is no chat at all. The panel and the admin inbox come in Phase 18b; this
+part is the database and the bot.
+
+### How it works
+
+- **Tables:** `conversations` (one per user, `open` or `closed`, read times
+  for the user and the admins) and `chat_messages` (1–1000 characters after
+  trimming; `sender_role` user, admin or bot).
+- **Reading:** the owner reads their own conversation and messages; admins
+  read all.
+- **Writing:** users insert their own messages (`sender_role = 'user'`, into
+  their own conversation) and admins theirs (`'admin'`, anywhere), through
+  insert policies. A trigger sets the time and trimmed text, checks the
+  sender again and holds the **rate limit: 5 messages in 30 seconds and 60 a
+  day per user** (admins: none). Nobody can edit or delete a message.
+- **The bot** writes only through `post_bot_reply()`, which needs
+  `ORDER_WRITE_SECRET` (the checkout's secret: no new variable) and only
+  answers when the latest message is the user's. Without the secret the chat
+  still works and the admin answers everything.
+- **"Needs admin"** isn't stored: a conversation needs the admin when its
+  latest bot message used the `human` rule or the fallback and no admin has
+  written since (`needsAdmin()` in `lib/chat/bot.ts`).
+- **Live updates:** after each insert, a trigger sends the message with
+  Realtime Broadcast to the private topics `chat:<conversation id>` and
+  `chat:admin`. Select policies on `realtime.messages` decide who may join:
+  the owner or an admin for `chat:<id>`, admins only for `chat:admin`
+  (`can_join_chat_topic()`). There is no insert policy there: clients only
+  listen. If `realtime.send` fails, the message is still saved (a warning is
+  logged) and the panel's polling picks it up.
+
+### Setting it up
+
+1. **Migration:** run `supabase/migrations/20261118000100_chat.sql` in the SQL
+   editor (after the orders migration: it reuses `check_order_secret`), then
+   rerun `supabase/tests/rls.sql` (it must end with "All RLS tests passed").
+2. Nothing else: no new environment variable.
+
+### Checking Realtime by hand (it can't be tested locally)
+
+The local tests check the join rules through a stand-in for Supabase's
+`realtime` schema, not Realtime itself. With two browsers on the preview:
+
+- [ ] User A opens the chat: their messages arrive live in A's panel and in the
+      admin's `/admin/chat`, without a refresh.
+- [ ] User B, logged in elsewhere, never sees A's messages, and can't join A's
+      topic (no messages arrive when subscribing to `chat:<A's id>` by hand).
+- [ ] A non-admin can't receive anything on `chat:admin`.
+
 ## Checking the preview by hand
 
 - [ ] **As a guest:** the builder, presets, sharing and My builds all work.
@@ -403,6 +455,10 @@ lock the database side at once: `update public.payment_config set secret_hash = 
   `lib/checkout/` (order rules, Midtrans client, Server Actions, the
   notification logic), `app/api/midtrans/notification`, `components/checkout/`,
   `app/checkout`, `app/orders`, `app/admin/orders`.
+- **Chat (18a):** `supabase/migrations/20261118000100_chat.sql`, `lib/chat/`
+  (`bot.ts` the rules, `service.ts` and `actions.ts` the Server Action,
+  `store.ts` Supabase), the Realtime stand-in in
+  `supabase/tests/supabase-shim.sql`.
 - **Receipt (17b):** `lib/receipt/` (the PDF layout: data in, bytes out, with
   pdf-lib and uqr), `components/receipt/` (the button and the off-screen 3D
   capture), `components/viewer/capture-frame.tsx`.
