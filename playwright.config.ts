@@ -40,7 +40,19 @@ export default defineConfig({
     // E2E_SUPABASE_URL (Phase 16b) runs the same suite with accounts on but the
     // database unreachable, e.g. E2E_SUPABASE_URL=http://127.0.0.1:9: the
     // catalogue must then come from the JSON exactly as before.
+    //
+    // E2E_CHECKOUT=on (Phase 17a, with E2E_SUPABASE_URL) adds dummy Midtrans
+    // settings, so the checkout UI is on (tests/e2e/checkout.spec.ts). No
+    // request ever reaches Midtrans in the tests. Without it they're empty, so
+    // real keys in .env.local never reach the test build.
     env: {
+      MIDTRANS_SERVER_KEY: process.env.E2E_CHECKOUT
+        ? "SB-Mid-server-e2e-dummy"
+        : "",
+      NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: process.env.E2E_CHECKOUT
+        ? "SB-Mid-client-e2e-dummy"
+        : "",
+      ORDER_WRITE_SECRET: process.env.E2E_CHECKOUT ? "e2e-dummy-secret" : "",
       NEXT_PUBLIC_SUPABASE_URL: process.env.E2E_SUPABASE_URL ?? "",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.E2E_SUPABASE_URL
         ? "sb_publishable_e2e_unreachable"

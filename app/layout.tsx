@@ -8,8 +8,12 @@ import { Footer } from "@/components/layout/footer";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { AccountSync } from "@/components/account/account-sync";
 import { CatalogueOverlay } from "@/components/catalogue/catalogue-overlay";
+import { ChatSlot } from "@/components/chat/chat-slot";
+import { CheckoutFlag } from "@/components/checkout/checkout-flag";
 import { loadCatalogue } from "@/lib/catalogue/load";
+import { isCheckoutConfigured } from "@/lib/checkout/config";
 import { SITE_URL } from "@/lib/site";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -70,20 +74,24 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <CatalogueOverlay overlay={overlay}>
-          <TooltipProvider>
-            <Navbar />
-            <main
-              id="main"
-              tabIndex={-1}
-              className="flex flex-1 flex-col outline-none"
-            >
-              {children}
-            </main>
-            <Footer />
-            <CommandPalette />
-            <AccountSync />
-            <Toaster />
-          </TooltipProvider>
+          <CheckoutFlag enabled={isCheckoutConfigured()}>
+            <TooltipProvider>
+              <Navbar />
+              <main
+                id="main"
+                tabIndex={-1}
+                className="flex flex-1 flex-col outline-none"
+              >
+                {children}
+              </main>
+              <Footer />
+              <CommandPalette />
+              <AccountSync />
+              {/* Live chat (Phase 18): only with accounts on. */}
+              {isSupabaseConfigured() ? <ChatSlot /> : null}
+              <Toaster />
+            </TooltipProvider>
+          </CheckoutFlag>
         </CatalogueOverlay>
         {/* Cookieless page-view counts. Vercel serves the script, so only render it there. */}
         {process.env.VERCEL ? <Analytics /> : null}

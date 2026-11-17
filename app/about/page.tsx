@@ -4,6 +4,11 @@ import Link from "next/link";
 import { DocPage, DocSection } from "@/components/legal/doc-page";
 import { formatDate } from "@/lib/format";
 import { CATALOG_STATS, PRICES_AS_OF } from "@/lib/parts";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+
+// Accounts (and the chat) exist only with the Supabase settings; without them
+// this page reads exactly as before.
+const accounts = isSupabaseConfigured();
 
 export const metadata: Metadata = {
   title: "About",
@@ -47,10 +52,18 @@ export default async function Page() {
             Saves your builds in your browser and shares any build as a link.
           </li>
         </ul>
-        <p>
-          There are no accounts and no sign-up. Start in the{" "}
-          <Link href="/builder">builder</Link>.
-        </p>
+        {accounts ? (
+          <p>
+            An account is optional: everything works without one. Start in the{" "}
+            <Link href="/builder">builder</Link>.{" "}
+            <Link href="/login">Log in</Link> to chat with the admin.
+          </p>
+        ) : (
+          <p>
+            There are no accounts and no sign-up. Start in the{" "}
+            <Link href="/builder">builder</Link>.
+          </p>
+        )}
       </DocSection>
 
       <DocSection title="Prices are checked or estimated">

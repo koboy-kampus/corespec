@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useMemo,
   useRef,
   useState,
@@ -39,7 +40,8 @@ import { clampDelta } from "@/lib/viewer/spring";
 import type { Case, Item, ResolvedSetup } from "@/types/parts";
 import { Animated, setFade } from "./animated";
 import { CameraRig, type CameraKeys, type CameraView } from "./camera-rig";
-import { ModelBlock } from "./model-block";
+import { CaptureFrame } from "./capture-frame";
+import { ModelBlock, SuspendModelsUp } from "./model-block";
 import { DESK_TONES, WARN } from "./palette";
 import { PartTooltip } from "./part-tooltip";
 import { hasWebGL, usePresence } from "./scene-common";
@@ -59,6 +61,10 @@ export interface DeskSceneProps {
   embedded?: boolean;
   /** Items already there on the first render skip the drop (shared builds). */
   skipIntro?: boolean;
+  /** The PDF receipt's picture: see SceneProps.onCapture. */
+  onCapture?: (png: string | null) => void;
+  /** A fixed pixel ratio (the receipt's capture), instead of the screen's. */
+  pixelRatio?: number;
 }
 
 const ITEM_DROP = 160; // mm
@@ -382,6 +388,8 @@ function DeskCanvas({
   cameraKeysRef,
   embedded = false,
   skipIntro = false,
+  onCapture,
+  pixelRatio,
 }: DeskSceneProps) {
   const layout = useMemo(() => layoutDesk(setup, pcCase), [setup, pcCase]);
   const highlights = useMemo(
@@ -499,7 +507,7 @@ function DeskCanvas({
   return (
     <Canvas
       frameloop="demand"
-      dpr={[1, 2]}
+      dpr={pixelRatio ?? [1, 2]}
       camera={{ fov: 30, near: 0.1, far: 200, position: [0, 6, 20] }}
       gl={{ antialias: true, alpha: true }}
       fallback={fallback}
@@ -520,10 +528,20 @@ function DeskCanvas({
             depthWrite={false}
           />
         </mesh>
-        {[
-          ...items.map((i) => render(i, false)),
-          ...leaving.map((i) => render(i, true)),
-        ]}
+        {onCapture ? (
+          // The receipt's capture: draw nothing until every model is in.
+          <SuspendModelsUp.Provider value>
+            <Suspense fallback={null}>
+              {items.map((i) => render(i, false))}
+              <CaptureFrame onCapture={onCapture} />
+            </Suspense>
+          </SuspendModelsUp.Provider>
+        ) : (
+          [
+            ...items.map((i) => render(i, false)),
+            ...leaving.map((i) => render(i, true)),
+          ]
+        )}
         <FloorShadows layout={layout} />
         {highlights.edges.map((side) => (
           <EdgeLine key={side} side={side} desk={layout.desk} />

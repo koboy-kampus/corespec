@@ -233,6 +233,200 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     await db.close();
   });
 
+  // Orders (Phase 17a): the two rules that matter most.
+  it("catch a policy that shows other people's orders", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      drop policy "orders: read own" on public.orders;
+      create policy "orders: read all" on public.orders for select to authenticated using (true);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /user reads another user's order/,
+    );
+    await db.close();
+  });
+
+  it("catch the order functions accepting a wrong secret", async () => {
+    const db = await freshDb();
+    // The check without the comparison: any secret passes once a hash is set.
+    await db.exec(`
+      create or replace function public.check_order_secret(p_secret text)
+      returns void language plpgsql stable security definer set search_path = '' as $$
+      begin
+        if (select secret_hash from public.payment_config where id) is null then
+          raise exception 'Not allowed' using errcode = '42501';
+        end if;
+      end;
+      $$;
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /create_order accepts a wrong secret/,
+    );
+    await db.close();
+  });
+
+  // Chat (Phase 18a).
+  it("catch a policy that shows other people's chat messages", async () => {
+    const db = await freshDb();
+    await db.exec(`
+      drop policy "chat_messages: read own" on public.chat_messages;
+      create policy "chat_messages: read all" on public.chat_messages for select to authenticated using (true);
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /user reads another user's chat messages/,
+    );
+    await db.close();
+  });
+
+  it("catch a bot reply being accepted without the secret", async () => {
+    const db = await freshDb();
+    // post_bot_reply without its secret check.
+    await db.exec(`
+      create or replace function public.post_bot_reply(
+        p_secret text, p_conversation_id uuid, p_body text, p_bot_rule text)
+      returns public.chat_messages language plpgsql security definer set search_path = '' as $$
+      declare result public.chat_messages;
+      begin
+        insert into public.chat_messages (conversation_id, sender_role, sender_id, body, bot_rule)
+        values (p_conversation_id, 'bot', null, p_body, p_bot_rule)
+        returning * into result;
+        return result;
+      end;
+      $$;
+    `);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /post_bot_reply accepts a wrong secret/,
+    );
+    await db.close();
+  });
+
+  /** alice (a user) with her conversation, acting as herself. */
+  async function chatFixture() {
+    const db = await freshDb();
+    await db.exec(`
+      insert into auth.users (id, email) values
+        ('00000000-0000-4000-8000-0000000000a1', 'a@example.test'),
+        ('00000000-0000-4000-8000-0000000000b1', 'b@example.test'),
+        ('00000000-0000-4000-8000-0000000000c1', 'c@example.test');
+      update public.profiles set role = 'admin' where id = '00000000-0000-4000-8000-0000000000c1';
+    `);
+    const as = (sub: string) => `
+      set role authenticated;
+      select set_config('request.jwt.claims', '{"sub": "${sub}", "role": "authenticated"}', false);
+    `;
+    const conv = async (sub: string) => {
+      await db.exec(as(sub));
+      const { rows } = await db.query<{ id: string }>(
+        "select (public.get_or_create_conversation()).id as id",
+      );
+      await db.exec("reset role;");
+      return rows[0].id;
+    };
+    return { db, as, conv };
+  }
+
+  it("save the message even when realtime.send fails (the panel polls)", async () => {
+    const { db, as, conv } = await chatFixture();
+    const id = await conv("00000000-0000-4000-8000-0000000000a1");
+    await db.exec(`
+      create or replace function realtime.send(payload jsonb, event text, topic text, private boolean default true)
+      returns void language plpgsql as $$
+      begin
+        raise exception 'Realtime is down';
+      end;
+      $$;
+    `);
+    await db.exec(as("00000000-0000-4000-8000-0000000000a1"));
+    await db.exec(`
+      insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+      values ('${id}', 'user', '00000000-0000-4000-8000-0000000000a1', 'Still saved?');
+    `);
+    await db.exec("reset role;");
+    const { rows } = await db.query<{ n: number; last: string | null }>(`
+      select (select count(*)::int from public.chat_messages where conversation_id = '${id}') as n,
+             (select last_message_at from public.conversations where id = '${id}') as last
+    `);
+    expect(rows[0].n).toBe(1);
+    expect(rows[0].last).not.toBeNull();
+    const { rows: sent } = await db.query<{ n: number }>(
+      "select count(*)::int as n from realtime.messages",
+    );
+    expect(sent[0].n).toBe(0);
+    await db.close();
+  });
+
+  it("broadcast each message to its conversation's topic and chat:admin, privately", async () => {
+    const { db, as, conv } = await chatFixture();
+    const id = await conv("00000000-0000-4000-8000-0000000000a1");
+    await db.exec(as("00000000-0000-4000-8000-0000000000a1"));
+    await db.exec(`
+      insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+      values ('${id}', 'user', '00000000-0000-4000-8000-0000000000a1', 'Hello');
+      reset role;
+    `);
+    const { rows } = await db.query<{
+      topic: string;
+      event: string;
+      private: boolean;
+      body: string;
+    }>(
+      "select topic, event, private, payload->>'body' as body from realtime.messages order by topic",
+    );
+    // Two sends, in any order (the topic names sort by the random id).
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { topic: `chat:${id}`, event: "message", private: true, body: "Hello" },
+        { topic: "chat:admin", event: "message", private: true, body: "Hello" },
+      ]),
+    );
+    await db.close();
+  });
+
+  it("let only the owner and admins join a conversation's topic, and only admins chat:admin (realtime.messages policies)", async () => {
+    const { db, as, conv } = await chatFixture();
+    const a = await conv("00000000-0000-4000-8000-0000000000a1");
+    await conv("00000000-0000-4000-8000-0000000000b1");
+    await db.exec(as("00000000-0000-4000-8000-0000000000a1"));
+    await db.exec(`
+      insert into public.chat_messages (conversation_id, sender_role, sender_id, body)
+      values ('${a}', 'user', '00000000-0000-4000-8000-0000000000a1', 'Hello');
+      reset role;
+    `);
+    // What a client joining `topic` would be allowed to receive: Realtime sets
+    // realtime.topic and reads realtime.messages under the policies.
+    const sees = async (who: string | null, topic: string) => {
+      await db.exec(
+        who
+          ? as(who)
+          : `set role anon; select set_config('request.jwt.claims', '{"role": "anon"}', false);`,
+      );
+      await db.exec(`select set_config('realtime.topic', '${topic}', false);`);
+      const { rows } = await db.query<{ n: number }>(
+        "select count(*)::int as n from realtime.messages where topic = realtime.topic()",
+      );
+      await db.exec("reset role;");
+      return rows[0].n > 0;
+    };
+    const alice = "00000000-0000-4000-8000-0000000000a1";
+    const bob = "00000000-0000-4000-8000-0000000000b1";
+    const carol = "00000000-0000-4000-8000-0000000000c1";
+    expect(await sees(alice, `chat:${a}`)).toBe(true);
+    expect(await sees(bob, `chat:${a}`)).toBe(false);
+    expect(await sees(carol, `chat:${a}`)).toBe(true);
+    expect(await sees(null, `chat:${a}`)).toBe(false);
+    expect(await sees(alice, "chat:admin")).toBe(false);
+    expect(await sees(bob, "chat:admin")).toBe(false);
+    expect(await sees(carol, "chat:admin")).toBe(true);
+    expect(await sees(null, "chat:admin")).toBe(false);
+    // Only select policies on realtime.messages: clients can't send.
+    const { rows: policies } = await db.query<{ cmd: string }>(
+      "select cmd from pg_policies where schemaname = 'realtime' and tablename = 'messages'",
+    );
+    expect(policies.map((p) => p.cmd)).toEqual(["SELECT"]);
+    await db.close();
+  });
+
   it("set search_path on every security definer function", async () => {
     const db = await freshDb();
     const { rows } = await db.query<{ name: string; config: string[] | null }>(`
@@ -244,11 +438,20 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
       "admin_list_users",
       "admin_stats",
       "audit_row",
+      "chat_messages_after_insert",
+      "chat_messages_before_insert",
+      "check_order_secret",
+      "create_order",
       "delete_my_account",
+      "get_or_create_conversation",
       "handle_new_user",
       "is_admin",
       "item_usage_count",
       "items_refuse_delete_in_use",
+      "mark_chat_read",
+      "post_bot_reply",
+      "set_conversation_status",
+      "set_order_payment",
       "set_role",
     ]);
     for (const r of rows) expect(r.config, r.name).toContain('search_path=""');
@@ -261,12 +464,23 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
         and r.rolname in ('anon', 'authenticated')
         and has_function_privilege(r.oid, p.oid, 'execute')
     `);
-    expect(grants.filter((g) => g.who === "anon")).toEqual([]);
+    // …except the two order functions: Midtrans's notification has no session,
+    // so they're open to anon and refuse everything without ORDER_WRITE_SECRET
+    // (rls.sql checks that).
+    expect(
+      grants
+        .filter((g) => g.who === "anon")
+        .map((g) => g.name)
+        .sort(),
+    ).toEqual(["create_order", "set_order_payment"]);
     // The trigger functions can't be called by anyone.
     for (const name of [
+      "check_order_secret",
       "handle_new_user",
       "audit_row",
       "items_refuse_delete_in_use",
+      "chat_messages_before_insert",
+      "chat_messages_after_insert",
     ])
       expect(
         grants.find((g) => g.name === name),
