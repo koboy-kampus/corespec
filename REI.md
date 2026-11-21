@@ -748,10 +748,95 @@ All of section 9's rules still apply (no service-role key, new SQL in a new migr
 
 ---
 
-**Session 3: Phase 17 is done (PR #6). Phase 18 runs on `feat/phase-18-chat`; start with Phase 18a.** _Earlier:_ **Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
+**Session 4: Phase 19 (section 10) runs on `feat/phase-19-models`; start with Phase 19a.** _Earlier:_ **Session 3: Phase 17 is done (PR #6). Phase 18 runs on `feat/phase-18-chat`; start with Phase 18a.** _Earlier:_ **Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
 
 _Session 2 instruction, kept for history:_ **Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
 
 ---
 
 _Session 1 instruction, kept for history:_ **Start now with Phase 0. Plan → implement → verify → summary → commit, then wait for "next".**
+
+---
+
+## 10. Session 4 — Phase 19: new 3D models for the desk view
+
+> **How to use:** `Read REI.md section 10, then plan Phase 19a.` Work on **`feat/phase-19-models`** (it starts from `feat/phase-18-chat`, so Phases 17 and 18 are in it). Open a draft PR `feat/phase-19-models` → `main`. Don't push to the 17 or 18 branches.
+
+**Why:** at the 19 Nov bimbingan the supervisor didn't like the desk view's boxes (especially the desk and the chair) and asked for better 3D, at least for the items in the presets and suggested setups. The ujian demo will be a **recording** made a few days before the ujian (early December), so the desk view has to look good on video.
+
+**What's already done (chat, 22 Nov):** 16 models made from scratch with Blender Python scripts, in `models-src/`. They're our own work, so there's no licence problem: credit them as "CoreSpec (Syah Reihan Pratama Nandi)", **CC0 1.0**. The scripts are in `tools/blender/` (run with Blender's Python module `bpy`, see 19c), and the previews are in `docs/models/previews/`. Every file follows the `docs/models.md` checklist: metres, origin at the bottom centre, x = width, y = up, z = toward the person, no Draco, no textures, no logos.
+
+| Model id | Use for | Fit | Triangles | Materials |
+| --- | --- | --- | --- | --- |
+| `desk-four-leg` | fixed desks (`adjustable` false) — **category model** for `desk` | stretch | ~2.5k | `wood` (top), `leg`, `black` |
+| `desk-sit-stand` | sit-stand desks (`adjustable` true) | stretch | ~2.5k | `wood`, `leg`, `steel`, `black` |
+| `chair-gaming` | chairs with `type` Gaming (racing back, pillows, coral piping) | contain | ~8.8k | `black`, `fabric`, `dark`, `steel`, `accent` |
+| `chair-office` | chairs with `type` Ergonomic (mesh back) — **category model** for `chair` | contain | ~8.7k | `black`, `fabric`, `mesh`, `dark`, `steel` |
+| `monitor-flat` | flat monitors on their own stand — **category model** for `monitor` | stretch | ~2.2k | `black`, `screen`, `dark`, `accent` |
+| `monitor-curved` | `curved` monitors on their own stand (slim Y-legs) | stretch | ~2.6k | same |
+| `monitor-panel` | **any monitor hanging on an arm** (no stand) | stretch | ~1.7k | same |
+| `arm-single` | **category model** for `arm`: articulated gas-spring arm, clamp at the back (−z), VESA plate at the front (+z) | stretch | ~2.5k | `black`, `dark`, `steel` |
+| `speaker-bookshelf` | **category model** for `speakers` (one speaker; the layout draws two) | stretch | ~1k | `dark`, `black`, `steel` |
+| `light-bar` | lighting with `kind` "Light bar" | stretch | ~1k | `dark`, `black`, `light` |
+| `desk-lamp` | lighting with `kind` "Lamp" | contain | ~0.7k | `dark`, `steel`, `black`, `light` |
+| `mousepad` | **category model** for `mousepad` | stretch | ~0.5k | `pad`, `dark` |
+| `headset` | **category model** for `headset` (with boom mic) | contain | ~4.7k | `dark`, `fabric`, `pad`, `steel`, `black`, `accent` |
+| `mouse` | **category model** for `mouse` (light strip at the back) | stretch | ~2.1k | `dark`, `black`, `steel`, `accent` |
+| `microphone` | **category model** for `microphone` (desk stand) | contain | ~3.2k | `black`, `steel`, `dark`, `mesh`, `light` |
+| `webcam` | **category model** for `webcam` (clip over the screen) | contain | ~1.8k | `black`, `dark`, `steel`, `screen`, `light` |
+
+LED strips keep their procedural look. The keyboard model is unchanged.
+
+### Phase 19a — Wire the models in
+
+1. **`data/models.json`**: one entry per model above (`basis` identity, `fit` as in the table, `defaultFor` where marked). `data/credits.json`: one "CoreSpec, CC0 1.0, made with Blender scripts in tools/blender" entry the models share (or one each, whatever `/credits` handles best). Then `npm run models` and check every compressed file against the budgets (each < 400 KB, the heaviest build < 2.5 MB); report the sizes.
+2. **Choosing the model is data, not code, wherever possible.** Add `modelId` to the items that need the non-default model: sit-stand desks → `desk-sit-stand`; Gaming chairs → `chair-gaming`; curved monitors → `monitor-curved`; Light bars → `light-bar`; Lamps → `desk-lamp`. A test in `lib/data.test.ts` checks the rule holds for every item (so a new item added through the admin panel can't drift silently: if that's a problem, put the rule in `resolveModel` instead, and explain which you chose).
+3. **The one rule that is code:** a monitor drawn on an arm uses `monitor-panel` (the layout doesn't draw a stand then). And the arm's model fills the arm's box from the clamp to the VESA plate (the layout already knows `poleZ` and `vesaZ`; make the arm item's box span that depth so the stretched model reaches the screen).
+4. **Desk-view palette for models.** Today `recolour` only knows the PC tones. Let models in the desk view use the desk tones too, and add the ones these models need: `wood` (light oak default), `leg` (dark steel), `fabric` (dark grey), `mesh` (dark grey, slightly lighter than fabric), `pad` (near-black cloth), `accent` (CoreSpec coral by default), `screen` (the existing emissive screen tone), `light` (the existing emissive light tone). Update the `recolour` docs. Check light and dark themes if the desk view has both.
+5. **Fit check:** every preset and suggested setup, in the desk view at desktop and phone width: nothing floats, sinks into the desk, or pokes through another item; the chair still turns; the warning glow still lights the right model (glow on models, not only boxes — check how the PC view does it). Exploded view and any other desk-view states still work.
+6. Tests: model resolution for each rule above, recolour with desk tones, the budget test, the e2e smoke that the desk view renders with models (no console errors), axe 0. Report the KB the desk view downloads for each preset before and after.
+
+### Phase 19b — Per-item colours ("finish")
+
+The research for the presets showed colourways matter (white vs oak desks, orange Cougar stitching, red AOC trim). Add an optional **`finish`** to setup items: a map from **material name** to colour (`"#RRGGBB"`), applied on top of `recolour` for that item only. Items without it keep the palette.
+
+- Validation: keys must be material names the item's model actually has; values `#RRGGBB`. Unit tests.
+- **Admin panel:** on a setup item's edit page, a "Finish" section listing the item's model's material names, each with a colour input and "reset to default". Saved like other item fields (DB column `finish jsonb` on `items`, new migration, RLS unchanged, audit log entry). The JSON catalogue keeps working when accounts are off.
+- The PDF receipt's 3D pictures use the finish too (they reuse the scene).
+- **Finishes for the preset items** (from Rei's research, 22 Nov):
+
+| Item | finish |
+| --- | --- |
+| `desk-ikea-lagkapten-adils-120-60` | `wood` light oak `#C9A57B`, `leg` black `#1E1E20`, `black` `#1E1E20` |
+| `desk-ikea-trotten-sit-stand-120-70` | `wood` white `#E8E6E1`, `leg` anthracite `#3A3B3F`, `steel` `#4A4B50` |
+| `desk-ikea-mittzon-sit-stand-140-80` | `wood` walnut `#5C3B28`, `leg` black `#1E1E20`, `steel` `#2A2A2D` |
+| `chair-cougar-armor-one` | `accent` orange `#F26B1D` |
+| `chair-ikea-markus` | `fabric` dark grey `#3A3B3E`, `mesh` dark grey `#45464A` |
+| `monitor-aoc-24g4` | `accent` red `#D0202A` |
+| `monitor-lg-ultragear-27gr75q` | `accent` dark purplish red `#7E2848` |
+| `headset-hyperx-cloud-ii` | `accent` red `#C4161C` |
+| `headset-hyperx-cloud-stinger-2` | `accent` `#1E1E20` (all black) |
+| `headset-logitech-g435-lightspeed` | `dark` black `#1C1C1E`, `accent` neon yellow `#D7F205`, `fabric` `#2A2A2D` |
+| `mouse-logitech-g102-lightsync` | `accent` RGB cyan `#3FD0FF` |
+| `mouse-logitech-g304-lightspeed` | `accent` `#26262A` (no RGB) |
+| `mouse-logitech-g502-x` | `accent` `#26262A` (no RGB) |
+| `speakers-creative-pebble-plus` | `steel` copper `#B87333` |
+| `speakers-logitech-z120` | (leave default; the white back isn't a separate part) |
+| `microphone-rode-podmic` | `mesh` grille `#6E6F73` |
+| `lighting-benq-screenbar-halo` | `dark` `#3A3B3F` |
+
+Everything else in the presets is black/dark and keeps the default.
+
+### Phase 19c — Docs, PI material, handoff
+
+- `tools/blender/README.md`: how to rebuild the models (`pip install bpy` for the matching Python, then `python tools/blender/build_roundN.py`; outputs land in an `out/` folder next to the scripts — change `OUT` to a repo-relative path while you're there), which script makes which model, and the axis convention. Don't make the build part of CI.
+- `docs/models.md`: the new models, the selection rules, the desk tones, and `finish`.
+- `/credits`: shows the CoreSpec models.
+- `docs/pi/`: a figure for the PI with the new desk view for each preset (screenshots at 1600 px wide, light background if the desk view supports it, otherwise as is), plus `docs/pi/angka.md` (number of models, triangles, KB).
+- `docs/demo-script.md`: the desk-view segment now shows the new models; note that the demo will be recorded.
+- `HANDOFF.md`: a Phase 19 section.
+
+### Rules for Phase 19
+
+- Don't edit the `.glb` files by hand. If a model needs a change, say what and the chat changes the script and re-exports (or change the script yourself and re-export, if `bpy` installs on Rei's PC).
+- Keep everything else from sections 6–9: branch + PR, new migration for `finish`, the chat runs it, rls.sql rerun, Rei tests on his phones before merge.
