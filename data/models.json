@@ -217,6 +217,29 @@
     "note": "A monitor without its stand, for a monitor hanging on an arm. Chosen by the desk layout, not by an item field."
   },
   {
+    "id": "monitor-panel-curved",
+    "file": "models-src/monitor-panel-curved.glb",
+    "credit": "monitor-panel-curved",
+    "variantFor": "monitor",
+    "layout": "on-arm",
+    "match": {
+      "curved": true
+    },
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "black": "black",
+      "screen": "screen",
+      "accent": "accent",
+      "dark": "dark"
+    },
+    "note": "A curved monitor without its stand, for a curved monitor hanging on an arm (Fix round, 22 Nov). Chosen by the desk layout plus the item's curved field."
+  },
+  {
     "id": "arm-single",
     "file": "models-src/arm-single.glb",
     "credit": "arm-single",

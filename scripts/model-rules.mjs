@@ -145,8 +145,8 @@ export function checkModels(models, credits, categories) {
         bad(`variantFor "${m.variantFor}" is not a category`);
       const hasMatch = m.match !== undefined;
       const hasLayout = m.layout !== undefined;
-      if (hasMatch === hasLayout)
-        bad('a variant needs exactly one of "match" or "layout"');
+      if (!hasMatch && !hasLayout)
+        bad('a variant needs a "match", a "layout", or both');
       if (
         hasMatch &&
         (typeof m.match !== "object" ||

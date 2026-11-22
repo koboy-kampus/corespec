@@ -247,16 +247,28 @@ describe("variants (Phase 19)", () => {
     expect(modelChain(chair("Gaming"), "on-arm")[0].id).toBe("chair-gaming");
   });
 
+  it("prefers the placement variant whose match fits (a curved monitor on an arm), and never uses it off the arm", () => {
+    const curved = ALL_ITEMS.find(
+      (i) => i.category === "monitor" && (i as { curved?: boolean }).curved,
+    )!;
+    expect(modelChain(curved, "on-arm").map((m) => m.id)).toEqual([
+      "monitor-panel-curved",
+    ]);
+    expect(modelChain(curved).map((m) => m.id)).toEqual([
+      "monitor-curved",
+      "monitor-flat",
+    ]);
+  });
+
   it("rejects a variant without a rule, with both rules, or with a bad match", () => {
     const v = { ...entry, id: "keyboard-test", variantFor: "keyboard" };
     const run = (extra: object) =>
       checkModels([{ ...v, ...extra }], [credit], categories);
     expect(run({})).toEqual([
-      'models.json "keyboard-test": a variant needs exactly one of "match" or "layout"',
+      'models.json "keyboard-test": a variant needs a "match", a "layout", or both',
     ]);
-    expect(run({ match: { a: 1 }, layout: "on-arm" })).toEqual([
-      'models.json "keyboard-test": a variant needs exactly one of "match" or "layout"',
-    ]);
+    // Both: a placement narrowed by a field (a curved monitor on an arm).
+    expect(run({ match: { a: 1 }, layout: "on-arm" })).toEqual([]);
     expect(run({ match: {} })[0]).toMatch(/match must be field → value pairs/);
     expect(run({ match: { size: ["XL"] } })[0]).toMatch(/match must be/);
     expect(run({ layout: "on-wall" })[0]).toMatch(
@@ -410,7 +422,7 @@ describe("model colours in each view (Phase 19)", () => {
 
   it("maps each Phase 19 model's materials to tones of the same name", () => {
     const phase19 = credits.filter((c) => c.author.startsWith("CoreSpec"));
-    expect(phase19).toHaveLength(16);
+    expect(phase19).toHaveLength(17);
     for (const c of phase19)
       for (const [mat, tone] of Object.entries(MODELS[c.id].recolour))
         expect(tone, `${c.id}: ${mat}`).toBe(mat);

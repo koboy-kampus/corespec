@@ -132,6 +132,18 @@
     "changes": "Made for CoreSpec with Blender Python scripts (tools/blender); scaled to each item's dimensions; re-coloured to the desk palette; Draco-compressed."
   },
   {
+    "id": "monitor-panel-curved",
+    "file": "/models/monitor-panel-curved.glb",
+    "source": "models-src/monitor-panel-curved.glb",
+    "usedFor": "Monitor (curved, on an arm)",
+    "title": "Monitor",
+    "author": "CoreSpec (Syah Reihan Pratama Nandi)",
+    "url": "https://github.com/koboy-kampus/corespec/tree/main/tools/blender",
+    "licence": "CC0 1.0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Made for CoreSpec with Blender Python scripts (tools/blender); scaled to each item's dimensions; re-coloured to the desk palette; Draco-compressed."
+  },
+  {
     "id": "arm-single",
     "file": "/models/arm-single.glb",
     "source": "models-src/arm-single.glb",

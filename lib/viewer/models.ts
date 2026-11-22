@@ -47,7 +47,7 @@ export interface ModelSpec {
   /**
    * A variant of its category's model (Phase 19): used for the items whose
    * fields equal `match` (e.g. { adjustable: true }), or for a `layout`
-   * placement (a monitor on an arm).
+   * placement (a monitor on an arm), or both (a curved monitor on an arm).
    */
   variantFor?: Category;
   match?: Record<string, string | number | boolean>;
@@ -95,11 +95,15 @@ const VARIANTS = Object.values(MODELS).filter((m) => m.variantFor);
 /** An item, as far as choosing its model goes. */
 export type ModelItem = { category: Category; modelId?: string };
 
-/** The variant whose `match` the item's fields equal, if any (first in models.json wins). */
+/**
+ * The variant whose `match` the item's fields equal, if any (first in
+ * models.json wins). Placement variants (`layout`) are left out.
+ */
 export function matchingVariant(item: ModelItem): ModelSpec | undefined {
   return VARIANTS.find(
     (m) =>
       m.variantFor === item.category &&
+      !m.layout && // placement variants only apply where they're placed
       m.match &&
       matchesRule(item as unknown as Record<string, unknown>, m.match),
   );
@@ -111,7 +115,8 @@ export function matchingVariant(item: ModelItem): ModelSpec | undefined {
  * has no model at all.
  *
  * - Placed somewhere with its own variant (a monitor on an arm): only that
- *   model, since the others would draw a stand the layout left out.
+ *   model, since the others would draw a stand the layout left out. A
+ *   placement variant with a `match` (curved) beats one without.
  * - Otherwise: the item's own `modelId`, then the variant its fields match
  *   (data/models.json `match`), then its category's default.
  */
@@ -120,10 +125,18 @@ export function modelChain(
   placement?: ModelPlacement,
 ): ModelSpec[] {
   if (placement) {
-    const placed = VARIANTS.find(
+    const placed = VARIANTS.filter(
       (m) => m.variantFor === item.category && m.layout === placement,
     );
-    if (placed) return [placed];
+    // The most specific first: one whose `match` the item's fields equal (a
+    // curved monitor on an arm), then one with no `match` (any monitor on an arm).
+    const pick =
+      placed.find(
+        (m) =>
+          m.match &&
+          matchesRule(item as unknown as Record<string, unknown>, m.match),
+      ) ?? placed.find((m) => !m.match);
+    if (pick) return [pick];
   }
   const own = item.modelId ? MODELS[item.modelId] : undefined;
   const variant = matchingVariant(item);

@@ -264,10 +264,15 @@ describe("3D models for the desk view (Phase 19)", () => {
     expect(orphans.map((m) => m.id)).toEqual([]);
   });
 
-  it("draws any monitor hanging on an arm without its stand", () => {
+  it("draws any monitor hanging on an arm without its stand, curved ones curved", () => {
     for (const m of ALL_ITEMS.filter((i) => i.category === "monitor"))
-      expect(modelChain(m, "on-arm").map((s) => s.id)).toEqual([
-        "monitor-panel",
+      expect(
+        modelChain(m, "on-arm").map((s) => s.id),
+        m.id,
+      ).toEqual([
+        (m as { curved?: boolean }).curved
+          ? "monitor-panel-curved"
+          : "monitor-panel",
       ]);
   });
 });
