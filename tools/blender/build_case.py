@@ -76,9 +76,7 @@ def pc_case():
         ring(f"fan_ring{i}", 52, 3, (0, y0 + 12, z), "accent")
     box("rear_fan", (120, 26, 120), (0, y1 - T - 16, 360), "black", bevel=8)
     ring("rear_ring", 52, 3, (0, y1 - T - 30, 360), "accent")
-    # visible ARGB: two light bars on the front panel, and strips just behind the glass (top and shroud)
-    for sx in (-1, 1):
-        box(f"front_bar{sx}", (6, 4, H - 90), (sx * (W / 2 - 11), y0 - 2, 14 + (H - 14) / 2), "accent", bevel=1.5)
+    # visible ARGB behind the glass: strips along the top and the PSU shroud
     box("strip_top", (5, D - 40, 5), (x1 - 14, 0, H - T - 6), "accent", bevel=1.5)
     box("strip_shroud", (5, D - 40, 5), (x1 - 14, 0, 14 + T + 122), "accent", bevel=1.5)
     o = join_by_material("case-mid-tower")
