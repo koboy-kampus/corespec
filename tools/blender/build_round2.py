@@ -6,7 +6,7 @@ from mathutils import Matrix, Vector
 from lib3d import *
 from models_a import gaming_chair, about
 
-OUT = "/home/claude/models3d/out"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")  # tools/blender/out (git-ignored)
 
 
 def bend(obj, angle_deg):

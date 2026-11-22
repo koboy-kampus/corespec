@@ -5,7 +5,7 @@ from lib3d import stats, export_glb, render_preview
 from build_round6 import microphone
 from build_round4 import monitor_panel_curved
 
-OUT = "/home/claude/models3d/out"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")  # tools/blender/out (git-ignored)
 report = {}
 for fn, cam, target, dist in [(microphone, (0.8, -1.2, 0.4), (0, 0, 120), 700),
                               (monitor_panel_curved, (0.75, -1.2, 0.35), (0, 0, 180), 1300)]:

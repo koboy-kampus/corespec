@@ -5,7 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/format";
 import { LEGAL_UPDATED } from "@/lib/site";
 import { FONTS, SOFTWARE } from "@/lib/software";
-import { ATTRIBUTION_REQUIRED, CREDITS } from "@/lib/viewer/models";
+import {
+  ATTRIBUTION_REQUIRED,
+  CREDITS,
+  OWN_AUTHOR,
+  splitCredits,
+} from "@/lib/viewer/models";
+
+const { others, own } = splitCredits(CREDITS);
 
 export const metadata: Metadata = {
   title: "Credits",
@@ -24,7 +31,7 @@ export default function Page() {
       <DocSection title="3D models">
         <p>Parts without a model listed here are drawn by CoreSpec itself.</p>
         <ul className="flex flex-col gap-3 [&>li]:ml-0 [&>li]:list-none">
-          {CREDITS.map((c) => (
+          {others.map((c) => (
             <li
               key={c.id}
               className="flex flex-col gap-2 rounded-btn border border-line bg-surface p-4"
@@ -53,6 +60,26 @@ export default function Page() {
               </p>
             </li>
           ))}
+          {own.length ? (
+            <li className="flex flex-col gap-2 rounded-btn border border-line bg-surface p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <a href={own[0].url} target="_blank" rel="noreferrer">
+                  Made for CoreSpec
+                </a>
+                <span>by {OWN_AUTHOR}</span>
+                <Badge variant="neutral">{own[0].licence}</Badge>
+              </div>
+              <p className="text-[14px] leading-5">
+                {own.length} models, built from scratch with Blender Python
+                scripts (in the project&apos;s tools/blender folder), free to
+                reuse under{" "}
+                <a href={own[0].licenceUrl} target="_blank" rel="noreferrer">
+                  {own[0].licence}
+                </a>
+                . Used for: {own.map((c) => c.usedFor).join(", ")}.
+              </p>
+            </li>
+          ) : null}
         </ul>
       </DocSection>
 

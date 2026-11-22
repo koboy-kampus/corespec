@@ -45,3 +45,7 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Blender model builds (tools/blender/README.md); the real sources are models-src/
+tools/blender/out/
+tools/blender/__pycache__/

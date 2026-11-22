@@ -6,7 +6,7 @@ from mathutils import Vector
 from lib3d import *
 from lib3d import _finish
 
-OUT = "/home/claude/models3d/out"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")  # tools/blender/out (git-ignored)
 
 
 def glass_mat():

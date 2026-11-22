@@ -28,7 +28,14 @@ import {
 } from "@/scripts/model-rules.mjs";
 import type { Item } from "@/types/parts";
 import { fitModel, planarUv } from "./fit-model";
-import { MODELS, modelChain, resolveModel } from "./models";
+import {
+  CREDITS,
+  MODELS,
+  OWN_AUTHOR,
+  modelChain,
+  resolveModel,
+  splitCredits,
+} from "./models";
 
 const pub = (url: string) => join(process.cwd(), "public", url);
 const builtBytes = Object.fromEntries(
@@ -528,5 +535,18 @@ describe("desk-view greys (Phase 19)", () => {
   it("leave the PC view's tones as they were", () => {
     expect(TONES.dark.color).toBe("#38343c");
     expect(TONES.black.color).toBe("#141215");
+  });
+});
+
+describe("/credits (Phase 19c)", () => {
+  it("lists other people's models one by one and CoreSpec's together", () => {
+    const { others, own } = splitCredits(CREDITS);
+    expect(others.map((c) => c.id)).toEqual(["cpu", "ram", "gpu", "keyboard"]);
+    expect(own).toHaveLength(18);
+    expect(own.every((c) => c.licence === "CC0 1.0")).toBe(true);
+    // One link and one licence serve them all.
+    expect(new Set(own.map((c) => c.url)).size).toBe(1);
+    expect(new Set(own.map((c) => c.licenceUrl)).size).toBe(1);
+    expect(own.every((c) => c.author === OWN_AUTHOR)).toBe(true);
   });
 });

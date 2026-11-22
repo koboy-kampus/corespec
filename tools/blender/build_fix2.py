@@ -10,7 +10,7 @@ from lib3d import *
 from lib3d import _finish
 from build_round6 import cut_below
 
-OUT = "/home/claude/models3d/out"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")  # tools/blender/out (git-ignored)
 
 
 def headset_on_hook():

@@ -6,7 +6,7 @@ from mathutils import Matrix, Vector
 from lib3d import *
 from build_round3_parts import rrect
 
-OUT = "/home/claude/models3d/out"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")  # tools/blender/out (git-ignored)
 
 
 def seg(name, p1, p2, w, t, material, bevel=8):

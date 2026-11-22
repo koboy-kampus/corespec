@@ -7,7 +7,7 @@ from lib3d import *
 from lib3d import _finish
 from build_round4 import panel, cutter_hole
 
-OUT = "/home/claude/models3d/out"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")  # tools/blender/out (git-ignored)
 
 
 def tapered_leg(name, hub, tip, w0, w1, h0, h1, material, bevel=3.0):

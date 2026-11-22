@@ -6,6 +6,7 @@ Axis convention so the exported glTF matches CoreSpec's item space
 So "toward the person" is Blender -Y, and the desk is at Blender +Y.
 """
 import math
+import os
 import bpy
 import bmesh
 from mathutils import Vector, Matrix
@@ -159,6 +160,7 @@ def stats(o):
 
 def export_glb(path):
     """Export in metres with the origin at the bottom centre (repo checklist), then restore for the preview."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     objs = [o for o in bpy.context.scene.objects if o.type == "MESH"]
     bpy.context.view_layer.update()
     ws = [o.matrix_world @ v.co for o in objs for v in o.data.vertices]

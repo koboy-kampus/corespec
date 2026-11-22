@@ -215,3 +215,21 @@ export interface Credit {
 }
 
 export const CREDITS: Credit[] = credits;
+
+/** Whose name the models made for CoreSpec (Phase 19, tools/blender) carry. */
+export const OWN_AUTHOR = "CoreSpec (Syah Reihan Pratama Nandi)";
+
+/**
+ * The credits split for /credits: models by other people, each credited on its
+ * own, and the ones made for CoreSpec, shown together (one author, one licence,
+ * one set of scripts).
+ */
+export function splitCredits(all: Credit[]): {
+  others: Credit[];
+  own: Credit[];
+} {
+  return {
+    others: all.filter((c) => c.author !== OWN_AUTHOR),
+    own: all.filter((c) => c.author === OWN_AUTHOR),
+  };
+}

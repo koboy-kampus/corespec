@@ -1,6 +1,6 @@
 # CoreSpec dalam angka
 
-Keadaan per **18 November 2026**, cabang `feat/phase-18-chat` (Fase 18c).
+Keadaan per **23 November 2026**, cabang `feat/phase-19-models` (Fase 19c).
 Angka katalog dan aturan diambil dari `data/` dan `lib/compat/`; angka
 pengujian dari pengukuran pada tanggal yang sama. Angka Lighthouse masih dari
 Fase 16 (12 November 2026); halaman yang diukur tidak berubah di Fase 17
@@ -17,6 +17,18 @@ lebar, tetap tajam pada lebar halaman Word 16 cm):
 | `aktivitas-admin-ubah-listing.png`  | Diagram aktivitas: admin mengubah listing harga marketplace   |
 | `aktivitas-simulasi-pembayaran.png` | Diagram aktivitas: checkout dan simulasi pembayaran (Fase 17) |
 | `aktivitas-live-chat.png`           | Diagram aktivitas: live chat dengan bot dan admin (Fase 18)   |
+
+Tangkapan layar tampilan meja (Fase 19), 1.600 px lebar kecuali disebut lain.
+Situs hanya punya tema gelap, jadi latarnya gelap:
+
+| Berkas                                  | Isi                                                                            |
+| --------------------------------------- | ------------------------------------------------------------------------------ |
+| `tampilan-meja-budget-1080p.png`        | Preset Budget 1080p, kamera bawaan                                             |
+| `tampilan-meja-sweet-spot-1440p.png`    | Preset Sweet Spot 1440p, kamera bawaan                                         |
+| `tampilan-meja-creator-workstation.png` | Preset Creator Workstation, kamera bawaan                                      |
+| `tampilan-meja-sebelum.png`             | Sweet Spot 1440p **sebelum** Fase 19 (model kotak, commit `f644275`)           |
+| `tampilan-meja-sesudah.png`             | Sweet Spot 1440p **sesudah** Fase 19 (model 3D), kamera dan ukuran sama persis |
+| `tampilan-meja-sebelum-sesudah.png`     | Keduanya berdampingan dengan label (2.400 px lebar)                            |
 
 ## Katalog
 
@@ -80,20 +92,78 @@ bisa dirakit), **warning** (bisa, tetapi kurang baik), **info** (catatan).
 Ringkasan tingkat: 8 aturan hanya error, 1 aturan error atau warning, 3 aturan
 warning, 3 aturan info.
 
-## Basis data (Fase 16, 17 dan 18)
+## Model 3D (Fase 19)
+
+**22 model** (`data/models.json`), **58.962 segitiga**, **305 KB** setelah
+dikompresi (Draco). Build terberat yang mungkin (untuk tiap kategori, model
+terbesar yang bisa tampil; PC dan setup) memuat **235 KB** model, jauh di bawah
+batas 2,5 MB; batas per berkas 400 KB.
+
+- **18 model dibuat sendiri** dari nol dengan skrip Python Blender
+  (`tools/blender/`), lisensi CC0 1.0: 227 KB, 55.596 segitiga. Empat lainnya
+  (CPU, RAM, GPU, keyboard) dari pihak lain dengan lisensi CC0/CC BY, tercantum
+  di `/credits`.
+- Diukur dengan `npm run models:check` (segitiga) dan ukuran berkas di
+  `public/models/` (KB = 1.000 byte), 23 November 2026.
+
+| Model                  | Untuk                           | Segitiga |   KB |
+| ---------------------- | ------------------------------- | -------: | ---: |
+| `desk-four-leg`        | Meja kaki empat                 |    2.408 |  9,4 |
+| `desk-sit-stand`       | Meja sit-stand                  |    2.560 | 10,1 |
+| `chair-gaming`         | Kursi gaming                    |    8.812 | 31,4 |
+| `chair-office`         | Kursi kantor                    |    8.716 | 30,8 |
+| `monitor-flat`         | Monitor datar                   |    2.212 |  9,0 |
+| `monitor-curved`       | Monitor lengkung                |    2.620 | 11,2 |
+| `monitor-panel`        | Monitor di lengan (tanpa kaki)  |    1.728 |  7,1 |
+| `monitor-panel-curved` | Monitor lengkung di lengan      |    1.728 |  8,1 |
+| `arm-single`           | Lengan monitor                  |    2.536 | 11,7 |
+| `speaker-bookshelf`    | Speaker (satu per speaker)      |      992 |  5,6 |
+| `light-bar`            | Light bar                       |      980 |  5,8 |
+| `desk-lamp`            | Lampu meja                      |      748 |  6,4 |
+| `mousepad`             | Mousepad                        |      468 |  3,5 |
+| `headset`              | Headset di gantungan bawah meja |    4.176 | 17,0 |
+| `mouse`                | Mouse                           |    2.084 | 10,2 |
+| `microphone`           | Mikrofon                        |    3.448 | 15,8 |
+| `webcam`               | Webcam                          |    1.836 | 10,8 |
+| `case-mid-tower`       | Casing PC (hanya tampilan meja) |    7.544 | 23,3 |
+| `cpu`                  | CPU (pihak lain)                |      366 |  6,6 |
+| `ram`                  | RAM (pihak lain)                |    1.436 |  6,1 |
+| `gpu`                  | Kartu grafis (pihak lain)       |      756 | 10,2 |
+| `keyboard`             | Keyboard (pihak lain)           |      808 | 55,0 |
+
+Lainnya di Fase 19:
+
+- **Finish**: 16 item preset punya warna sendiri per bagian model (misalnya
+  daun meja putih Trotten, piping oranye Cougar); dicek di situs dan di basis
+  data, bisa diubah admin, tercatat di log audit.
+- **Pencahayaan dan kamera** tampilan meja untuk rekaman demo: lampu utama lebih
+  terang, rim light putih dari belakang agar barang gelap terpisah dari latar,
+  abu-abu netral (tidak keunguan), dan kamera bawaan yang membingkai setup
+  sekitar 75–80% lebar layar di desktop maupun ponsel. Tampilan PC tidak
+  berubah (tangkapan layar uji visualnya tetap sama).
+- **Sebelum/sesudah**: `tampilan-meja-sebelum.png` dan
+  `tampilan-meja-sesudah.png` (berdampingan: `tampilan-meja-sebelum-sesudah.png`)
+  memakai preset Sweet Spot 1440p, kamera yang sama persis (posisi dan titik
+  pandang kamera "sesudah" dipakai juga untuk "sebelum") dan ukuran yang sama
+  (1.600 px). "Sebelum" dibuat dari commit `f644275`, commit terakhir sebelum
+  Fase 19a.
+
+## Basis data (Fase 16–19)
 
 - **11 tabel**: `auth.users` (dikelola Supabase Auth), `profiles`, `builds`,
   `items`, `listings`, `site_settings`, `audit_log`, sejak Fase 17 `orders`
   dan `payment_config`, dan sejak Fase 18 `conversations` dan
-  `chat_messages`. Lihat `erd.png`.
-- **8 berkas migrasi** SQL dan `seed.sql` (katalog dari JSON, aman dijalankan
+  `chat_messages`. Lihat `erd.png`. Fase 19 menambah satu kolom, `items.finish`.
+- **10 berkas migrasi** SQL dan `seed.sql` (katalog dari JSON, aman dijalankan
   ulang).
 - **Row Level Security** aktif di semua tabel. `supabase/tests/rls.sql` berisi
-  **191 pemeriksaan** (tamu, pengguna, admin): misalnya pengguna tidak bisa
+  **201 pemeriksaan** (tamu, pengguna, admin): misalnya pengguna tidak bisa
   menjadikan dirinya admin, tidak bisa membaca build atau pesanan orang lain,
   bukan admin tidak bisa mengubah item atau listing, dan tidak ada yang bisa
   menulis pesanan tanpa rahasia server, dan pengguna tidak bisa membaca chat
-  orang lain atau menulis sebagai admin atau bot. Cara hitung: setiap `assert` dan
+  orang lain atau menulis sebagai admin atau bot, dan finish yang salah bentuk
+  atau finish pada komponen PC ditolak (10 pemeriksaan baru di Fase 19, jadi
+  191 + 10). Cara hitung: setiap `assert` dan
   setiap `raise exception 'FAIL: …'` dihitung satu. Dengan cara yang sama,
   versi Fase 16c berisi 97; angka 84 yang tertulis sebelumnya memakai cara
   hitung lain yang tidak tercatat. Pemeriksaan ini hanya menghitung akun
@@ -106,7 +176,11 @@ warning, 3 aturan info.
   14 November. Migrasi pesanan (Fase 17) dijalankan 17 November 2026 dan
   `rls.sql` versi saat itu lolos di sana. Migrasi chat (Fase 18,
   `20261118000100_chat.sql`) dijalankan 18 November 2026, dan `rls.sql`
-  dengan **191 pemeriksaan** lolos di proyek asli.
+  dengan **191 pemeriksaan** lolos di proyek asli. Migrasi finish (Fase 19,
+  `20261122000100_item_finish.sql`) dijalankan 22 November 2026, dan `rls.sql`
+  dengan **201 pemeriksaan** lolos di proyek asli; 16 finish preset terpasang.
+  Penghapusan `fabric` dari finish G435 (`20261123000100_g435_finish.sql`)
+  dilakukan langsung lewat SQL editor pada 23 November 2026.
 - **18 fungsi `security definer`**, semuanya dengan `search_path` kosong
   (6 di antaranya untuk chat). Enam belas tidak bisa dipanggil tamu. Dua (`create_order`,
   `set_order_payment`) memang bisa dipanggil siapa saja, karena notifikasi
@@ -205,11 +279,12 @@ admin"; masing-masing mengenai satu aturan.
 | Aksesibilitas (axe, di dalam e2e)            | semua halaman dan dialog utama                | 0 pelanggaran |
 
 Pengujian unit juga menjalankan semua migrasi, `rls.sql` dan `seed.sql` di
-Postgres lokal (PGlite), termasuk 17 uji "mutasi" yang sengaja melonggarkan
+Postgres lokal (PGlite), termasuk 19 uji "mutasi" yang sengaja melonggarkan
 satu aturan keamanan dan memastikan `rls.sql` mendeteksinya (2 di antaranya
 untuk pesanan: pesanan orang lain terbaca, dan rahasia yang salah diterima;
 2 untuk chat: pesan orang lain terbaca, dan balasan bot tanpa rahasia
-diterima).
+diterima; 2 untuk finish: aturan warna dihapus, dan komponen PC boleh punya
+finish).
 Pembayaran sungguhan tidak bisa dijalankan otomatis; daftar cek manualnya ada
 di `docs/accounts.md`.
 
