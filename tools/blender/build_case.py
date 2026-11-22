@@ -44,6 +44,9 @@ def pc_case():
     # front: mesh panel with a black surround and a power button on top
     box("front_frame", (W, 10, H - 14), (0, y0 + 5, 14 + (H - 14) / 2), "black", bevel=4)
     box("front_mesh", (W - 34, 4, H - 70), (0, y0 - 1, 14 + (H - 14) / 2), "mesh", bevel=1)
+    # vertical RGB strips down both front edges (they glow like the fan rings)
+    for sx in (-1, 1):
+        box(f"front_strip{sx}", (5, 3, H - 90), (sx * (W / 2 - 9), y0 - 1.5, 14 + (H - 14) / 2), "accent", bevel=1)
     cyl("power", 6, 3, (W / 2 - 30, y0 + 30, H + 1), "steel", verts=20)
     box("io", (40, 14, 2), (W / 2 - 70, y0 + 30, H + 0.5), "dark")
     for sx in (-1, 1):
