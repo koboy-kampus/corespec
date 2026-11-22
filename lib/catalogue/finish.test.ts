@@ -42,11 +42,8 @@ const PRESET_FINISHES: Record<string, Record<string, string>> = {
   "monitor-lg-ultragear-27gr75q": { accent: "#7E2848" },
   "headset-hyperx-cloud-ii": { accent: "#C4161C" },
   "headset-hyperx-cloud-stinger-2": { accent: "#1E1E20" },
-  "headset-logitech-g435-lightspeed": {
-    dark: "#1C1C1E",
-    accent: "#D7F205",
-    fabric: "#2A2A2D",
-  },
+  // No "fabric": the hook headset model (23 Nov) has none (20261123000100).
+  "headset-logitech-g435-lightspeed": { dark: "#1C1C1E", accent: "#D7F205" },
   "mouse-logitech-g102-lightsync": { accent: "#3FD0FF" },
   "mouse-logitech-g304-lightspeed": { accent: "#26262A" },
   "mouse-logitech-g502-x": { accent: "#26262A" },

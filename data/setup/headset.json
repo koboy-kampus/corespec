@@ -51,8 +51,7 @@
     "wireless": true,
     "finish": {
       "dark": "#1C1C1E",
-      "accent": "#D7F205",
-      "fabric": "#2A2A2D"
+      "accent": "#D7F205"
     }
   },
   {
