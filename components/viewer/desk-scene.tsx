@@ -97,11 +97,7 @@ function DeskLights() {
         cool white edge on the tops and outlines of dark items (the chair, the
         desk legs, the speakers, the case) so they part from the dark page.
       */}
-      <directionalLight
-        position={[4, 6, -8]}
-        intensity={1.7}
-        color="#dfe7ff"
-      />
+      <directionalLight position={[4, 6, -8]} intensity={1.7} color="#dfe7ff" />
       <directionalLight
         position={[-5, 4, -7]}
         intensity={0.9}
