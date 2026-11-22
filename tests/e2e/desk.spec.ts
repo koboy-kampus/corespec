@@ -237,8 +237,9 @@ test("the desk view draws each setup item with its Phase 19 model", async ({
   await page.getByRole("tab", { name: /^Setup/ }).click();
   await expect(page.getByTestId("desk-view").locator("canvas")).toBeVisible();
   // A sit-stand desk, a gaming chair, a monitor on an arm (no stand), a light
-  // bar, and the category models for everything else.
+  // bar, the PC case (desk view only), and the category models for the rest.
   const want = [
+    "case-mid-tower.glb",
     "desk-sit-stand.glb",
     "chair-gaming.glb",
     "monitor-panel.glb",

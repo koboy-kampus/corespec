@@ -48,12 +48,14 @@ function FittedModel({
   glow,
   palette,
   finish,
+  mirrorX,
 }: {
   id: ModelId;
   size: Vec3;
   glow?: string;
   palette: ModelPalette;
   finish?: Finish;
+  mirrorX?: boolean;
 }) {
   const spec = MODELS[id];
   // Loaded on first use, Draco-decoded with the self-hosted decoder. useGLTF caches
@@ -69,7 +71,7 @@ function FittedModel({
   }, [scene, spec, sx, sy, sz]);
   useEffect(() => () => meshes.forEach((m) => m.geometry.dispose()), [meshes]);
 
-  return (
+  const drawn = (
     <>
       {meshes.map((m, i) => {
         // A model that keeps its own textures uses its own material (unless it glows).
@@ -80,21 +82,30 @@ function FittedModel({
         const own = "emissive" in look ? look : undefined;
         // The item's own colour for this material (its finish), on top of the
         // tone's roughness and metalness. Glowing materials have none.
-        const colour = finishColour(finish, m.materialName, tone) ?? look.color;
+        const finished = finishColour(finish, m.materialName, tone);
+        const colour = finished ?? look.color;
+        // Glass: see-through, and it writes no depth so what's behind shows.
+        const opacity = "opacity" in look ? (look.opacity ?? 1) : 1;
         // A screen glows with the same soft gradient as the procedural one, and
         // a flagged monitor's screen keeps it; the rest turns amber.
         const screen = tone === "screen";
         const tint = screen ? undefined : glow;
         const map = screen ? screenTexture() : null;
+        // RGB glows in its own colour, so a finish changes the glow too.
+        const emissive =
+          tint ?? (own?.emissive && finished ? finished : own?.emissive);
         return (
           <mesh key={i} geometry={m.geometry}>
             <meshStandardMaterial
               color={colour}
               roughness={look.roughness}
               metalness={look.metalness}
-              emissive={tint ?? own?.emissive ?? "#000000"}
+              emissive={emissive ?? "#000000"}
               emissiveIntensity={tint ? 0.25 : (own?.emissiveIntensity ?? 0)}
               emissiveMap={map}
+              transparent={opacity < 1}
+              opacity={opacity}
+              depthWrite={opacity >= 1}
             />
             {glow ? <Outlines thickness={2.5} color={glow} /> : null}
           </mesh>
@@ -102,6 +113,8 @@ function FittedModel({
       })}
     </>
   );
+  // Mirrored left to right (three.js flips the faces' winding to match).
+  return mirrorX ? <group scale={[-1, 1, 1]}>{drawn}</group> : drawn;
 }
 
 /** The first model in `ids` that loads, else the next one, else `fallback`. */
@@ -112,6 +125,7 @@ function ModelChain({
   fallback,
   palette,
   finish,
+  mirrorX,
 }: {
   ids: ModelId[];
   size: Vec3;
@@ -119,6 +133,7 @@ function ModelChain({
   fallback: ReactNode;
   palette: ModelPalette;
   finish?: Finish;
+  mirrorX?: boolean;
 }) {
   const suspendUp = useContext(SuspendModelsUp);
   const [first, ...rest] = ids;
@@ -131,6 +146,7 @@ function ModelChain({
       fallback={fallback}
       palette={palette}
       finish={finish}
+      mirrorX={mirrorX}
     />
   ) : (
     fallback
@@ -142,6 +158,7 @@ function ModelChain({
       glow={glow}
       palette={palette}
       finish={finish}
+      mirrorX={mirrorX}
     />
   );
   return (
@@ -163,6 +180,7 @@ export function ModelBlock({
   fallback,
   palette = "pc",
   finish,
+  mirrorX,
 }: {
   ids: ModelId[];
   pos: Vec3;
@@ -174,6 +192,11 @@ export function ModelBlock({
   palette?: ModelPalette;
   /** The item's finish (Phase 19b): material name → colour. */
   finish?: Finish;
+  /**
+   * Draw the model mirrored left to right (x), not its fallback: the desk
+   * view's PC on the desk's right shows its glass side to the left.
+   */
+  mirrorX?: boolean;
 }) {
   return (
     <group position={pos}>
@@ -184,6 +207,7 @@ export function ModelBlock({
         fallback={fallback}
         palette={palette}
         finish={finish}
+        mirrorX={mirrorX}
       />
     </group>
   );

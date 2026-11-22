@@ -348,7 +348,6 @@
     "fit": "stretch",
     "recolour": {
       "dark": "dark",
-      "fabric": "fabric",
       "steel": "steel",
       "accent": "accent",
       "pad": "pad",
@@ -414,5 +413,27 @@
       "light": "light"
     },
     "note": "Webcam with a clip over the top of the screen, lens facing +Z."
+  },
+  {
+    "id": "case-mid-tower",
+    "file": "models-src/case-mid-tower.glb",
+    "credit": "case-mid-tower",
+    "defaultFor": "case",
+    "views": ["desk"],
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "black": "black",
+      "dark": "dark",
+      "steel": "steel",
+      "mesh": "mesh",
+      "glass": "glass",
+      "accent": "rgb"
+    },
+    "note": "Desk view only: a mid-tower with a glass side (+x) and simple RGB internals, front mesh at +z. Stretched to the chosen case; the layout turns the glass toward the desk."
   }
 ]

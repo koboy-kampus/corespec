@@ -74,6 +74,12 @@ export interface CameraView {
   zoom?: [number, number];
   /** Scales the fitted home distance (below 1 starts closer). */
   fit?: number;
+  /**
+   * The home view for a viewport's aspect and the camera's field of view (scene
+   * units), instead of `target` and the fitted distance: the desk view frames
+   * the setup itself. Keep it the same function between renders (useMemo).
+   */
+  home?: (aspect: number, fovDeg: number) => { target: Vec3; dist: number };
 }
 
 /**
@@ -88,7 +94,14 @@ export function CameraRig({
   embedded = false,
   view,
 }: CameraRigProps) {
-  const [tx, ty, tz] = view?.target ?? [0, 0, 0];
+  const camera = useThree((s) => s.camera) as PerspectiveCamera;
+  const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
+  const homeFor = view?.home;
+  const home = useMemo(
+    () => homeFor?.(aspect, camera.fov) ?? null,
+    [homeFor, aspect, camera.fov],
+  );
+  const [tx, ty, tz] = home?.target ?? view?.target ?? [0, 0, 0];
   const [dx, dy, dz] = view?.dir ?? HOME_DIR.toArray();
   const homeDir = useMemo(
     () => new Vector3(dx, dy, dz).normalize(),
@@ -98,8 +111,6 @@ export function CameraRig({
   const [minAz, maxAz] = view?.azimuth ?? [-Infinity, Infinity];
   const [minZoom, maxZoom] = view?.zoom ?? [MIN_ZOOM, MAX_ZOOM];
   const fit = view?.fit ?? 1;
-  const camera = useThree((s) => s.camera) as PerspectiveCamera;
-  const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
   const invalidate = useThree((s) => s.invalidate);
   const controls = useRef<OrbitControlsImpl>(null);
   const lookAt = useRef(new Vector3());
@@ -113,9 +124,10 @@ export function CameraRig({
   const placed = useRef(false);
 
   const [sx, sy, sz] = caseSize;
+  const homeDist = home?.dist;
   const dist = useMemo(
-    () => fitDistance([sx, sy, sz], camera.fov, aspect) * fit,
-    [sx, sy, sz, camera.fov, aspect, fit],
+    () => homeDist ?? fitDistance([sx, sy, sz], camera.fov, aspect) * fit,
+    [homeDist, sx, sy, sz, camera.fov, aspect, fit],
   );
   const [fx, fy, fz] = focus ?? [NaN, NaN, NaN];
 

@@ -28,6 +28,9 @@ export type ModelTone = Tone | DeskTone;
  * hanging on a monitor arm (drawn without its stand).
  */
 export type ModelPlacement = "on-arm";
+
+/** The two 3D views. A model can be limited to one (`views` in data/models.json). */
+export type ModelView = "pc" | "desk";
 export interface ModelSpec {
   id: ModelId;
   /** Where the site serves the compressed file. */
@@ -52,6 +55,8 @@ export interface ModelSpec {
   variantFor?: Category;
   match?: Record<string, string | number | boolean>;
   layout?: ModelPlacement;
+  /** The views it's drawn in; unset = both (the desk view's PC case: desk only). */
+  views?: ModelView[];
 }
 
 interface ModelEntry {
@@ -64,6 +69,7 @@ interface ModelEntry {
   variantFor?: string;
   match?: Record<string, string | number | boolean>;
   layout?: string;
+  views?: string[];
 }
 
 export const MODELS: Record<ModelId, ModelSpec> = Object.fromEntries(
@@ -80,6 +86,7 @@ export const MODELS: Record<ModelId, ModelSpec> = Object.fromEntries(
       variantFor: m.variantFor as Category | undefined,
       match: m.match,
       layout: m.layout as ModelPlacement | undefined,
+      views: m.views as ModelView[] | undefined,
     },
   ]),
 );
@@ -119,8 +126,20 @@ export function matchingVariant(item: ModelItem): ModelSpec | undefined {
  *   placement variant with a `match` (curved) beats one without.
  * - Otherwise: the item's own `modelId`, then the variant its fields match
  *   (data/models.json `match`), then its category's default.
+ *
+ * With a `view`, models limited to the other view are left out (the desk
+ * view's PC case never shows in the PC view). Without one, all count.
  */
 export function modelChain(
+  item: ModelItem,
+  placement?: ModelPlacement,
+  view?: ModelView,
+): ModelSpec[] {
+  const chain = anyViewChain(item, placement);
+  return view ? chain.filter((m) => !m.views || m.views.includes(view)) : chain;
+}
+
+function anyViewChain(
   item: ModelItem,
   placement?: ModelPlacement,
 ): ModelSpec[] {
@@ -150,8 +169,9 @@ export function modelChain(
 export function resolveModel(
   item: ModelItem,
   placement?: ModelPlacement,
+  view?: ModelView,
 ): ModelSpec | null {
-  return modelChain(item, placement)[0] ?? null;
+  return modelChain(item, placement, view)[0] ?? null;
 }
 
 /** Materials that glow (a screen, a lamp): their look comes from the scene, not a finish. */

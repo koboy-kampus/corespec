@@ -250,5 +250,17 @@
     "licence": "CC0 1.0",
     "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "changes": "Made for CoreSpec with Blender Python scripts (tools/blender); scaled to each item's dimensions; re-coloured to the desk palette; Draco-compressed."
+  },
+  {
+    "id": "case-mid-tower",
+    "file": "/models/case-mid-tower.glb",
+    "source": "models-src/case-mid-tower.glb",
+    "usedFor": "PC case (desk view)",
+    "title": "Mid-tower PC case",
+    "author": "CoreSpec (Syah Reihan Pratama Nandi)",
+    "url": "https://github.com/koboy-kampus/corespec/tree/main/tools/blender",
+    "licence": "CC0 1.0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Made for CoreSpec with Blender Python scripts (tools/blender); scaled to each item's dimensions; re-coloured to the desk palette; Draco-compressed."
   }
 ]

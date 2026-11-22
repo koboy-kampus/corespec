@@ -19,8 +19,7 @@ import {
   itemBounds,
   layoutDesk,
   SEATED_DIR,
-  SEATED_FIT,
-  seatedTarget,
+  seatedHome,
   segmentHitsBox,
   type Box,
   type DeskBlock,
@@ -73,40 +72,44 @@ const CHAIR_MARGIN = 60;
 const NO_WARNINGS: NonNullable<DeskSceneProps["warnings"]> = [];
 
 /**
- * Seated view: from behind the chair and a little above eye height, looking at the
- * middle of the screen. Orbit stays in front of the desk and above the floor.
+ * Seated view: from in front of the desk, a little left and above eye height,
+ * framing the setup (see `seatedHome`). Orbit stays in front of the desk and
+ * above the floor.
  */
 const SEATED_VIEW: CameraView = {
   dir: SEATED_DIR,
   polar: [Math.PI * 0.14, Math.PI * 0.49],
   azimuth: [-1.15, 1.15],
-  zoom: [0.3, 1.5],
-  fit: SEATED_FIT,
+  zoom: [0.3, 1.8],
 };
 
 function DeskLights() {
   return (
     <>
       <ambientLight intensity={0.9} />
-      <hemisphereLight args={["#ffffff", "#2a2629", 0.9]} />
+      <hemisphereLight args={["#ffffff", "#28282a", 0.9]} />
       {/* Key light from in front and above, where the person sits. */}
       <directionalLight position={[2, 7, 9]} intensity={3.1} />
       <directionalLight position={[-7, 4, 3]} intensity={0.6} />
       {/*
         Rim lights from behind and above (Phase 19, for the recorded demo): a
-        cool white edge on the tops and outlines of dark items (the chair, the
-        desk legs, the speakers, the case) so they part from the dark page.
+        white edge on the tops and outlines of dark items (the chair, the desk
+        legs, the speakers, the case) so they part from the dark page. Neutral
+        white: a cool tint, with the coral below, turned dark greys mauve.
       */}
-      <directionalLight position={[4, 6, -8]} intensity={1.7} color="#dfe7ff" />
+      <directionalLight position={[4, 6, -8]} intensity={1.7} color="#f4f4f4" />
       <directionalLight
         position={[-5, 4, -7]}
         intensity={0.9}
-        color="#dfe7ff"
+        color="#f4f4f4"
       />
-      {/* A faint coral rim from behind, the brand colour without tinting the desk. */}
+      {/*
+        A faint coral rim from behind, low, so it edges the backs of things
+        rather than tinting their tops.
+      */}
       <directionalLight
-        position={[-6, 3, -6]}
-        intensity={0.35}
+        position={[-6, 0.6, -6]}
+        intensity={0.3}
         color="#fe2e4b"
       />
     </>
@@ -403,13 +406,19 @@ function DeskCanvas({
   const { min, max } = layout.frame;
   const frame = [0, 1, 2].map((i) => (max[i] - min[i]) * MM_TO_UNITS) as Vec3;
   const [fx0, , fz0] = [0, 1, 2].map((i) => (min[i] + max[i]) / 2);
-  const [aimX, aimY, aimZ] = seatedTarget(layout);
+  // The home view frames the setup itself, for the viewport's shape.
   const view = useMemo<CameraView>(
     () => ({
       ...SEATED_VIEW,
-      target: [aimX * MM_TO_UNITS, aimY * MM_TO_UNITS, aimZ * MM_TO_UNITS],
+      home: (aspect, fov) => {
+        const { target, dist } = seatedHome(layout, aspect, fov);
+        return {
+          target: target.map((v) => v * MM_TO_UNITS) as Vec3,
+          dist: dist * MM_TO_UNITS,
+        };
+      },
     }),
-    [aimX, aimY, aimZ],
+    [layout],
   );
 
   const chairTargets = useMemo(() => chairFadeTargets(layout), [layout]);
@@ -430,7 +439,9 @@ function DeskCanvas({
     // its box, before the item's turn, with the procedural blocks while it loads
     // or if it fails. A pair of speakers has a box (and a model) per speaker.
     const models =
-      part && !ghost ? modelChain(part, item.placement).map((m) => m.id) : [];
+      part && !ghost
+        ? modelChain(part, item.placement, "desk").map((m) => m.id)
+        : [];
     const boxes = item.modelBoxes ?? [
       itemBounds({ origin: [0, 0, 0], blocks: item.blocks }),
     ];
@@ -455,6 +466,7 @@ function DeskCanvas({
               glow={glow}
               palette="desk"
               finish={part && "finish" in part ? part.finish : undefined}
+              mirrorX={item.mirror}
               fallback={
                 <group position={centre.map((v) => -v) as Vec3}>{inside}</group>
               }

@@ -44,7 +44,15 @@ export const DESK_TONES = [
   "accent",
   "screen",
   "light",
+  "glass",
+  "rgb",
 ];
+
+/**
+ * The views a model can be limited to (`"views"` in data/models.json). Unset =
+ * both. The desk view's PC case is "desk" only: the PC view draws the real parts.
+ */
+export const VIEWS = ["pc", "desk"];
 
 /** Every tone a model's material may map to. */
 export const MODEL_TONES = [...TONES, ...DESK_TONES];
@@ -76,6 +84,7 @@ export const matchesRule = (item, match) =>
  *   variantFor?: string,
  *   match?: Record<string, string | number | boolean>,
  *   layout?: string,
+ *   views?: string[],
  *   note?: string,
  * }} ModelEntry
  * @typedef {{ id: string, file: string, source: string, licence: string,
@@ -166,6 +175,16 @@ export function checkModels(models, credits, categories) {
         bad(`layout must be one of ${LAYOUT_VARIANTS.join(", ")}`);
     } else if (m.match !== undefined || m.layout !== undefined)
       bad('"match" and "layout" need "variantFor"');
+    if (
+      m.views !== undefined &&
+      (!Array.isArray(m.views) ||
+        !m.views.length ||
+        new Set(m.views).size !== m.views.length ||
+        !m.views.every((v) => VIEWS.includes(v)))
+    )
+      bad(
+        `views must be a list of different views from ${VIEWS.join(", ")}, e.g. ["desk"] (leave it out for both)`,
+      );
 
     const credit = credits.find((c) => c.id === m.credit);
     if (!credit) {

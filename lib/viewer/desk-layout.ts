@@ -6,6 +6,7 @@ import type {
   ResolvedSetup,
   SetupCategory,
 } from "@/types/parts";
+import { frameBox } from "./fit";
 import type { Vec3 } from "./layout";
 import type { ModelPlacement } from "./models";
 
@@ -45,7 +46,11 @@ export type DeskTone =
   /** The PC's smoked glass side panel (see-through). */
   | "smoke"
   /** Parts glimpsed through the PC's glass. */
-  | "pcb";
+  | "pcb"
+  /** Models only (Phase 19): clear glass, the PC case's side. */
+  | "glass"
+  /** Models only: RGB lighting that glows (the PC case's fans). */
+  | "rgb";
 
 export interface DeskBlock {
   /** Centre, relative to the item's origin. */
@@ -87,6 +92,11 @@ export interface DeskItemLayout {
   modelBoxes?: Box[];
   /** Where it's placed, when that picks a different model ("on-arm": a monitor without its stand). */
   placement?: ModelPlacement;
+  /**
+   * Mirrored left to right (its blocks already are; its model is drawn
+   * mirrored too): the PC right of the desk's middle, glass toward the desk.
+   */
+  mirror?: boolean;
 }
 
 /** Anything with an origin and blocks. */
@@ -383,9 +393,12 @@ function lampBlocks(l: number, w: number, h: number): DeskBlock[] {
 }
 
 /**
- * The PC: a frame with a smoked glass side toward the chair, and a few dim shapes
- * behind it (board, graphics card, cooler, PSU cover) hinting at the parts inside.
- * Case length along x, width along z; everything stays inside l × h × w.
+ * The PC, standing as on a real desk: its front toward the person (+z), its
+ * length running back (z), and its glass side toward the desk (+x; the layout
+ * mirrors it when the PC stands right of the desk's middle). A frame, the smoked
+ * glass, and a few dim shapes behind it (board, graphics card, cooler, PSU
+ * cover) hinting at the parts inside. Everything stays inside w × h × l.
+ * The desk view draws the PC case model over these when it loads (Phase 19).
  */
 function pcBlocks(c: Case): DeskBlock[] {
   const { l, w, h } = c.dims!;
@@ -394,37 +407,41 @@ function pcBlocks(c: Case): DeskBlock[] {
   const back = -w / 2 + t; // inside face of the far panel
   const shroud = Math.min(h * 0.2, 110);
   return [
-    block(0, 0, -w / 2 + t / 2, [l, h, t], "dark"), // far side panel
-    block(0, 0, t / 2, [l, t, w - t], "dark"), // floor
-    block(0, h - t, t / 2, [l, t, w - t], "dark"), // roof
-    block(-l / 2 + t / 2, t, t / 2, [t, h - 2 * t, w - t], "dark"), // front
-    block(l / 2 - t / 2, t, t / 2, [t, h - 2 * t, w - t], "dark"), // back
-    block(0, t, w / 2 - 2, [l - 2 * t, h - 2 * t, 3], "smoke"), // glass
+    block(-w / 2 + t / 2, 0, 0, [t, h, l], "dark"), // far side panel
+    block(t / 2, 0, 0, [w - t, t, l], "dark"), // floor
+    block(t / 2, h - t, 0, [w - t, t, l], "dark"), // roof
+    block(t / 2, t, l / 2 - t / 2, [w - t, h - 2 * t, t], "dark"), // front
+    block(t / 2, t, -l / 2 + t / 2, [w - t, h - 2 * t, t], "dark"), // back
+    block(w / 2 - 2, t, 0, [3, h - 2 * t, l - 2 * t], "smoke"), // glass
     // Inside, seen through the glass.
-    block(0, t, 0, [l - 2 * t, shroud, inner * 0.9], "dark"), // PSU cover
+    block(0, t, 0, [inner * 0.9, shroud, l - 2 * t], "dark"), // PSU cover
     block(
-      l * 0.05,
-      t + shroud + h * 0.06,
       back + 3,
-      [l * 0.6, h * 0.62, 6],
+      t + shroud + h * 0.06,
+      -l * 0.05,
+      [6, h * 0.62, l * 0.6],
       "pcb",
     ),
     block(
-      l * 0.02,
-      t + shroud + h * 0.12,
       back + 6 + inner * 0.25,
-      [l * 0.62, Math.min(48, h * 0.1), inner * 0.45],
+      t + shroud + h * 0.12,
+      -l * 0.02,
+      [inner * 0.45, Math.min(48, h * 0.1), l * 0.62],
       "black",
     ),
     block(
-      l * 0.12,
-      t + shroud + h * 0.4,
       back + 6 + inner * 0.2,
-      [Math.min(80, l * 0.2), Math.min(90, h * 0.2), inner * 0.38],
+      t + shroud + h * 0.4,
+      -l * 0.12,
+      [inner * 0.38, Math.min(90, h * 0.2), Math.min(80, l * 0.2)],
       "steel",
     ),
   ];
 }
+
+/** The same blocks, mirrored left to right about the item's origin. */
+const mirrorX = (blocks: DeskBlock[]): DeskBlock[] =>
+  blocks.map((b) => ({ ...b, pos: [-b.pos[0], b.pos[1], b.pos[2]] }));
 
 // --- layout ---------------------------------------------------------------------
 
@@ -844,15 +861,20 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
   // Items that take whatever space is left, biggest first.
   if (pcCase?.dims) {
     const { l, w, h } = pcCase.dims;
-    placeFree(
+    const pc = placeFree(
       ctx,
       "pc",
       pcCase.id,
-      [l, h, w],
-      [W / 2 - l / 2, back + w / 2],
+      [w, h, l],
+      [W / 2 - w / 2, back + l / 2],
       pcBlocks(pcCase),
       isSmallCase(pcCase),
     );
+    // Its glass faces the desk's middle: mirror it when it stands right of it.
+    if (pc.origin[0] > 0) {
+      pc.blocks = mirrorX(pc.blocks);
+      pc.mirror = true;
+    }
   }
   if (lighting?.kind === "Lamp") {
     const { l, w, h } = lighting.dims!;
@@ -928,21 +950,32 @@ export function chairFadeTargets(layout: DeskLayout): Vec3[] {
 
 /** Where the seated view looks from (before normalising): in front of the desk, a little left (the chair stands right), above eye height. */
 export const SEATED_DIR: Vec3 = [-0.12, 0.65, 1];
-/** The seated view's distance, as a share of the distance that fits the whole frame. */
-export const SEATED_FIT = 0.95;
+/**
+ * How much of the view the setup's boxes fill from the seated view (Phase 19,
+ * for the recorded demo): 82% of the width or the height, whichever they reach
+ * first, on a desktop or a phone alike. The models sit a little inside their
+ * boxes (the chair most), so what shows fills about 75–80%.
+ */
+export const SEATED_FILL = 0.82;
 
 /**
- * What the seated view aims at: between the desk top and the screen, centred
- * across what's framed (the PC's room on the left, the chair's on the right), so
- * the whole setup fits.
+ * The seated view's home (mm): looking from SEATED_DIR at the setup itself (the
+ * desk and everything placed: each item's own box), centred and filling
+ * SEATED_FILL of the view.
+ * R in the builder eases back to it.
  */
-export function seatedTarget(layout: DeskLayout): Vec3 {
-  const { min, max } = layout.frame;
-  return [
-    (min[0] + max[0]) / 2,
-    (layout.desk.heightMm + layout.lookAt[1]) / 2,
-    ((min[2] + max[2]) / 2 + layout.lookAt[2]) / 2,
-  ];
+export function seatedHome(
+  layout: DeskLayout,
+  aspect: number,
+  fovDeg: number,
+): { target: Vec3; dist: number } {
+  return frameBox(
+    layout.items.map(itemBounds),
+    SEATED_DIR,
+    fovDeg,
+    aspect,
+    SEATED_FILL,
+  );
 }
 
 /** Point the camera eases to for a slot: the middle of that item. */

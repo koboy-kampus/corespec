@@ -545,7 +545,8 @@ export function layoutBuild(build: ResolvedBuild): SceneLayout {
  * whole part, with the procedural blocks kept as its fallback.
  */
 function withModels(layout: PartLayout, part: Part): PartLayout {
-  const models = modelChain(part).map((m) => m.id);
+  // The PC view's models only (the desk view's PC case isn't one).
+  const models = modelChain(part, undefined, "pc").map((m) => m.id);
   if (!models.length) return layout;
   if (layout.blocks.some((b) => b.body))
     return {

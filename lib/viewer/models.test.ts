@@ -182,9 +182,9 @@ describe("resolveModel", () => {
     expect(resolveModel({ ...cpu, modelId: "nope" })?.id).toBe("cpu");
   });
 
-  it("3. returns null for the procedural box", () => {
-    expect(resolveModel(pcCase)).toBeNull();
-    expect(modelChain(pcCase)).toEqual([]);
+  it("3. returns null for the procedural box (the PC view's case)", () => {
+    expect(resolveModel(pcCase, undefined, "pc")).toBeNull();
+    expect(modelChain(pcCase, undefined, "pc")).toEqual([]);
   });
 
   it("works for setup items and for parts without a category model", () => {
@@ -422,9 +422,111 @@ describe("model colours in each view (Phase 19)", () => {
 
   it("maps each Phase 19 model's materials to tones of the same name", () => {
     const phase19 = credits.filter((c) => c.author.startsWith("CoreSpec"));
-    expect(phase19).toHaveLength(17);
+    expect(phase19).toHaveLength(18);
+    // The PC case's accent is its RGB lighting, which glows.
+    const except: Record<string, string> = { "case-mid-tower/accent": "rgb" };
     for (const c of phase19)
       for (const [mat, tone] of Object.entries(MODELS[c.id].recolour))
-        expect(tone, `${c.id}: ${mat}`).toBe(mat);
+        expect(tone, `${c.id}: ${mat}`).toBe(except[`${c.id}/${mat}`] ?? mat);
+  });
+});
+
+describe("models for one view only (Phase 19: the desk view's PC case)", () => {
+  const pcCase = getItem("case-nzxt-h5-flow")!;
+  const entry = {
+    id: "case-test",
+    file: "models-src/case-test.glb",
+    credit: "case-test",
+    basis: [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ],
+  };
+  const credit = {
+    id: "case-test",
+    file: "/models/case-test.glb",
+    source: "models-src/case-test.glb",
+    usedFor: "Case",
+    title: "Case",
+    author: "Someone",
+    url: "https://example.com/case",
+    licence: "CC0 1.0",
+    licenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    changes: "",
+  };
+  const errors = (views: unknown) =>
+    checkModels([{ ...entry, views } as never], [credit], categories);
+
+  it("accepts a list of different views, or none", () => {
+    expect(errors(undefined)).toEqual([]);
+    expect(errors(["desk"])).toEqual([]);
+    expect(errors(["pc", "desk"])).toEqual([]);
+  });
+
+  it("refuses an unknown view, an empty list, a repeat or a plain string", () => {
+    for (const bad of [["kitchen"], [], ["desk", "desk"], "desk"])
+      expect(errors(bad), JSON.stringify(bad)[0]).toEqual([
+        expect.stringMatching(/views must be a list of different views/),
+      ]);
+  });
+
+  it("draws the case model in the desk view only; every case gets it there", () => {
+    expect(modelChain(pcCase, undefined, "desk").map((m) => m.id)).toEqual([
+      "case-mid-tower",
+    ]);
+    expect(modelChain(pcCase, undefined, "pc")).toEqual([]);
+    for (const c of ALL_ITEMS.filter((i) => i.category === "case"))
+      expect(resolveModel(c, undefined, "desk")?.id, c.id).toBe(
+        "case-mid-tower",
+      );
+    // No other model is limited to one view.
+    expect(
+      Object.values(MODELS)
+        .filter((m) => m.views)
+        .map((m) => m.id),
+    ).toEqual(["case-mid-tower"]);
+  });
+
+  it("is fitted to the case's own size, glass and RGB in the desk palette", () => {
+    const m = MODELS["case-mid-tower"];
+    expect(m.fit).toBe("stretch");
+    expect(m.recolour.glass).toBe("glass");
+    expect(m.recolour.accent).toBe("rgb");
+    const glass = modelLook("glass", "desk")!;
+    expect(glass.opacity).toBeGreaterThan(0.1);
+    expect(glass.opacity).toBeLessThan(0.2);
+    expect(glass.roughness).toBeLessThan(0.1);
+    const rgb = modelLook("rgb", "desk")!;
+    expect(rgb.emissive).toBe(ACCENT);
+    expect(rgb.emissiveIntensity).toBeGreaterThan(0.5);
+  });
+});
+
+describe("desk-view greys (Phase 19)", () => {
+  it("are neutral, so they don't read mauve under the coral back light", () => {
+    for (const tone of [
+      "desk",
+      "leg",
+      "dark",
+      "black",
+      "steel",
+      "fabric",
+      "pad",
+      "mesh",
+    ] as const) {
+      const hex = DESK_TONES[tone].color;
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      expect(Math.max(r, g, b) - Math.min(r, g, b), tone).toBeLessThanOrEqual(
+        2,
+      );
+      // Not warmer than neutral: red never above blue.
+      expect(r, tone).toBeLessThanOrEqual(b);
+    }
+  });
+
+  it("leave the PC view's tones as they were", () => {
+    expect(TONES.dark.color).toBe("#38343c");
+    expect(TONES.black.color).toBe("#141215");
   });
 });
