@@ -154,6 +154,28 @@ export function resolveModel(
   return modelChain(item, placement)[0] ?? null;
 }
 
+/** Materials that glow (a screen, a lamp): their look comes from the scene, not a finish. */
+const GLOWING_TONES: ReadonlySet<string> = new Set(["screen", "light"]);
+
+/** A material an item's finish can colour, and the palette tone it has otherwise. */
+export type FinishMaterial = { name: string; tone: ModelTone };
+
+/**
+ * The materials an item's finish (Phase 19b) may name: those of every model it
+ * can show, wherever it's placed (a monitor on an arm included), so a finish
+ * still applies when the item moves. Glowing materials are left out. In the
+ * order of the item's first model, then any the others add.
+ */
+export function finishMaterials(item: ModelItem): FinishMaterial[] {
+  const out = new Map<string, ModelTone>();
+  const placements: (ModelPlacement | undefined)[] = [undefined, "on-arm"];
+  for (const placement of placements)
+    for (const m of modelChain(item, placement))
+      for (const [name, tone] of Object.entries(m.recolour))
+        if (!GLOWING_TONES.has(tone) && !out.has(name)) out.set(name, tone);
+  return [...out].map(([name, tone]) => ({ name, tone }));
+}
+
 /** Self-hosted Draco decoder (copied by `npm run models`), so nothing loads from a CDN. */
 export const DRACO_DECODER_PATH = "/draco/";
 

@@ -26,6 +26,7 @@ const ITEM_COLS = [
   "dims",
   "specs",
   "model_id",
+  "finish",
   "active",
   "position",
 ] as const;
@@ -55,6 +56,7 @@ export function seedSql(items: Item[], estimatesAsOf: string): string {
           r.dims ? json(r.dims) : "null",
           json(r.specs),
           val(r.model_id),
+          r.finish ? json(r.finish) : "null",
           r.active,
           r.position,
         ].join(", ")})`,

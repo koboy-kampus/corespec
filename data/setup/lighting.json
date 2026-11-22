@@ -65,7 +65,10 @@
     "placement": "monitor-top",
     "kind": "Light bar",
     "rgb": false,
-    "usbPowered": true
+    "usbPowered": true,
+    "finish": {
+      "dark": "#3A3B3F"
+    }
   },
   {
     "id": "lighting-xiaomi-mijia-led-desk-lamp-1s",

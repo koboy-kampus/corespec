@@ -35,7 +35,12 @@
     "depthMm": 600,
     "heightMinMm": 730,
     "heightMaxMm": 730,
-    "adjustable": false
+    "adjustable": false,
+    "finish": {
+      "wood": "#C9A57B",
+      "leg": "#1E1E20",
+      "black": "#1E1E20"
+    }
   },
   {
     "id": "desk-ikea-trotten-sit-stand-120-70",
@@ -54,7 +59,12 @@
     "depthMm": 700,
     "heightMinMm": 720,
     "heightMaxMm": 1220,
-    "adjustable": true
+    "adjustable": true,
+    "finish": {
+      "wood": "#E8E6E1",
+      "leg": "#3A3B3F",
+      "steel": "#4A4B50"
+    }
   },
   {
     "id": "desk-ikea-mittzon-sit-stand-140-80",
@@ -73,7 +83,12 @@
     "depthMm": 800,
     "heightMinMm": 650,
     "heightMaxMm": 1250,
-    "adjustable": true
+    "adjustable": true,
+    "finish": {
+      "wood": "#5C3B28",
+      "leg": "#1E1E20",
+      "steel": "#2A2A2D"
+    }
   },
   {
     "id": "desk-ikea-linnmon-adils-100-60",

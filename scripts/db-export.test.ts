@@ -28,7 +28,7 @@ type Row = Record<string, unknown>;
 async function exportFrom(db: PGlite) {
   const items = (
     await db.query<Row>(
-      "select id, category, brand, name, tier, price_idr, dims, specs, model_id, active, position from public.items",
+      "select id, category, brand, name, tier, price_idr, dims, specs, model_id, finish, active, position from public.items",
     )
   ).rows;
   const listings = (

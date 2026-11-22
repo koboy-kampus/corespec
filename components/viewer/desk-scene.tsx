@@ -443,6 +443,7 @@ function DeskCanvas({
               size={[0, 1, 2].map((a) => box.max[a] - box.min[a]) as Vec3}
               glow={glow}
               palette="desk"
+              finish={part && "finish" in part ? part.finish : undefined}
               fallback={
                 <group position={centre.map((v) => -v) as Vec3}>{inside}</group>
               }

@@ -13,7 +13,12 @@ import { Outlines, useGLTF } from "@react-three/drei";
 import { fitModel, planarUv } from "@/lib/viewer/fit-model";
 import type { Vec3 } from "@/lib/viewer/layout";
 import { DRACO_DECODER_PATH, MODELS, type ModelId } from "@/lib/viewer/models";
-import { modelLook, type ModelPalette } from "./palette";
+import {
+  finishColour,
+  modelLook,
+  type Finish,
+  type ModelPalette,
+} from "./palette";
 import { screenTexture } from "./screen-texture";
 
 /**
@@ -42,11 +47,13 @@ function FittedModel({
   size,
   glow,
   palette,
+  finish,
 }: {
   id: ModelId;
   size: Vec3;
   glow?: string;
   palette: ModelPalette;
+  finish?: Finish;
 }) {
   const spec = MODELS[id];
   // Loaded on first use, Draco-decoded with the self-hosted decoder. useGLTF caches
@@ -71,6 +78,9 @@ function FittedModel({
         const tone = spec.recolour[m.materialName];
         const look = (tone && modelLook(tone, palette)) || m;
         const own = "emissive" in look ? look : undefined;
+        // The item's own colour for this material (its finish), on top of the
+        // tone's roughness and metalness. Glowing materials have none.
+        const colour = finishColour(finish, m.materialName, tone) ?? look.color;
         // A screen glows with the same soft gradient as the procedural one, and
         // a flagged monitor's screen keeps it; the rest turns amber.
         const screen = tone === "screen";
@@ -79,7 +89,7 @@ function FittedModel({
         return (
           <mesh key={i} geometry={m.geometry}>
             <meshStandardMaterial
-              color={look.color}
+              color={colour}
               roughness={look.roughness}
               metalness={look.metalness}
               emissive={tint ?? own?.emissive ?? "#000000"}
@@ -101,12 +111,14 @@ function ModelChain({
   glow,
   fallback,
   palette,
+  finish,
 }: {
   ids: ModelId[];
   size: Vec3;
   glow?: string;
   fallback: ReactNode;
   palette: ModelPalette;
+  finish?: Finish;
 }) {
   const suspendUp = useContext(SuspendModelsUp);
   const [first, ...rest] = ids;
@@ -118,12 +130,19 @@ function ModelChain({
       glow={glow}
       fallback={fallback}
       palette={palette}
+      finish={finish}
     />
   ) : (
     fallback
   );
   const model = (
-    <FittedModel id={first} size={size} glow={glow} palette={palette} />
+    <FittedModel
+      id={first}
+      size={size}
+      glow={glow}
+      palette={palette}
+      finish={finish}
+    />
   );
   return (
     <ModelBoundary fallback={next}>
@@ -143,6 +162,7 @@ export function ModelBlock({
   glow,
   fallback,
   palette = "pc",
+  finish,
 }: {
   ids: ModelId[];
   pos: Vec3;
@@ -152,6 +172,8 @@ export function ModelBlock({
   fallback: ReactNode;
   /** Which view's tones the model's materials take (see `modelLook`). */
   palette?: ModelPalette;
+  /** The item's finish (Phase 19b): material name → colour. */
+  finish?: Finish;
 }) {
   return (
     <group position={pos}>
@@ -161,6 +183,7 @@ export function ModelBlock({
         glow={glow}
         fallback={fallback}
         palette={palette}
+        finish={finish}
       />
     </group>
   );

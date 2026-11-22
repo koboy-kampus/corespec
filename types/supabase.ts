@@ -116,6 +116,7 @@ export interface Database {
           dims: { l: number; w: number; h: number } | null;
           specs: Record<string, unknown>;
           model_id: string | null;
+          finish: Record<string, string> | null;
           active: boolean;
           position: number;
           created_at: string;
@@ -132,6 +133,7 @@ export interface Database {
           dims?: { l: number; w: number; h: number } | null;
           specs?: Record<string, unknown>;
           model_id?: string | null;
+          finish?: Record<string, string> | null;
           active?: boolean;
           position?: number;
         };
@@ -143,6 +145,7 @@ export interface Database {
           dims?: { l: number; w: number; h: number } | null;
           specs?: Record<string, unknown>;
           model_id?: string | null;
+          finish?: Record<string, string> | null;
           active?: boolean;
           position?: number;
         };

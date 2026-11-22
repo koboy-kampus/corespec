@@ -109,3 +109,20 @@ export function modelLook(
   const desk = DESK_TONES[tone as keyof typeof DESK_TONES];
   return palette === "desk" ? (desk ?? pc) : (pc ?? desk);
 }
+
+/** An item's finish (Phase 19b): model material name → "#RRGGBB". */
+export type Finish = Readonly<Record<string, string>>;
+
+/**
+ * The colour an item's finish gives one of its model's materials, if any.
+ * Glowing materials (a screen, a lamp) keep their look: their light comes
+ * from the scene.
+ */
+export function finishColour(
+  finish: Finish | undefined,
+  material: string,
+  tone: string | undefined,
+): string | undefined {
+  if (!finish || tone === "screen" || tone === "light") return undefined;
+  return Object.hasOwn(finish, material) ? finish[material] : undefined;
+}

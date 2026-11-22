@@ -3,7 +3,7 @@
 // fetching and writing; scripts/db-export.test.ts checks that exporting a
 // database seeded from the JSON gives back exactly the same files.
 
-/** @typedef {{ id: string, category: string, brand: string, name: string, tier: string, price_idr: number, dims: Record<string, number> | null, specs: Record<string, unknown>, model_id: string | null, active: boolean, position: number }} ItemRow */
+/** @typedef {{ id: string, category: string, brand: string, name: string, tier: string, price_idr: number, dims: Record<string, number> | null, specs: Record<string, unknown>, model_id: string | null, finish?: Record<string, string> | null, active: boolean, position: number }} ItemRow */
 /** @typedef {{ item_id: string, marketplace: string, url: string, price_idr: number, checked_at: string }} ListingRow */
 
 const BASE_ORDER = [
@@ -22,6 +22,21 @@ const sortListings = (list) =>
     (a, b) =>
       a.priceIDR - b.priceIDR || (a.url < b.url ? -1 : a.url > b.url ? 1 : 0),
   );
+
+/**
+ * A finish with its materials in the JSON's order (jsonb keeps its own order:
+ * shortest key first), any new ones after.
+ * @param {Record<string, string>} finish
+ * @param {unknown} before the JSON's finish for this item, if any
+ */
+function sameOrder(finish, before) {
+  const keys = before && typeof before === "object" ? Object.keys(before) : [];
+  /** @type {Record<string, string>} */
+  const out = {};
+  for (const k of keys) if (k in finish) out[k] = finish[k];
+  for (const k of Object.keys(finish)) if (!(k in out)) out[k] = finish[k];
+  return out;
+}
 
 /**
  * One row as a catalogue item, keys in the same order the JSON already has
@@ -44,6 +59,7 @@ export function rowToJson(row, listings, existing) {
       : {}),
     ...row.specs,
     ...(row.model_id ? { modelId: row.model_id } : {}),
+    ...(row.finish ? { finish: sameOrder(row.finish, existing?.finish) } : {}),
     ...(row.active ? {} : { active: false }),
   };
   const list = sortListings(

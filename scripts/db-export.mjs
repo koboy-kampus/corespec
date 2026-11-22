@@ -41,7 +41,7 @@ let items, listings, settings;
 try {
   [items, listings, settings] = await Promise.all([
     get(
-      "items?select=id,category,brand,name,tier,price_idr,dims,specs,model_id,active,position&limit=5000",
+      "items?select=id,category,brand,name,tier,price_idr,dims,specs,model_id,finish,active,position&limit=5000",
     ),
     get(
       "listings?select=item_id,marketplace,url,price_idr,checked_at&limit=20000",
