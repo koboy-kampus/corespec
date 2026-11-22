@@ -219,3 +219,45 @@ test.describe("touch on a shared desk view", () => {
     expect(await scrollY()).toBe(0);
   });
 });
+
+test("the desk view draws each setup item with its Phase 19 model", async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  const loads = new Set<string>();
+  page.on("request", (r) => {
+    const path = new URL(r.url()).pathname;
+    if (path.startsWith("/models/")) loads.add(path.slice("/models/".length));
+  });
+  const sweet = presets.find((p) => p.id === "sweet-spot-1440p")!;
+  await openSaved(page, {
+    ...sweet.parts,
+    ...sweet.setup,
+  } as Record<string, string>);
+  await page.getByRole("tab", { name: /^Setup/ }).click();
+  await expect(page.getByTestId("desk-view").locator("canvas")).toBeVisible();
+  // A sit-stand desk, a gaming chair, a monitor on an arm (no stand), a light
+  // bar, and the category models for everything else.
+  const want = [
+    "desk-sit-stand.glb",
+    "chair-gaming.glb",
+    "monitor-panel.glb",
+    "arm-single.glb",
+    "light-bar.glb",
+    "speaker-bookshelf.glb",
+    "mousepad.glb",
+    "mouse.glb",
+    "headset.glb",
+    "microphone.glb",
+    "webcam.glb",
+    "keyboard.glb",
+  ];
+  await expect
+    .poll(() => want.filter((f) => !loads.has(f)), { timeout: 15_000 })
+    .toEqual([]);
+  // Never the models this setup doesn't call for.
+  for (const f of ["monitor-flat.glb", "desk-four-leg.glb", "chair-office.glb"])
+    expect(loads.has(f), f).toBe(false);
+  await page.waitForLoadState("networkidle");
+  expect(errors).toEqual([]);
+});

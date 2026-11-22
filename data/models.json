@@ -71,5 +71,325 @@
       "mat16": "steel",
       "mat9": "steel"
     }
+  },
+  {
+    "id": "desk-four-leg",
+    "file": "models-src/desk-four-leg.glb",
+    "credit": "desk-four-leg",
+    "defaultFor": "desk",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "wood": "wood",
+      "black": "black",
+      "leg": "leg"
+    },
+    "note": "Fixed-height desk: top along X, legs down to Y = 0, front edge toward +Z. Stretched to the desk's width, depth and height."
+  },
+  {
+    "id": "desk-sit-stand",
+    "file": "models-src/desk-sit-stand.glb",
+    "credit": "desk-sit-stand",
+    "variantFor": "desk",
+    "match": {
+      "adjustable": true
+    },
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "wood": "wood",
+      "leg": "leg",
+      "black": "black",
+      "steel": "steel"
+    },
+    "note": "Sit-stand desk with a crossbar and lifting columns; drawn at seated height like the procedural desk."
+  },
+  {
+    "id": "chair-gaming",
+    "file": "models-src/chair-gaming.glb",
+    "credit": "chair-gaming",
+    "variantFor": "chair",
+    "match": {
+      "type": "Gaming"
+    },
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "contain",
+    "recolour": {
+      "black": "black",
+      "dark": "dark",
+      "steel": "steel",
+      "accent": "accent",
+      "fabric": "fabric"
+    },
+    "note": "Racing-style chair facing −Z (backrest at +Z), same as the procedural chair; the layout turns it toward the desk."
+  },
+  {
+    "id": "chair-office",
+    "file": "models-src/chair-office.glb",
+    "credit": "chair-office",
+    "defaultFor": "chair",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "contain",
+    "recolour": {
+      "black": "black",
+      "steel": "steel",
+      "dark": "dark",
+      "fabric": "fabric",
+      "mesh": "mesh"
+    },
+    "note": "Office chair with a mesh back, facing −Z (backrest at +Z)."
+  },
+  {
+    "id": "monitor-flat",
+    "file": "models-src/monitor-flat.glb",
+    "credit": "monitor-flat",
+    "defaultFor": "monitor",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "black": "black",
+      "screen": "screen",
+      "accent": "accent",
+      "dark": "dark"
+    },
+    "note": "Flat monitor on its own stand, screen facing +Z. Stretched over the stand and panel the layout draws."
+  },
+  {
+    "id": "monitor-curved",
+    "file": "models-src/monitor-curved.glb",
+    "credit": "monitor-curved",
+    "variantFor": "monitor",
+    "match": {
+      "curved": true
+    },
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "black": "black",
+      "screen": "screen",
+      "accent": "accent",
+      "dark": "dark"
+    },
+    "note": "Curved monitor on slim Y-legs, screen facing +Z; its box includes the curve."
+  },
+  {
+    "id": "monitor-panel",
+    "file": "models-src/monitor-panel.glb",
+    "credit": "monitor-panel",
+    "variantFor": "monitor",
+    "layout": "on-arm",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "black": "black",
+      "screen": "screen",
+      "accent": "accent",
+      "dark": "dark"
+    },
+    "note": "A monitor without its stand, for a monitor hanging on an arm. Chosen by the desk layout, not by an item field."
+  },
+  {
+    "id": "arm-single",
+    "file": "models-src/arm-single.glb",
+    "credit": "arm-single",
+    "defaultFor": "arm",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "black": "black",
+      "dark": "dark",
+      "steel": "steel"
+    },
+    "note": "Gas-spring arm: clamp at the back (−Z), VESA plate at the front (+Z). Stretched from the clamp to the plate."
+  },
+  {
+    "id": "speaker-bookshelf",
+    "file": "models-src/speaker-bookshelf.glb",
+    "credit": "speaker-bookshelf",
+    "defaultFor": "speakers",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "dark": "dark",
+      "black": "black",
+      "steel": "steel"
+    },
+    "note": "One bookshelf speaker, driver facing +Z. The layout draws two, each in its own box."
+  },
+  {
+    "id": "light-bar",
+    "file": "models-src/light-bar.glb",
+    "credit": "light-bar",
+    "variantFor": "lighting",
+    "match": {
+      "kind": "Light bar"
+    },
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "dark": "dark",
+      "light": "light",
+      "black": "black"
+    },
+    "note": "Monitor light bar that sits on top of the screen; light facing down and toward +Z."
+  },
+  {
+    "id": "desk-lamp",
+    "file": "models-src/desk-lamp.glb",
+    "credit": "desk-lamp",
+    "variantFor": "lighting",
+    "match": {
+      "kind": "Lamp"
+    },
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "contain",
+    "recolour": {
+      "dark": "dark",
+      "steel": "steel",
+      "black": "black",
+      "light": "light"
+    },
+    "note": "Desk lamp with an arm and head, light under the head."
+  },
+  {
+    "id": "mousepad",
+    "file": "models-src/mousepad.glb",
+    "credit": "mousepad",
+    "defaultFor": "mousepad",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "pad": "pad",
+      "dark": "dark"
+    },
+    "note": "Flat cloth pad with a stitched edge."
+  },
+  {
+    "id": "headset",
+    "file": "models-src/headset.glb",
+    "credit": "headset",
+    "defaultFor": "headset",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "contain",
+    "recolour": {
+      "dark": "dark",
+      "fabric": "fabric",
+      "steel": "steel",
+      "accent": "accent",
+      "pad": "pad",
+      "black": "black"
+    },
+    "note": "Headset with a boom mic, lying on the desk."
+  },
+  {
+    "id": "mouse",
+    "file": "models-src/mouse.glb",
+    "credit": "mouse",
+    "defaultFor": "mouse",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "stretch",
+    "recolour": {
+      "dark": "dark",
+      "black": "black",
+      "steel": "steel",
+      "accent": "accent"
+    },
+    "note": "Mouse with its buttons toward −Z and the light strip at the back (+Z)."
+  },
+  {
+    "id": "microphone",
+    "file": "models-src/microphone.glb",
+    "credit": "microphone",
+    "defaultFor": "microphone",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "contain",
+    "recolour": {
+      "black": "black",
+      "steel": "steel",
+      "dark": "dark",
+      "mesh": "mesh",
+      "light": "light"
+    },
+    "note": "Microphone on a desk stand."
+  },
+  {
+    "id": "webcam",
+    "file": "models-src/webcam.glb",
+    "credit": "webcam",
+    "defaultFor": "webcam",
+    "basis": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    "fit": "contain",
+    "recolour": {
+      "black": "black",
+      "steel": "steel",
+      "screen": "screen",
+      "dark": "dark",
+      "light": "light"
+    },
+    "note": "Webcam with a clip over the top of the screen, lens facing +Z."
   }
 ]

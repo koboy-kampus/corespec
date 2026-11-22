@@ -7,6 +7,7 @@ import type {
   SetupCategory,
 } from "@/types/parts";
 import type { Vec3 } from "./layout";
+import type { ModelPlacement } from "./models";
 
 /**
  * Where every setup item sits in the 3D desk view (Phase 12), in millimetres.
@@ -31,6 +32,12 @@ export type DeskTone =
   | "steel"
   | "fabric"
   | "pad"
+  /** Models only (Phase 19): a wooden desk top, light oak by default. */
+  | "wood"
+  /** Models only: a chair's mesh back, a touch lighter than fabric. */
+  | "mesh"
+  /** Models only: trim and piping, CoreSpec coral by default. */
+  | "accent"
   /** Emissive: the monitor screen. */
   | "screen"
   /** Emissive: light bars, lamps, LED strips. */
@@ -72,6 +79,14 @@ export interface DeskItemLayout {
   spot: "desk" | "floor" | "monitor" | "edge";
   /** Turned about its origin's vertical axis, in radians (the chair). */
   rotY?: number;
+  /**
+   * Where the item's 3D model is drawn, relative to its origin and before
+   * `rotY`: one model per box. Unset = one model over all its blocks. A pair of
+   * speakers has two boxes, one per speaker (Phase 19).
+   */
+  modelBoxes?: Box[];
+  /** Where it's placed, when that picks a different model ("on-arm": a monitor without its stand). */
+  placement?: ModelPlacement;
 }
 
 /** Anything with an origin and blocks. */
@@ -631,6 +646,7 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
       origin: [0, H, 0],
       blocks,
       spot: "desk",
+      ...(arm ? { placement: "on-arm" as const } : {}),
     });
     screenTop = [0, H + panelBottom + ph, panelZ];
     lookAt = [0, H + panelBottom + ph / 2, panelZ];
@@ -663,6 +679,11 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
           pos: [b.pos[0] + x, b.pos[1], b.pos[2]] as Vec3,
         })),
       ),
+      // One model per speaker, each in its own box.
+      modelBoxes: [-cx, cx].map((x) => ({
+        min: [x - l / 2, 0, -w / 2] as Vec3,
+        max: [x + l / 2, h, w / 2] as Vec3,
+      })),
       spot: "desk",
     });
     for (const x of [-cx, cx])

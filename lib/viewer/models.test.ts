@@ -14,13 +14,20 @@ import models from "@/data/models.json";
 import { ALL_CATEGORIES } from "@/lib/categories";
 import { ALL_ITEMS, getItem } from "@/lib/parts";
 import {
+  ACCENT,
+  DESK_TONES,
+  modelLook,
+  TONES,
+} from "@/components/viewer/palette";
+import {
   BUILD_BUDGET_BYTES,
+  MODEL_TONES,
   checkModels,
   checkSizes,
   heaviestBuildBytes,
 } from "@/scripts/model-rules.mjs";
 import type { Item } from "@/types/parts";
-import { fitModel } from "./fit-model";
+import { fitModel, planarUv } from "./fit-model";
 import { MODELS, modelChain, resolveModel } from "./models";
 
 const pub = (url: string) => join(process.cwd(), "public", url);
@@ -187,6 +194,103 @@ describe("resolveModel", () => {
   });
 });
 
+describe("variants (Phase 19)", () => {
+  const entry = {
+    id: "keyboard-test",
+    file: "models-src/keyboard-test.glb",
+    credit: "keyboard-test",
+    basis: [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ],
+    fit: "contain",
+  };
+  const credit = {
+    id: "keyboard-test",
+    file: "/models/keyboard-test.glb",
+    source: "models-src/keyboard-test.glb",
+    usedFor: "Keyboard",
+    title: "Keyboard",
+    author: "Someone",
+    url: "https://example.com/keyboard",
+    licence: "CC0 1.0",
+    licenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    changes: "",
+  };
+  const chair = (type: string) =>
+    ALL_ITEMS.find(
+      (i) => i.category === "chair" && (i as { type?: string }).type === type,
+    )!;
+
+  it("picks the variant an item's fields match, before the category model", () => {
+    expect(modelChain(chair("Gaming")).map((m) => m.id)).toEqual([
+      "chair-gaming",
+      "chair-office",
+    ]);
+    expect(modelChain(chair("Ergonomic")).map((m) => m.id)).toEqual([
+      "chair-office",
+    ]);
+  });
+
+  it("still lets an item's own modelId win over a variant", () => {
+    expect(
+      resolveModel({ ...chair("Gaming"), modelId: "chair-office" })?.id,
+    ).toBe("chair-office");
+  });
+
+  it("uses only the placement's model when there is one, and ignores a placement without one", () => {
+    const monitor = ALL_ITEMS.find((i) => i.category === "monitor")!;
+    expect(modelChain(monitor, "on-arm").map((m) => m.id)).toEqual([
+      "monitor-panel",
+    ]);
+    expect(modelChain(chair("Gaming"), "on-arm")[0].id).toBe("chair-gaming");
+  });
+
+  it("rejects a variant without a rule, with both rules, or with a bad match", () => {
+    const v = { ...entry, id: "keyboard-test", variantFor: "keyboard" };
+    const run = (extra: object) =>
+      checkModels([{ ...v, ...extra }], [credit], categories);
+    expect(run({})).toEqual([
+      'models.json "keyboard-test": a variant needs exactly one of "match" or "layout"',
+    ]);
+    expect(run({ match: { a: 1 }, layout: "on-arm" })).toEqual([
+      'models.json "keyboard-test": a variant needs exactly one of "match" or "layout"',
+    ]);
+    expect(run({ match: {} })[0]).toMatch(/match must be field → value pairs/);
+    expect(run({ match: { size: ["XL"] } })[0]).toMatch(/match must be/);
+    expect(run({ layout: "on-wall" })[0]).toMatch(
+      /layout must be one of on-arm/,
+    );
+    expect(run({ match: { wired: true }, defaultFor: "keyboard" })[0]).toMatch(
+      /either a category default or a variant/,
+    );
+    expect(
+      checkModels([{ ...entry, match: { a: 1 } }], [credit], categories),
+    ).toEqual([
+      'models.json "keyboard-test": "match" and "layout" need "variantFor"',
+    ]);
+    expect(run({ match: { wired: true } })).toEqual([]);
+  });
+
+  it("accepts desk tones in recolour, and still rejects made-up ones", () => {
+    const run = (recolour: Record<string, string>) =>
+      checkModels([{ ...entry, recolour }], [credit], categories);
+    expect(run({ top: "wood", trim: "accent", back: "mesh" })).toEqual([]);
+    expect(run({ top: "walnut" })).toEqual([
+      'models.json "keyboard-test": recolour "top" → "walnut" is not a palette tone',
+    ]);
+  });
+
+  it("counts variants in the heaviest build", () => {
+    const models = [
+      { ...entry, id: "d", defaultFor: "desk" },
+      { ...entry, id: "v", variantFor: "desk", match: { adjustable: true } },
+    ];
+    expect(heaviestBuildBytes(models, { d: 100, v: 300 }, [])).toBe(300);
+  });
+});
+
 describe("fitModel", () => {
   it("rotates with the basis, then fills the target box exactly", () => {
     const root = new Group();
@@ -244,6 +348,26 @@ describe("fitModel", () => {
   });
 });
 
+describe("planarUv", () => {
+  it("projects UVs from the front over the mesh's own extent, and keeps existing ones", () => {
+    const g = new BoxGeometry(600, 300, 10);
+    g.deleteAttribute("uv");
+    planarUv(g);
+    const uv = g.getAttribute("uv");
+    expect(uv.count).toBe(g.getAttribute("position").count);
+    const us = Array.from({ length: uv.count }, (_, i) => uv.getX(i));
+    const vs = Array.from({ length: uv.count }, (_, i) => uv.getY(i));
+    expect(Math.min(...us)).toBeCloseTo(0);
+    expect(Math.max(...us)).toBeCloseTo(1);
+    expect(Math.min(...vs)).toBeCloseTo(0);
+    expect(Math.max(...vs)).toBeCloseTo(1);
+    const own = new BoxGeometry(1, 1, 1);
+    const before = own.getAttribute("uv");
+    planarUv(own);
+    expect(own.getAttribute("uv")).toBe(before);
+  });
+});
+
 describe("mirrored models", () => {
   it("keeps faces pointing outward when the basis is a mirror", () => {
     const root = new Group();
@@ -264,5 +388,31 @@ describe("mirrored models", () => {
         6;
     }
     expect(volume).toBeCloseTo(338 * 64 * 140, -2);
+  });
+});
+
+describe("model colours in each view (Phase 19)", () => {
+  it("resolves every tone a model may use, in both views", () => {
+    for (const tone of MODEL_TONES)
+      for (const view of ["pc", "desk"] as const)
+        expect(modelLook(tone, view), `${tone} in ${view}`).toBeDefined();
+    expect(modelLook("walnut", "desk")).toBeUndefined();
+  });
+
+  it("takes the desk view's own tones first there, and the PC's in the PC view", () => {
+    expect(modelLook("dark", "desk")).toBe(DESK_TONES.dark);
+    expect(modelLook("dark", "pc")).toBe(TONES.dark);
+    expect(modelLook("wood", "desk")?.color).toBe("#c4a07a"); // light oak
+    expect(modelLook("accent", "desk")?.color).toBe(ACCENT); // CoreSpec coral
+    expect(modelLook("screen", "desk")?.emissive).toBeDefined();
+    expect(modelLook("light", "desk")?.emissiveIntensity).toBeGreaterThan(1);
+  });
+
+  it("maps each Phase 19 model's materials to tones of the same name", () => {
+    const phase19 = credits.filter((c) => c.author.startsWith("CoreSpec"));
+    expect(phase19).toHaveLength(16);
+    for (const c of phase19)
+      for (const [mat, tone] of Object.entries(MODELS[c.id].recolour))
+        expect(tone, `${c.id}: ${mat}`).toBe(mat);
   });
 });

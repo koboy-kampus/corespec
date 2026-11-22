@@ -15,6 +15,8 @@ import {
 import { presets, presetSummary } from "@/lib/presets";
 import idsBeforePhase13 from "@/lib/__fixtures__/ids-before-phase-13.json";
 import type { Tier } from "@/types/parts";
+import { MODELS, modelChain, resolveModel } from "@/lib/viewer/models";
+import { matchesRule } from "@/scripts/model-rules.mjs";
 
 /** Runtime checks on the seeded JSON, since TypeScript can't verify JSON imports. */
 describe("parts catalogue", () => {
@@ -204,5 +206,68 @@ describe("setup catalogue", () => {
       expect(d.adjustable, d.id).toBe(d.heightMinMm !== d.heightMaxMm);
       expect(d.dims).toEqual({ l: d.widthMm, w: d.depthMm, h: d.heightMinMm });
     }
+  });
+});
+
+describe("3D models for the desk view (Phase 19)", () => {
+  /** The brief's table: which model each setup item shows. */
+  const expected = (item: (typeof ALL_ITEMS)[number]): string | null => {
+    const i = item as unknown as Record<string, unknown>;
+    switch (item.category) {
+      case "desk":
+        return i.adjustable ? "desk-sit-stand" : "desk-four-leg";
+      case "chair":
+        return i.type === "Gaming" ? "chair-gaming" : "chair-office";
+      case "monitor":
+        return i.curved ? "monitor-curved" : "monitor-flat";
+      case "lighting":
+        return i.kind === "Light bar"
+          ? "light-bar"
+          : i.kind === "Lamp"
+            ? "desk-lamp"
+            : null; // LED strips keep their procedural look
+      case "arm":
+        return "arm-single";
+      case "speakers":
+        return "speaker-bookshelf";
+      case "mousepad":
+      case "headset":
+      case "mouse":
+      case "microphone":
+      case "webcam":
+      case "keyboard":
+        return item.category;
+      default:
+        return resolveModel(item)?.id ?? null; // PC parts: unchanged
+    }
+  };
+
+  it("gives every catalogue item the model its fields call for", () => {
+    const wrong = ALL_ITEMS.flatMap((item) => {
+      const got = resolveModel(item)?.id ?? null;
+      const want = expected(item);
+      return got === want ? [] : [`${item.id}: ${got} (want ${want})`];
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it("has at least one catalogue item for every variant rule (a renamed type or kind can't orphan a model)", () => {
+    const orphans = Object.values(MODELS).filter(
+      (m) =>
+        m.match &&
+        !ALL_ITEMS.some(
+          (i) =>
+            i.category === m.variantFor &&
+            matchesRule(i as unknown as Record<string, unknown>, m.match!),
+        ),
+    );
+    expect(orphans.map((m) => m.id)).toEqual([]);
+  });
+
+  it("draws any monitor hanging on an arm without its stand", () => {
+    for (const m of ALL_ITEMS.filter((i) => i.category === "monitor"))
+      expect(modelChain(m, "on-arm").map((s) => s.id)).toEqual([
+        "monitor-panel",
+      ]);
   });
 });

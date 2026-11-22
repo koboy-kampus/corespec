@@ -156,6 +156,51 @@ describe("items on and around the desk", () => {
     );
   });
 
+  it("marks a monitor on an arm, so it gets the stand-less model (Phase 19)", () => {
+    expect(item(layoutDesk({ monitor: aw }), "monitor").placement).toBe(
+      undefined,
+    );
+    expect(
+      item(layoutDesk({ monitor: aw, arm: S.arm[0] }), "monitor").placement,
+    ).toBe("on-arm");
+  });
+
+  it("spans the arm's box from the clamp to the VESA plate behind the screen", () => {
+    for (const arm of S.arm) {
+      const l = layoutDesk({ desk: mittzon, monitor: aw, arm });
+      const a = bounds(l, "arm");
+      const m = bounds(l, "monitor");
+      // The model stretched over this box reaches the back of the screen…
+      expect(a.max[2], arm.id).toBeCloseTo(m.min[2]);
+      // …and its clamp stays on the desk's back edge.
+      expect(a.min[2], arm.id).toBeGreaterThanOrEqual(-l.desk.depthMm / 2);
+      expect(a.min[1], arm.id).toBeCloseTo(l.desk.heightMm);
+    }
+  });
+
+  it("gives each speaker of the pair its own model box (Phase 19)", () => {
+    const l = layoutDesk({ desk: mittzon, monitor: aw, speakers: edifier });
+    const sp = item(l, "speakers");
+    expect(sp.modelBoxes).toHaveLength(2);
+    const [left, right] = sp.modelBoxes!;
+    const { l: w, h, w: d } = edifier.dims!;
+    for (const b of [left, right]) {
+      expect(b.max[0] - b.min[0]).toBeCloseTo(w);
+      expect(b.max[1] - b.min[1]).toBeCloseTo(h);
+      expect(b.max[2] - b.min[2]).toBeCloseTo(d);
+    }
+    expect(left.max[0]).toBeLessThan(right.min[0]); // apart, not one long box
+    // Every speaker block sits inside one of the two boxes.
+    for (const b of sp.blocks)
+      expect(
+        sp.modelBoxes!.some((box) =>
+          [0, 1, 2].every(
+            (a) => b.pos[a] >= box.min[a] && b.pos[a] <= box.max[a],
+          ),
+        ),
+      ).toBe(true);
+  });
+
   it("lays a big mousepad under both keyboard and mouse", () => {
     const pad = S.mousepad.find((p) => p.size === "XL")!;
     const l = layoutDesk({

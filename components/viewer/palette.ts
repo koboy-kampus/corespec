@@ -50,6 +50,11 @@ export const DESK_TONES: Record<
   steel: { color: "#7a787c", roughness: 0.35, metalness: 0.8 },
   fabric: { color: "#38353b", roughness: 0.9, metalness: 0.05 },
   pad: { color: "#242226", roughness: 0.95, metalness: 0 },
+  // Phase 19, for the desk-view models: an oak top, a chair's mesh back, and
+  // coral trim (the brand accent). A finish (Phase 19b) can change them per item.
+  wood: { color: "#c4a07a", roughness: 0.7, metalness: 0.02 },
+  mesh: { color: "#444147", roughness: 0.85, metalness: 0.05 },
+  accent: { color: ACCENT, roughness: 0.5, metalness: 0.1 },
   /** The emissive map (a soft gradient) comes from the scene. */
   screen: {
     color: "#05060a",
@@ -79,3 +84,28 @@ export const DESK_TONES: Record<
     emissiveIntensity: 0.25,
   },
 };
+
+/** How a model's material looks: its tone's colour and finish, plus any glow of its own. */
+export type ModelLook = {
+  color: string;
+  roughness: number;
+  metalness: number;
+  emissive?: string;
+  emissiveIntensity?: number;
+};
+
+/**
+ * Which palette a model's tones come from. The desk view looks in the desk
+ * tones first, the PC view in the PC tones first; each falls back to the
+ * other, so any tone in data/models.json draws in either view.
+ */
+export type ModelPalette = "pc" | "desk";
+
+export function modelLook(
+  tone: string,
+  palette: ModelPalette,
+): ModelLook | undefined {
+  const pc = TONES[tone as keyof typeof TONES];
+  const desk = DESK_TONES[tone as keyof typeof DESK_TONES];
+  return palette === "desk" ? (desk ?? pc) : (pc ?? desk);
+}

@@ -10,17 +10,12 @@ import {
 } from "react";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import {
-  BoxGeometry,
-  CanvasTexture,
-  SRGBColorSpace,
-  type Group,
-  type Texture,
-} from "three";
+import { BoxGeometry, CanvasTexture, type Group, type Texture } from "three";
 import type { CompatResult } from "@/lib/compat/rules";
 import {
   chairFadeTargets,
   deskFocus,
+  boxCenter,
   itemBounds,
   layoutDesk,
   SEATED_DIR,
@@ -42,6 +37,7 @@ import { Animated, setFade } from "./animated";
 import { CameraRig, type CameraKeys, type CameraView } from "./camera-rig";
 import { CaptureFrame } from "./capture-frame";
 import { ModelBlock, SuspendModelsUp } from "./model-block";
+import { screenTexture } from "./screen-texture";
 import { DESK_TONES, WARN } from "./palette";
 import { PartTooltip } from "./part-tooltip";
 import { hasWebGL, usePresence } from "./scene-common";
@@ -104,25 +100,6 @@ function DeskLights() {
       />
     </>
   );
-}
-
-let screenMap: Texture | null = null;
-/** The screen's soft glow: a gentle diagonal gradient, made once. */
-function screenTexture(): Texture {
-  if (screenMap) return screenMap;
-  const c = document.createElement("canvas");
-  c.width = 64;
-  c.height = 64;
-  const g = c.getContext("2d")!;
-  const grad = g.createLinearGradient(0, 0, 64, 64);
-  grad.addColorStop(0, "#56607e");
-  grad.addColorStop(0.55, "#2c3348");
-  grad.addColorStop(1, "#191c28");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 64, 64);
-  screenMap = new CanvasTexture(c);
-  screenMap.colorSpace = SRGBColorSpace;
-  return screenMap;
 }
 
 /** e^(−k·r²), shifted and scaled so it's 1 in the middle (r = 0) and 0 at the edge (r = 1). */
@@ -438,24 +415,41 @@ function DeskCanvas({
     const blocks = item.blocks.map((b, i) => (
       <BlockMesh key={i} b={b} glow={glow} ghost={ghost} />
     ));
-    // An item with a model (its own or its category's) draws it in its own box,
-    // before the item's turn, with the procedural blocks while it loads or if it fails.
-    const models = part && !ghost ? modelChain(part).map((m) => m.id) : [];
-    const own = itemBounds({ origin: [0, 0, 0], blocks: item.blocks });
-    const centre = [0, 1, 2].map((i) => (own.min[i] + own.max[i]) / 2) as Vec3;
-    const meshes = models.length ? (
-      <ModelBlock
-        ids={models}
-        pos={centre}
-        size={[0, 1, 2].map((i) => own.max[i] - own.min[i]) as Vec3}
-        glow={glow}
-        fallback={
-          <group position={centre.map((v) => -v) as Vec3}>{blocks}</group>
-        }
-      />
-    ) : (
-      blocks
-    );
+    // An item with a model (its own, a variant or its category's) draws it in
+    // its box, before the item's turn, with the procedural blocks while it loads
+    // or if it fails. A pair of speakers has a box (and a model) per speaker.
+    const models =
+      part && !ghost ? modelChain(part, item.placement).map((m) => m.id) : [];
+    const boxes = item.modelBoxes ?? [
+      itemBounds({ origin: [0, 0, 0], blocks: item.blocks }),
+    ];
+    const meshes = models.length
+      ? boxes.map((box, k) => {
+          const centre = boxCenter(box);
+          // The blocks this box stands in for, drawn around its centre.
+          const inside = item.blocks.flatMap((b, i) =>
+            boxes.length === 1 ||
+            [0, 1, 2].every(
+              (a) => b.pos[a] >= box.min[a] && b.pos[a] <= box.max[a],
+            )
+              ? [blocks[i]]
+              : [],
+          );
+          return (
+            <ModelBlock
+              key={k}
+              ids={models}
+              pos={centre}
+              size={[0, 1, 2].map((a) => box.max[a] - box.min[a]) as Vec3}
+              glow={glow}
+              palette="desk"
+              fallback={
+                <group position={centre.map((v) => -v) as Vec3}>{inside}</group>
+              }
+            />
+          );
+        })
+      : blocks;
     const turned = item.rotY ? (
       <group rotation={[0, item.rotY, 0]}>{meshes}</group>
     ) : (

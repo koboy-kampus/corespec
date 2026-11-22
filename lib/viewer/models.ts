@@ -3,9 +3,11 @@ import models from "@/data/models.json";
 import {
   ALLOWED_LICENCES,
   ATTRIBUTION_REQUIRED,
+  matchesRule,
   modelUrl,
 } from "@/scripts/model-rules.mjs";
 import type { Category } from "@/types/parts";
+import type { DeskTone } from "./desk-layout";
 import type { Tone, Vec3 } from "./layout";
 
 /**
@@ -18,6 +20,14 @@ export type ModelId = string;
 /** "stretch" fills the item's box on every axis; "contain" keeps proportions. */
 export type ModelFit = "stretch" | "contain";
 
+/** A palette tone a model's material can take: a PC tone or a desk-view tone. */
+export type ModelTone = Tone | DeskTone;
+
+/**
+ * Where an item is drawn, when that changes its model: "on-arm" is a monitor
+ * hanging on a monitor arm (drawn without its stand).
+ */
+export type ModelPlacement = "on-arm";
 export interface ModelSpec {
   id: ModelId;
   /** Where the site serves the compressed file. */
@@ -28,12 +38,20 @@ export interface ModelSpec {
    */
   basis: [Vec3, Vec3, Vec3];
   /** Source material name → palette tone. Anything not listed keeps its colour. */
-  recolour: Record<string, Tone>;
+  recolour: Record<string, ModelTone>;
   fit: ModelFit;
   /** Set (with a reason) when the model keeps its own textures. */
   keepTextures?: string;
   /** The category this is the default model for, if any. */
   defaultFor?: Category;
+  /**
+   * A variant of its category's model (Phase 19): used for the items whose
+   * fields equal `match` (e.g. { adjustable: true }), or for a `layout`
+   * placement (a monitor on an arm).
+   */
+  variantFor?: Category;
+  match?: Record<string, string | number | boolean>;
+  layout?: ModelPlacement;
 }
 
 interface ModelEntry {
@@ -43,6 +61,9 @@ interface ModelEntry {
   fit?: string;
   keepTextures?: string;
   defaultFor?: string;
+  variantFor?: string;
+  match?: Record<string, string | number | boolean>;
+  layout?: string;
 }
 
 export const MODELS: Record<ModelId, ModelSpec> = Object.fromEntries(
@@ -52,10 +73,13 @@ export const MODELS: Record<ModelId, ModelSpec> = Object.fromEntries(
       id: m.id,
       url: modelUrl(m.id),
       basis: m.basis as ModelSpec["basis"],
-      recolour: (m.recolour ?? {}) as Record<string, Tone>,
+      recolour: (m.recolour ?? {}) as Record<string, ModelTone>,
       fit: (m.fit ?? "stretch") as ModelFit,
       keepTextures: m.keepTextures,
       defaultFor: m.defaultFor as Category | undefined,
+      variantFor: m.variantFor as Category | undefined,
+      match: m.match,
+      layout: m.layout as ModelPlacement | undefined,
     },
   ]),
 );
@@ -66,28 +90,55 @@ const DEFAULTS = new Map<string, ModelSpec>(
   ),
 );
 
+const VARIANTS = Object.values(MODELS).filter((m) => m.variantFor);
+
+/** An item, as far as choosing its model goes. */
+export type ModelItem = { category: Category; modelId?: string };
+
+/** The variant whose `match` the item's fields equal, if any (first in models.json wins). */
+export function matchingVariant(item: ModelItem): ModelSpec | undefined {
+  return VARIANTS.find(
+    (m) =>
+      m.variantFor === item.category &&
+      m.match &&
+      matchesRule(item as unknown as Record<string, unknown>, m.match),
+  );
+}
+
 /**
- * Every model an item could show, best first: its own `modelId`, then its
- * category's default. If one fails to load the viewer tries the next, then falls
- * back to the procedural box. Empty when the item has no model at all.
+ * Every model an item could show, best first. If one fails to load the viewer
+ * tries the next, then falls back to the procedural box. Empty when the item
+ * has no model at all.
+ *
+ * - Placed somewhere with its own variant (a monitor on an arm): only that
+ *   model, since the others would draw a stand the layout left out.
+ * - Otherwise: the item's own `modelId`, then the variant its fields match
+ *   (data/models.json `match`), then its category's default.
  */
-export function modelChain(item: {
-  category: Category;
-  modelId?: string;
-}): ModelSpec[] {
+export function modelChain(
+  item: ModelItem,
+  placement?: ModelPlacement,
+): ModelSpec[] {
+  if (placement) {
+    const placed = VARIANTS.find(
+      (m) => m.variantFor === item.category && m.layout === placement,
+    );
+    if (placed) return [placed];
+  }
   const own = item.modelId ? MODELS[item.modelId] : undefined;
+  const variant = matchingVariant(item);
   const fallback = DEFAULTS.get(item.category);
-  return [own, fallback].filter(
+  return [own, variant, fallback].filter(
     (m, i, all): m is ModelSpec => !!m && all.indexOf(m) === i,
   );
 }
 
-/** The model an item shows: product model, else category model, else null (the box). */
-export function resolveModel(item: {
-  category: Category;
-  modelId?: string;
-}): ModelSpec | null {
-  return modelChain(item)[0] ?? null;
+/** The model an item shows: product model, else variant, else category model, else null (the box). */
+export function resolveModel(
+  item: ModelItem,
+  placement?: ModelPlacement,
+): ModelSpec | null {
+  return modelChain(item, placement)[0] ?? null;
 }
 
 /** Self-hosted Draco decoder (copied by `npm run models`), so nothing loads from a CDN. */
