@@ -787,6 +787,8 @@ _Session 1 instruction, kept for history:_ **Start now with Phase 0. Plan → im
 
 LED strips keep their procedural look. The keyboard model is unchanged.
 
+**Fix round (22 Nov, after 19a):** `microphone` re-exported (tripod legs now run from a hub down to the feet, thicker). New `monitor-panel-curved` (same panel, curved, no stand): use it for a **curved monitor on an arm** (the code rule next to `monitor-panel`). Both come from `tools/blender/build_fix1.py`.
+
 ### Phase 19a — Wire the models in
 
 1. **`data/models.json`**: one entry per model above (`basis` identity, `fit` as in the table, `defaultFor` where marked). `data/credits.json`: one "CoreSpec, CC0 1.0, made with Blender scripts in tools/blender" entry the models share (or one each, whatever `/credits` handles best). Then `npm run models` and check every compressed file against the budgets (each < 400 KB, the heaviest build < 2.5 MB); report the sizes.

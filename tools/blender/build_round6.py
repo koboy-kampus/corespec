@@ -86,13 +86,17 @@ def mouse():
 
 def microphone():
     reset()
-    # tripod desk stand
+    # tripod desk stand: three legs from the hub down to rubber feet
+    hub = Vector((0, 0, 46))
+    cyl("hub", 11, 16, tuple(hub), "black", verts=20, bevel=2)
     for k in range(3):
         a = math.radians(90 + k * 120)
-        p = Vector((60 * math.cos(a), 60 * math.sin(a), 0))
-        box(f"tri{k}", (70, 9, 7), (p.x / 2, p.y / 2, 18), "black", bevel=2, rot=(0, math.radians(-28), a))
-        sphere(f"foot{k}", 6, (p.x, p.y, 4), "black", scale=(1, 1, 0.7))
-    cyl("stem", 7, 80, (0, 0, 60), "steel", verts=16)
+        foot = Vector((62 * math.cos(a), 62 * math.sin(a), 6))
+        d = foot - (hub + Vector((0, 0, -4)))
+        leg = box(f"tri{k}", (11, 9, d.length), (hub + Vector((0, 0, -4)) + foot) / 2, "black", bevel=3, segments=2)
+        leg.rotation_euler = d.to_track_quat("Z", "X").to_euler()
+        sphere(f"foot{k}", 8, (foot.x, foot.y, 6), "black", scale=(1.1, 1.1, 0.75))
+    cyl("stem", 8, 64, (0, 0, 84), "steel", verts=16)
     box("yoke_base", (20, 16, 12), (0, 0, 102), "black", bevel=3)
     for s in (-1, 1):
         box(f"yoke{s}", (6, 14, 60), (s * 30, 0, 128), "black", bevel=2)
@@ -127,16 +131,17 @@ def webcam():
     return join_by_material("webcam")
 
 
-report = {}
-jobs = [
-    (headset, (0.9, -1.2, 0.5), (0, 0, 100), 700),
-    (mouse, (0.7, -1.0, 0.8), (0, 0, 15), 330),
-    (microphone, (0.8, -1.2, 0.4), (0, 0, 120), 700),
-    (webcam, (0.8, -1.3, 0.5), (0, 0, 30), 330),
-]
-for fn, cam, target, dist in jobs:
-    o = fn()
-    report[o.name] = stats(o)
-    export_glb(f"{OUT}/{o.name}.glb")
-    render_preview(f"{OUT}/{o.name}.png", target, cam_dir=cam, dist=dist, res=(700, 540), samples=16)
-print(json.dumps(report))
+if __name__ == '__main__':
+    report = {}
+    jobs = [
+        (headset, (0.9, -1.2, 0.5), (0, 0, 100), 700),
+        (mouse, (0.7, -1.0, 0.8), (0, 0, 15), 330),
+        (microphone, (0.8, -1.2, 0.4), (0, 0, 120), 700),
+        (webcam, (0.8, -1.3, 0.5), (0, 0, 30), 330),
+    ]
+    for fn, cam, target, dist in jobs:
+        o = fn()
+        report[o.name] = stats(o)
+        export_glb(f"{OUT}/{o.name}.glb")
+        render_preview(f"{OUT}/{o.name}.png", target, cam_dir=cam, dist=dist, res=(700, 540), samples=16)
+    print(json.dumps(report))

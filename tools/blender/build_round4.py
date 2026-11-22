@@ -83,6 +83,12 @@ def monitor_panel_only():
     return join_by_material("monitor-panel")
 
 
+def monitor_panel_curved():
+    reset()
+    panel(z0=0, curved=True)
+    return join_by_material("monitor-panel-curved")
+
+
 def monitor_arm():
     """Articulated gas-spring arm. Pole at the back (+Y), VESA plate at the front (-Y)."""
     reset()
