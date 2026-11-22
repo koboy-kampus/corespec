@@ -789,6 +789,8 @@ LED strips keep their procedural look. The keyboard model is unchanged.
 
 **Fix round (22 Nov, after 19a):** `microphone` re-exported (tripod legs now run from a hub down to the feet, thicker). New `monitor-panel-curved` (same panel, curved, no stand): use it for a **curved monitor on an arm** (the code rule next to `monitor-panel`). Both come from `tools/blender/build_fix1.py`.
 
+**PC case for the desk view (22 Nov, branch `models/pc-case`):** `case-mid-tower` (`tools/blender/build_case.py`, ~7.1k triangles): mid-tower, front mesh at +z, **glass side on +x**, simple internals behind the glass (board, GPU with fan rings, tower cooler, RAM, PSU shroud, 3 front + 1 rear fan with `accent` rings). Rules: **desk view only** (the PC view keeps drawing the real parts; add a way for a model to apply to one view only, e.g. `"views": ["desk"]`), fit `stretch` to the chosen case's dims (ITX cases too). Turn it so the glass faces the desk (mirror if the PC sits on the other side). Materials: `glass` must render transparent (about 15% opacity, low roughness, no depth write so the internals show), `accent` glows (emissive, like RGB; per-item `finish` can change it), `mesh` for the front.
+
 ### Phase 19a — Wire the models in
 
 1. **`data/models.json`**: one entry per model above (`basis` identity, `fit` as in the table, `defaultFor` where marked). `data/credits.json`: one "CoreSpec, CC0 1.0, made with Blender scripts in tools/blender" entry the models share (or one each, whatever `/credits` handles best). Then `npm run models` and check every compressed file against the budgets (each < 400 KB, the heaviest build < 2.5 MB); report the sizes.
