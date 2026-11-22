@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ComponentProps, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { CircleAlert } from "lucide-react";
 import { cn } from "cn";
 
@@ -151,5 +151,61 @@ export function CheckGroup({
       </div>
       <FieldError id={`${id}-error`} error={error} />
     </fieldset>
+  );
+}
+
+/**
+ * One material of an item's finish (Phase 19b): a colour input and "Reset to
+ * default". The colour only goes into the form ("finish.<material>") once it's
+ * been picked; reset sends it empty, so the material keeps the palette's
+ * colour, which the input shows meanwhile.
+ */
+export function FinishField({
+  name,
+  material,
+  defaultColour,
+  initial,
+}: {
+  name: string;
+  material: string;
+  /** The palette's colour for it, shown while it has none of its own. */
+  defaultColour: string;
+  initial: string;
+}) {
+  const id = useId();
+  const [colour, setColour] = useState(initial);
+  const own = colour !== "";
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[13px] leading-5 font-medium text-fg">
+        {material}
+      </label>
+      <div className="flex min-h-10 items-center gap-3">
+        <input
+          id={id}
+          type="color"
+          value={(own ? colour : defaultColour).toLowerCase()}
+          onChange={(e) => setColour(e.target.value.toUpperCase())}
+          aria-describedby={`${id}-state`}
+          className="h-10 w-14 shrink-0 cursor-pointer rounded-input border border-line-strong/70 bg-canvas p-1"
+        />
+        <input type="hidden" name={name} value={colour} />
+        <span
+          id={`${id}-state`}
+          className="min-w-0 flex-1 font-mono text-[12px] leading-4 text-fg-3"
+        >
+          {own ? colour.toUpperCase() : "Default"}
+        </span>
+        <button
+          type="button"
+          onClick={() => setColour("")}
+          disabled={!own}
+          aria-label={`Reset ${material} to default`}
+          className="h-10 shrink-0 rounded-input px-2 text-[13px] leading-5 text-fg-2 underline-offset-4 hover:text-fg hover:underline disabled:cursor-default disabled:no-underline disabled:opacity-40"
+        >
+          Reset to default
+        </button>
+      </div>
+    </div>
   );
 }

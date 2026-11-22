@@ -52,6 +52,10 @@ const PAGES = [
   ["credits", "/credits"],
   ["prices", "/prices"],
   ["404", "/nope"],
+  // The checkout simulation's pieces (Phase 17a); the real pages need a login.
+  ["checkout pieces", "/styleguide/checkout"],
+  // The live chat's panel and inbox (Phase 18b); the real ones need a login.
+  ["chat pieces", "/styleguide/chat"],
 ] as const;
 
 for (const [label, path] of PAGES) {

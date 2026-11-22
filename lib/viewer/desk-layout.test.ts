@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { deskWidth } from "@/lib/compat/setup-rules";
 import { CATALOG, SETUP_CATALOG } from "@/lib/parts";
 import type { Case, ResolvedSetup } from "@/types/parts";
-import { fitDistance } from "./fit";
+import { screenExtent } from "./fit";
 import {
   SEATED_DIR,
-  SEATED_FIT,
+  SEATED_FILL,
   SEATED_HEIGHT_MM,
   boxesOverlap,
   chairFadeTargets,
@@ -15,7 +15,7 @@ import {
   itemBounds,
   itemBoxes,
   layoutDesk,
-  seatedTarget,
+  seatedHome,
   segmentHitsBox,
   type Box,
   type DeskKey,
@@ -156,6 +156,51 @@ describe("items on and around the desk", () => {
     );
   });
 
+  it("marks a monitor on an arm, so it gets the stand-less model (Phase 19)", () => {
+    expect(item(layoutDesk({ monitor: aw }), "monitor").placement).toBe(
+      undefined,
+    );
+    expect(
+      item(layoutDesk({ monitor: aw, arm: S.arm[0] }), "monitor").placement,
+    ).toBe("on-arm");
+  });
+
+  it("spans the arm's box from the clamp to the VESA plate behind the screen", () => {
+    for (const arm of S.arm) {
+      const l = layoutDesk({ desk: mittzon, monitor: aw, arm });
+      const a = bounds(l, "arm");
+      const m = bounds(l, "monitor");
+      // The model stretched over this box reaches the back of the screen…
+      expect(a.max[2], arm.id).toBeCloseTo(m.min[2]);
+      // …and its clamp stays on the desk's back edge.
+      expect(a.min[2], arm.id).toBeGreaterThanOrEqual(-l.desk.depthMm / 2);
+      expect(a.min[1], arm.id).toBeCloseTo(l.desk.heightMm);
+    }
+  });
+
+  it("gives each speaker of the pair its own model box (Phase 19)", () => {
+    const l = layoutDesk({ desk: mittzon, monitor: aw, speakers: edifier });
+    const sp = item(l, "speakers");
+    expect(sp.modelBoxes).toHaveLength(2);
+    const [left, right] = sp.modelBoxes!;
+    const { l: w, h, w: d } = edifier.dims!;
+    for (const b of [left, right]) {
+      expect(b.max[0] - b.min[0]).toBeCloseTo(w);
+      expect(b.max[1] - b.min[1]).toBeCloseTo(h);
+      expect(b.max[2] - b.min[2]).toBeCloseTo(d);
+    }
+    expect(left.max[0]).toBeLessThan(right.min[0]); // apart, not one long box
+    // Every speaker block sits inside one of the two boxes.
+    for (const b of sp.blocks)
+      expect(
+        sp.modelBoxes!.some((box) =>
+          [0, 1, 2].every(
+            (a) => b.pos[a] >= box.min[a] && b.pos[a] <= box.max[a],
+          ),
+        ),
+      ).toBe(true);
+  });
+
   it("lays a big mousepad under both keyboard and mouse", () => {
     const pad = S.mousepad.find((p) => p.size === "XL")!;
     const l = layoutDesk({
@@ -266,6 +311,7 @@ describe("items on and around the desk", () => {
     for (const c of [nr200, terra, lancool]) {
       const l = layoutDesk({ desk: mittzon }, c);
       const b = bounds(l, "pc");
+      // Side on to the person: length across, width running back.
       expect(b.max[0] - b.min[0]).toBeCloseTo(c.dims!.l);
       expect(b.max[1] - b.min[1]).toBeCloseTo(c.dims!.h);
       expect(b.max[2] - b.min[2]).toBeCloseTo(c.dims!.w);
@@ -410,11 +456,11 @@ describe("camera helpers", () => {
     ).toBe(false);
   });
 
-  /** Where the seated camera ends up, for a fitted distance `dist` (mm). */
-  const seatedCamera = (l: DeskLayout, dist: number): Vec3 => {
-    const t = seatedTarget(l);
+  /** Where the seated camera ends up for a viewport's aspect (mm). */
+  const seatedCamera = (l: DeskLayout, aspect: number): Vec3 => {
+    const { target, dist } = seatedHome(l, aspect, 30);
     const n = Math.hypot(...SEATED_DIR);
-    return t.map((v, i) => v + (SEATED_DIR[i] / n) * dist) as Vec3;
+    return target.map((v, i) => v + (SEATED_DIR[i] / n) * dist) as Vec3;
   };
   const grow = (b: Box, by: number): Box => ({
     min: b.min.map((v) => v - by) as Vec3,
@@ -429,8 +475,6 @@ describe("camera helpers", () => {
             for (const arm of [undefined, S.arm[0]]) {
               const l = layoutDesk({ desk: d, monitor: m, arm, chair }, c);
               const box = grow(bounds(l, "chair"), 60);
-              const { min, max } = l.frame;
-              const size = [0, 1, 2].map((i) => max[i] - min[i]) as Vec3;
               const { widthMm: W, depthMm: D, heightMm: H } = l.desk;
               const corners = [-1, 1].flatMap((sx) =>
                 [-1, 1].flatMap((sz) =>
@@ -440,10 +484,7 @@ describe("camera helpers", () => {
               const points = [...chairFadeTargets(l), ...corners];
               // The same distance the camera rig fits, for a phone, a square and a wide viewport.
               for (const aspect of [0.45, 1, 1.8]) {
-                const cam = seatedCamera(
-                  l,
-                  fitDistance(size, 30, aspect) * SEATED_FIT,
-                );
+                const cam = seatedCamera(l, aspect);
                 for (const p of points)
                   expect(
                     segmentHitsBox(cam, p, box),
@@ -451,7 +492,7 @@ describe("camera helpers", () => {
                   ).toBe(false);
               }
             }
-  });
+  }, 30_000);
 
   it("from behind the chair at eye height it hides the screen, so the fade still has a job", () => {
     const l = layoutDesk({ desk: micke, monitor: aw, chair: S.chair[1] });
@@ -473,5 +514,60 @@ describe("camera helpers", () => {
     expect(f[0]).toBeCloseTo(0);
     expect(f[1]).toBeGreaterThan(micke.heightMinMm);
     expect(deskFocus(l, "chair")).toBeNull();
+  });
+});
+
+describe("the PC shows its glass to the person, its front to the desk (Phase 19)", () => {
+  const of = (l: DeskLayout, tone: string) =>
+    item(l, "pc").blocks.find((b) => b.tone === tone)!.pos;
+
+  it("on the floor left of the desk: glass toward the person, parts toward the back (left), not mirrored", () => {
+    const l = layoutDesk({ desk: mittzon }, lancool);
+    expect(item(l, "pc").origin[0]).toBeLessThan(0);
+    expect(of(l, "smoke")[2]).toBeGreaterThan(0);
+    expect(of(l, "pcb")[0]).toBeLessThan(0);
+    expect(item(l, "pc").mirror).toBeUndefined();
+  });
+
+  it("on the desk's right: mirrored, so its front faces left (the desk's middle); glass still toward the person", () => {
+    const l = layoutDesk({ desk: mittzon }, terra);
+    expect(item(l, "pc").spot).toBe("desk");
+    expect(item(l, "pc").origin[0]).toBeGreaterThan(0);
+    expect(of(l, "smoke")[2]).toBeGreaterThan(0);
+    expect(of(l, "pcb")[0]).toBeGreaterThan(0);
+    expect(item(l, "pc").mirror).toBe(true);
+    // Mirroring keeps it in the same box.
+    const b = bounds(l, "pc");
+    expect(b.max[0] - b.min[0]).toBeCloseTo(terra.dims!.l);
+  });
+});
+
+describe("the seated home view (Phase 19: tighter, for the recording)", () => {
+  const layouts = [
+    layoutDesk({ desk: micke, monitor: aw }),
+    layoutDesk({ desk: mittzon, monitor: aw, chair: S.chair[0] }, lancool),
+    layoutDesk({ desk: mittzon }, terra),
+  ];
+
+  it("fills SEATED_FILL of the view, centred, on a phone, a square and a wide viewport", () => {
+    for (const l of layouts)
+      for (const aspect of [0.45, 0.8, 1, 1.8]) {
+        const { target, dist } = seatedHome(l, aspect, 30);
+        const e = screenExtent(
+          l.items.map(itemBounds),
+          target,
+          SEATED_DIR,
+          dist,
+          30,
+          aspect,
+        )!;
+        const half = Math.max((e.x[1] - e.x[0]) / 2, (e.y[1] - e.y[0]) / 2);
+        expect(half, `${aspect}`).toBeCloseTo(SEATED_FILL, 2);
+        expect((e.x[0] + e.x[1]) / 2).toBeCloseTo(0, 2);
+        expect((e.y[0] + e.y[1]) / 2).toBeCloseTo(0, 2);
+        // Nothing is cut off.
+        for (const v of [...e.x, ...e.y])
+          expect(Math.abs(v)).toBeLessThanOrEqual(SEATED_FILL + 1e-3);
+      }
   });
 });

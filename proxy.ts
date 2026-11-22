@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { HINT_COOKIE } from "@/lib/auth/hint";
+import { isCheckoutConfigured } from "@/lib/checkout/config";
 import { supabaseConfig } from "@/lib/supabase/config";
 
 /**
@@ -52,8 +53,15 @@ export async function proxy(request: NextRequest) {
     return to;
   }
 
-  // Not logged in: /account needs a login (the page checks again on the server).
-  if (!loggedIn && path.startsWith("/account")) {
+  // Checkout simulation (Phase 17a) switched off: its pages don't exist.
+  const checkoutPage = path === "/checkout" || path.startsWith("/orders");
+  if (checkoutPage && !isCheckoutConfigured()) {
+    return NextResponse.rewrite(new URL("/404", request.url), { status: 404 });
+  }
+
+  // Not logged in: /account, /checkout and /orders need a login (the pages
+  // check again on the server).
+  if (!loggedIn && (path.startsWith("/account") || checkoutPage)) {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", path);
     const to = NextResponse.redirect(login);
@@ -86,5 +94,7 @@ export const config = {
     "/register",
     "/forgot-password",
     "/auth/:path*",
+    "/checkout",
+    "/orders/:path*",
   ],
 };

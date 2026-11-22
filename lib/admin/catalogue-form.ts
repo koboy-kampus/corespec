@@ -1,11 +1,38 @@
 import type { Item } from "@/types/parts";
+import { modelLook } from "@/components/viewer/palette";
 import { isCategory, SPEC_FIELDS, type Field } from "@/lib/catalogue/schema";
+import { finishMaterials, MODELS } from "@/lib/viewer/models";
 
 /**
  * Reading the admin catalogue forms (Phase 16b). Pure, so it's tested without a
  * server; the Server Actions in catalogue-actions.ts then check the result with
  * lib/catalogue/schema.ts and lib/catalogue/listings.ts.
  */
+
+/** The Finish section's input names: "finish.wood", "finish.leg"… */
+export const FINISH_PREFIX = "finish.";
+
+/** The ids in data/models.json, for the item form's "3D model" select. */
+export const MODEL_IDS = Object.keys(MODELS);
+
+/**
+ * The Finish section's materials for an item, each with the desk palette's
+ * colour it has by default. None for PC parts (they have no finish).
+ */
+export function finishChoices(
+  item: Pick<Item, "category"> & { modelId?: string },
+): { name: string; colour: string }[] {
+  // PC parts are the categories with a 3D anchor in the case.
+  if (
+    !isCategory(item.category) ||
+    SPEC_FIELDS[item.category].some((f) => f.key === "anchor")
+  )
+    return [];
+  return finishMaterials(item).map(({ name, tone }) => ({
+    name,
+    colour: modelLook(tone, "desk")?.color ?? "#808080",
+  }));
+}
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 
@@ -65,6 +92,13 @@ export function readItemForm(form: FormData): Record<string, unknown> {
   }
   if (isCategory(category))
     for (const f of SPEC_FIELDS[category]) raw[f.key] = readField(f, form);
+  // The Finish section: one "finish.<material>" per material, empty when it
+  // keeps the palette's colour (reset to default).
+  const finish: Record<string, string> = {};
+  for (const [key, value] of form.entries())
+    if (key.startsWith(FINISH_PREFIX) && typeof value === "string" && value)
+      finish[key.slice(FINISH_PREFIX.length)] = value.trim();
+  if (Object.keys(finish).length) raw.finish = finish;
   return raw;
 }
 
@@ -86,6 +120,9 @@ export function itemFormValues(
     "dims.w": item.dims ? String(item.dims.w) : "",
     "dims.h": item.dims ? String(item.dims.h) : "",
   };
+  const finish = (rec.finish ?? {}) as Record<string, string>;
+  for (const [name, colour] of Object.entries(finish))
+    out[`${FINISH_PREFIX}${name}`] = colour;
   if (item.category && isCategory(item.category))
     for (const f of SPEC_FIELDS[item.category]) {
       const v = rec[f.key];

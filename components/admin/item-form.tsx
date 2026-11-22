@@ -12,7 +12,8 @@ import {
 } from "@/lib/catalogue/schema";
 import { TIER_LABEL } from "@/lib/picker";
 import type { Category } from "@/types/parts";
-import { CheckField, CheckGroup, SelectField } from "./inputs";
+import { FINISH_PREFIX } from "@/lib/admin/catalogue-form";
+import { CheckField, CheckGroup, FinishField, SelectField } from "./inputs";
 
 type Values = Record<string, string | string[]>;
 
@@ -33,6 +34,7 @@ export function ItemForm({
   initial,
   presetLocked,
   modelIds,
+  finishMaterials = [],
 }: {
   mode: "new" | "edit";
   category: Category;
@@ -40,6 +42,11 @@ export function ItemForm({
   /** A preset uses this item, so it can't be taken out of the picker. */
   presetLocked: boolean;
   modelIds: string[];
+  /**
+   * The materials its finish can colour, with the palette's colour for each
+   * (from the saved item's model). None for PC parts.
+   */
+  finishMaterials?: { name: string; colour: string }[];
 }) {
   const [state, action, pending] = useActionState<AdminFormState, FormData>(
     saveItem,
@@ -248,6 +255,36 @@ export function ItemForm({
           {SPEC_FIELDS[category].map(spec)}
         </div>
       </section>
+
+      {finishMaterials.length ? (
+        <section className="flex flex-col gap-4" aria-labelledby="item-finish">
+          <div className="flex flex-col gap-1">
+            <h2 id="item-finish" className="text-h3 text-fg">
+              Finish
+            </h2>
+            <p className="text-[13px] leading-5 text-fg-3">
+              Its colours in the desk view, per part of its 3D model. Default
+              keeps the site&apos;s palette. The list follows the saved 3D
+              model: after changing the model or a field that picks it (curved,
+              type, kind…), save first.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {finishMaterials.map((m) => (
+              <FinishField
+                key={m.name}
+                name={`${FINISH_PREFIX}${m.name}`}
+                material={m.name}
+                defaultColour={m.colour}
+                initial={one(v[`${FINISH_PREFIX}${m.name}`])}
+              />
+            ))}
+          </div>
+          {err.finish ? (
+            <FormMessage tone="error">{err.finish}</FormMessage>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="flex flex-col gap-3">
         {state.error ? (

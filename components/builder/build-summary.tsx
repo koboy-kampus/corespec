@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Pencil } from "lucide-react";
 import { cn } from "cn";
+import { CheckoutButton } from "@/components/checkout/checkout-button";
 import { PriceTag } from "@/components/ui/price-tag";
 import { useBuildDerived } from "@/hooks/use-build";
 import { CATEGORIES } from "@/lib/categories";
@@ -95,6 +96,7 @@ export function BuildSummary({ className }: { className?: string }) {
         </div>
         <Subtotals pcIDR={pcIDR} setupIDR={setupIDR} />
         <BuildActions hasParts={filled > 0} />
+        <CheckoutButton itemCount={filled + setupFilled} results={results} />
       </div>
 
       {chosen.length ? (

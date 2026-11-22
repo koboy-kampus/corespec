@@ -1,5 +1,6 @@
 import {
   Box3,
+  Float32BufferAttribute,
   Matrix4,
   Vector3,
   type BufferGeometry,
@@ -118,4 +119,26 @@ export function flipWinding(geometry: BufferGeometry): void {
     }
     attr.needsUpdate = true;
   }
+}
+
+/**
+ * Gives a mesh UVs projected flat from the front (x → u, y → v, 0–1 over its
+ * own extent), when it has none. A model's `screen` uses them for the same
+ * soft gradient as the procedural screen: `npm run models` prunes UVs that no
+ * texture uses, so the built files don't carry them.
+ */
+export function planarUv(geometry: BufferGeometry): void {
+  if (geometry.getAttribute("uv")) return;
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  const pos = geometry.getAttribute("position");
+  if (!box || !pos) return;
+  const w = box.max.x - box.min.x || 1;
+  const h = box.max.y - box.min.y || 1;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = (pos.getX(i) - box.min.x) / w;
+    uv[i * 2 + 1] = (pos.getY(i) - box.min.y) / h;
+  }
+  geometry.setAttribute("uv", new Float32BufferAttribute(uv, 2));
 }

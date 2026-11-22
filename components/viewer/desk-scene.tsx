@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useMemo,
   useRef,
   useState,
@@ -9,22 +10,16 @@ import {
 } from "react";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import {
-  BoxGeometry,
-  CanvasTexture,
-  SRGBColorSpace,
-  type Group,
-  type Texture,
-} from "three";
+import { BoxGeometry, CanvasTexture, type Group, type Texture } from "three";
 import type { CompatResult } from "@/lib/compat/rules";
 import {
   chairFadeTargets,
   deskFocus,
+  boxCenter,
   itemBounds,
   layoutDesk,
   SEATED_DIR,
-  SEATED_FIT,
-  seatedTarget,
+  seatedHome,
   segmentHitsBox,
   type Box,
   type DeskBlock,
@@ -39,7 +34,9 @@ import { clampDelta } from "@/lib/viewer/spring";
 import type { Case, Item, ResolvedSetup } from "@/types/parts";
 import { Animated, setFade } from "./animated";
 import { CameraRig, type CameraKeys, type CameraView } from "./camera-rig";
-import { ModelBlock } from "./model-block";
+import { CaptureFrame } from "./capture-frame";
+import { ModelBlock, SuspendModelsUp } from "./model-block";
+import { screenTexture } from "./screen-texture";
 import { DESK_TONES, WARN } from "./palette";
 import { PartTooltip } from "./part-tooltip";
 import { hasWebGL, usePresence } from "./scene-common";
@@ -59,6 +56,10 @@ export interface DeskSceneProps {
   embedded?: boolean;
   /** Items already there on the first render skip the drop (shared builds). */
   skipIntro?: boolean;
+  /** The PDF receipt's picture: see SceneProps.onCapture. */
+  onCapture?: (png: string | null) => void;
+  /** A fixed pixel ratio (the receipt's capture), instead of the screen's. */
+  pixelRatio?: number;
 }
 
 const ITEM_DROP = 160; // mm
@@ -71,52 +72,48 @@ const CHAIR_MARGIN = 60;
 const NO_WARNINGS: NonNullable<DeskSceneProps["warnings"]> = [];
 
 /**
- * Seated view: from behind the chair and a little above eye height, looking at the
- * middle of the screen. Orbit stays in front of the desk and above the floor.
+ * Seated view: from in front of the desk, a little left and above eye height,
+ * framing the setup (see `seatedHome`). Orbit stays in front of the desk and
+ * above the floor.
  */
 const SEATED_VIEW: CameraView = {
   dir: SEATED_DIR,
   polar: [Math.PI * 0.14, Math.PI * 0.49],
   azimuth: [-1.15, 1.15],
-  zoom: [0.3, 1.5],
-  fit: SEATED_FIT,
+  zoom: [0.3, 1.8],
 };
 
 function DeskLights() {
   return (
     <>
       <ambientLight intensity={0.9} />
-      <hemisphereLight args={["#ffffff", "#2a2629", 0.9]} />
+      <hemisphereLight args={["#ffffff", "#28282a", 0.9]} />
       {/* Key light from in front and above, where the person sits. */}
-      <directionalLight position={[2, 7, 9]} intensity={2.6} />
+      <directionalLight position={[2, 7, 9]} intensity={3.1} />
       <directionalLight position={[-7, 4, 3]} intensity={0.6} />
-      {/* A faint coral rim from behind, the brand colour without tinting the desk. */}
+      {/*
+        Rim lights from behind and above (Phase 19, for the recorded demo): a
+        white edge on the tops and outlines of dark items (the chair, the desk
+        legs, the speakers, the case) so they part from the dark page. Neutral
+        white: a cool tint, with the coral below, turned dark greys mauve.
+      */}
+      <directionalLight position={[4, 6, -8]} intensity={1.7} color="#f4f4f4" />
       <directionalLight
-        position={[-6, 3, -6]}
-        intensity={0.35}
+        position={[-5, 4, -7]}
+        intensity={0.9}
+        color="#f4f4f4"
+      />
+      {/*
+        A faint coral rim from behind, low, so it edges the backs of things
+        rather than tinting their tops.
+      */}
+      <directionalLight
+        position={[-6, 0.6, -6]}
+        intensity={0.3}
         color="#fe2e4b"
       />
     </>
   );
-}
-
-let screenMap: Texture | null = null;
-/** The screen's soft glow: a gentle diagonal gradient, made once. */
-function screenTexture(): Texture {
-  if (screenMap) return screenMap;
-  const c = document.createElement("canvas");
-  c.width = 64;
-  c.height = 64;
-  const g = c.getContext("2d")!;
-  const grad = g.createLinearGradient(0, 0, 64, 64);
-  grad.addColorStop(0, "#56607e");
-  grad.addColorStop(0.55, "#2c3348");
-  grad.addColorStop(1, "#191c28");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 64, 64);
-  screenMap = new CanvasTexture(c);
-  screenMap.colorSpace = SRGBColorSpace;
-  return screenMap;
 }
 
 /** e^(−k·r²), shifted and scaled so it's 1 in the middle (r = 0) and 0 at the edge (r = 1). */
@@ -382,6 +379,8 @@ function DeskCanvas({
   cameraKeysRef,
   embedded = false,
   skipIntro = false,
+  onCapture,
+  pixelRatio,
 }: DeskSceneProps) {
   const layout = useMemo(() => layoutDesk(setup, pcCase), [setup, pcCase]);
   const highlights = useMemo(
@@ -407,13 +406,19 @@ function DeskCanvas({
   const { min, max } = layout.frame;
   const frame = [0, 1, 2].map((i) => (max[i] - min[i]) * MM_TO_UNITS) as Vec3;
   const [fx0, , fz0] = [0, 1, 2].map((i) => (min[i] + max[i]) / 2);
-  const [aimX, aimY, aimZ] = seatedTarget(layout);
+  // The home view frames the setup itself, for the viewport's shape.
   const view = useMemo<CameraView>(
     () => ({
       ...SEATED_VIEW,
-      target: [aimX * MM_TO_UNITS, aimY * MM_TO_UNITS, aimZ * MM_TO_UNITS],
+      home: (aspect, fov) => {
+        const { target, dist } = seatedHome(layout, aspect, fov);
+        return {
+          target: target.map((v) => v * MM_TO_UNITS) as Vec3,
+          dist: dist * MM_TO_UNITS,
+        };
+      },
     }),
-    [aimX, aimY, aimZ],
+    [layout],
   );
 
   const chairTargets = useMemo(() => chairFadeTargets(layout), [layout]);
@@ -430,24 +435,45 @@ function DeskCanvas({
     const blocks = item.blocks.map((b, i) => (
       <BlockMesh key={i} b={b} glow={glow} ghost={ghost} />
     ));
-    // An item with a model (its own or its category's) draws it in its own box,
-    // before the item's turn, with the procedural blocks while it loads or if it fails.
-    const models = part && !ghost ? modelChain(part).map((m) => m.id) : [];
-    const own = itemBounds({ origin: [0, 0, 0], blocks: item.blocks });
-    const centre = [0, 1, 2].map((i) => (own.min[i] + own.max[i]) / 2) as Vec3;
-    const meshes = models.length ? (
-      <ModelBlock
-        ids={models}
-        pos={centre}
-        size={[0, 1, 2].map((i) => own.max[i] - own.min[i]) as Vec3}
-        glow={glow}
-        fallback={
-          <group position={centre.map((v) => -v) as Vec3}>{blocks}</group>
-        }
-      />
-    ) : (
-      blocks
-    );
+    // An item with a model (its own, a variant or its category's) draws it in
+    // its box, before the item's turn, with the procedural blocks while it loads
+    // or if it fails. A pair of speakers has a box (and a model) per speaker.
+    const models =
+      part && !ghost
+        ? modelChain(part, item.placement, "desk").map((m) => m.id)
+        : [];
+    const boxes = item.modelBoxes ?? [
+      itemBounds({ origin: [0, 0, 0], blocks: item.blocks }),
+    ];
+    const meshes = models.length
+      ? boxes.map((box, k) => {
+          const centre = boxCenter(box);
+          // The blocks this box stands in for, drawn around its centre.
+          const inside = item.blocks.flatMap((b, i) =>
+            boxes.length === 1 ||
+            [0, 1, 2].every(
+              (a) => b.pos[a] >= box.min[a] && b.pos[a] <= box.max[a],
+            )
+              ? [blocks[i]]
+              : [],
+          );
+          return (
+            <ModelBlock
+              key={k}
+              ids={models}
+              pos={centre}
+              size={[0, 1, 2].map((a) => box.max[a] - box.min[a]) as Vec3}
+              glow={glow}
+              palette="desk"
+              finish={part && "finish" in part ? part.finish : undefined}
+              mirrorX={item.mirror}
+              fallback={
+                <group position={centre.map((v) => -v) as Vec3}>{inside}</group>
+              }
+            />
+          );
+        })
+      : blocks;
     const turned = item.rotY ? (
       <group rotation={[0, item.rotY, 0]}>{meshes}</group>
     ) : (
@@ -499,7 +525,7 @@ function DeskCanvas({
   return (
     <Canvas
       frameloop="demand"
-      dpr={[1, 2]}
+      dpr={pixelRatio ?? [1, 2]}
       camera={{ fov: 30, near: 0.1, far: 200, position: [0, 6, 20] }}
       gl={{ antialias: true, alpha: true }}
       fallback={fallback}
@@ -520,10 +546,20 @@ function DeskCanvas({
             depthWrite={false}
           />
         </mesh>
-        {[
-          ...items.map((i) => render(i, false)),
-          ...leaving.map((i) => render(i, true)),
-        ]}
+        {onCapture ? (
+          // The receipt's capture: draw nothing until every model is in.
+          <SuspendModelsUp.Provider value>
+            <Suspense fallback={null}>
+              {items.map((i) => render(i, false))}
+              <CaptureFrame onCapture={onCapture} />
+            </Suspense>
+          </SuspendModelsUp.Provider>
+        ) : (
+          [
+            ...items.map((i) => render(i, false)),
+            ...leaving.map((i) => render(i, true)),
+          ]
+        )}
         <FloorShadows layout={layout} />
         {highlights.edges.map((side) => (
           <EdgeLine key={side} side={side} desk={layout.desk} />

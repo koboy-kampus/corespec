@@ -27,7 +27,10 @@
       "h": 172
     },
     "placement": "desk",
-    "connection": "XLR"
+    "connection": "XLR",
+    "finish": {
+      "mesh": "#6E6F73"
+    }
   },
   {
     "id": "microphone-hyperx-quadcast-s",

@@ -155,6 +155,12 @@ export type DeskPlacement = "desk" | "monitor-top" | "desk-edge" | "floor";
 export interface SetupBase extends ItemBase {
   category: SetupCategory;
   placement: DeskPlacement;
+  /**
+   * Phase 19b: its colourway in the desk view, as model material name →
+   * "#RRGGBB" (e.g. { wood: "#E8E6E1" } for a white desk top). Materials not
+   * listed keep the palette's colour. See `finishMaterials` (lib/viewer/models.ts).
+   */
+  finish?: Record<string, string>;
 }
 
 export interface Monitor extends SetupBase {

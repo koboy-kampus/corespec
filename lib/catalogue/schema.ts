@@ -1,3 +1,4 @@
+import { finishMaterials } from "@/lib/viewer/models";
 import type { Category, Item, Tier } from "@/types/parts";
 
 /**
@@ -341,9 +342,15 @@ export const BASE_KEYS = [
   "tier",
   "dims",
   "modelId",
+  "finish",
   "listings",
   "active",
 ] as const;
+
+/** A finish colour: "#RRGGBB" (the database checks the same). */
+export const FINISH_COLOUR = /^#[0-9A-Fa-f]{6}$/;
+/** At most this many materials in one finish (as the database). */
+export const FINISH_MAX = 12;
 
 const isCategory = (c: unknown): c is Category =>
   typeof c === "string" && Object.hasOwn(SPEC_FIELDS, c);
@@ -506,7 +513,48 @@ export function checkItem(raw: unknown): {
     else out[field.key] = res.value;
   }
 
+  if (r.finish !== undefined && r.finish !== null) {
+    const res = checkFinish(out, r.finish);
+    if (res.error) errors.finish = res.error;
+    else if (res.value) out.finish = res.value;
+  }
+
   return Object.keys(errors).length
     ? { errors }
     : { item: out as Omit<Item, "listings">, errors };
+}
+
+/**
+ * Checks a setup item's finish (Phase 19b) against the materials its model has
+ * (`finishMaterials`, from data/models.json). `item` is the checked item so
+ * far: its category, model id and fields pick the model. Colours come back
+ * upper-case; an empty finish comes back as none.
+ */
+export function checkFinish(
+  item: Record<string, unknown>,
+  finish: unknown,
+): { value?: Record<string, string>; error?: string } {
+  const category = item.category as Category;
+  if (PC_ONLY[category]) return { error: "Only setup items have a finish." };
+  if (!finish || typeof finish !== "object" || Array.isArray(finish))
+    return { error: "A finish is a list of material colours." };
+  const entries = Object.entries(finish as Record<string, unknown>);
+  if (entries.length > FINISH_MAX)
+    return { error: `At most ${FINISH_MAX} materials.` };
+  const names = new Set(
+    finishMaterials(item as { category: Category; modelId?: string }).map(
+      (m) => m.name,
+    ),
+  );
+  const value: Record<string, string> = {};
+  for (const [name, colour] of entries) {
+    if (!names.has(name))
+      return {
+        error: `"${name.slice(0, 40)}" isn't a material of this item's 3D model.`,
+      };
+    if (typeof colour !== "string" || !FINISH_COLOUR.test(colour))
+      return { error: `The colour for "${name}" must be like #1E1E20.` };
+    value[name] = colour.toUpperCase();
+  }
+  return entries.length ? { value } : {};
 }

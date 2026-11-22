@@ -3,8 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FolderOpen, LogIn, LogOut, Shield, UserRound } from "lucide-react";
+import {
+  FolderOpen,
+  LogIn,
+  LogOut,
+  Receipt,
+  Shield,
+  UserRound,
+} from "lucide-react";
 import { cn } from "cn";
+import { useCheckoutEnabled } from "@/components/checkout/checkout-flag";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -60,6 +68,7 @@ function MobileLinks({
 }) {
   const hint = useAuthHint();
   const router = useRouter();
+  const checkout = useCheckoutEnabled();
   if (!hint)
     return (
       <Link href="/login" onClick={onNavigate} className={linkClass}>
@@ -71,6 +80,11 @@ function MobileLinks({
       <Link href="/account" onClick={onNavigate} className={linkClass}>
         My account <UserRound className="size-4 text-fg-3" aria-hidden />
       </Link>
+      {checkout ? (
+        <Link href="/orders" onClick={onNavigate} className={linkClass}>
+          My orders <Receipt className="size-4 text-fg-3" aria-hidden />
+        </Link>
+      ) : null}
       {hint === "admin" ? (
         <Link href="/admin" onClick={onNavigate} className={linkClass}>
           Admin <Shield className="size-4 text-fg-3" aria-hidden />
@@ -83,7 +97,11 @@ function MobileLinks({
           onNavigate();
           await logOutHere();
           const path = window.location.pathname;
-          if (path.startsWith("/account") || path.startsWith("/admin"))
+          if (
+            ["/account", "/admin", "/checkout", "/orders"].some((p) =>
+              path.startsWith(p),
+            )
+          )
             router.push("/");
         }}
       >
@@ -107,6 +125,7 @@ function Menu({ className }: { className?: string }) {
   const hint = useAuthHint();
   const name = useAccountStore((s) => s.name);
   const router = useRouter();
+  const checkout = useCheckoutEnabled();
   const [busy, setBusy] = useState(false);
 
   if (!hint) {
@@ -153,6 +172,13 @@ function Menu({ className }: { className?: string }) {
             <FolderOpen /> My builds
           </Link>
         </DropdownMenuItem>
+        {checkout ? (
+          <DropdownMenuItem asChild>
+            <Link href="/orders">
+              <Receipt /> My orders
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         {hint === "admin" ? (
           <DropdownMenuItem asChild>
             <Link href="/admin">
@@ -168,7 +194,11 @@ function Menu({ className }: { className?: string }) {
             try {
               await logOutHere();
               const path = window.location.pathname;
-              if (path.startsWith("/account") || path.startsWith("/admin"))
+              if (
+                ["/account", "/admin", "/checkout", "/orders"].some((p) =>
+                  path.startsWith(p),
+                )
+              )
                 router.push("/");
             } finally {
               setBusy(false);

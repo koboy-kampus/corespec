@@ -27,7 +27,10 @@
       "h": 122
     },
     "placement": "desk",
-    "kind": "2.1"
+    "kind": "2.1",
+    "finish": {
+      "steel": "#B87333"
+    }
   },
   {
     "id": "speakers-logitech-z333",

@@ -6,12 +6,15 @@ import { ArrowLeft } from "lucide-react";
 import { ItemForm } from "@/components/admin/item-form";
 import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/ui/section-header";
-import { itemFormValues } from "@/lib/admin/catalogue-form";
+import {
+  finishChoices,
+  itemFormValues,
+  MODEL_IDS,
+} from "@/lib/admin/catalogue-form";
 import { requireAdmin } from "@/lib/auth/dal";
 import { ALL_CATEGORIES, CATEGORY_LABEL } from "@/lib/categories";
 import { isCategory } from "@/lib/catalogue/schema";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import models from "@/data/models.json";
 import { AdminSkeleton } from "../../skeleton";
 
 export const metadata: Metadata = {
@@ -63,7 +66,8 @@ async function NewItem({
             id: `${category}-`,
           }}
           presetLocked={false}
-          modelIds={Object.keys(models)}
+          modelIds={MODEL_IDS}
+          finishMaterials={finishChoices({ category })}
         />
       ) : (
         <ul className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">

@@ -522,10 +522,327 @@ Rei's supervisor suggested user and admin login, because examiners like seeing i
 - The compatibility rules stay pure functions on plain objects, so their tests don't change.
 - For the PI: export an ERD and a use case diagram (actors: Guest, User, Admin) into `docs/`.
 
+## 9. Session 3 — Phases 17 and 18
+
+> **How to use (session 3):** open Claude Code in the repo and say:
+> `Read REI.md section 9 and HANDOFF.md, then start Phase 17a.`
+
+Rei's supervisor asked for two more features at the 16 November bimbingan: a **payment simulation with a downloadable PDF receipt** (the items plus a picture of the PC and the setup) and a **live chat** with the admin. CoreSpec is still **not a shop**: nothing is sold, stocked or shipped, and every screen and the PDF say so.
+
+**Deadline: Phase 17a and 17b must be on a Vercel preview by Wednesday 18 Nov, evening**, so Rei can test on his phones before the bimbingan on Thursday 19 Nov. If time runs short, cut scope in this order: admin orders list → QR code on the PDF → desk picture on the PDF. Never cut: the "simulation" wording, the server-side price recalculation, the tests of the status rules.
+
+**Everything in sections 0, 3, 6, 7 and the session 2 rules in section 8 still applies** (read the Next 16 docs in `node_modules/next/dist/docs/` before using a Next API that's new to this repo: Route Handlers and `next/script` are both new here). On top of that:
+
+- Work on a new branch **`feat/phase-17-checkout`** and open a PR; never push to `main`.
+- **Still no Supabase service-role key.** The pattern for trusted writes is in 17a.
+- New SQL goes in **new** migration files (rerunnable, like the others). Don't run them on the real project: the chat does that, then reruns `supabase/tests/rls.sql`.
+- **With the Midtrans settings missing the site is exactly as before**: no Checkout button, no order pages, no request to Midtrans, and `accounts-off.spec.ts` stays green. Checkout also needs accounts on.
+- Rei types every key himself. Never print, log or ask for a key's value.
+
+### Facts checked in the Midtrans docs on 17 Nov 2026 (don't work from memory)
+
+- **Product: Snap, pop-up mode.** The server asks for a token; the browser opens the payment pop-up with it. No Core API charge calls.
+- **Create a transaction:** `POST https://app.sandbox.midtrans.com/snap/v1/transactions`, headers `Accept: application/json`, `Content-Type: application/json`, `Authorization: Basic base64(SERVER_KEY + ":")`. Body: `transaction_details: { order_id, gross_amount }` (integer rupiah) plus optional `item_details: [{ id, price, quantity, name }]`, `customer_details`, `expiry: { unit, duration }`, `custom_field1..3`. `order_id`: unique, at most 50 characters, only letters, digits, `-`, `_`, `~`, `.`. **The item prices × quantities must add up to `gross_amount`** or Midtrans rejects the request. Success is HTTP 201 with `{ token, redirect_url }`.
+- **Browser:** load `https://app.sandbox.midtrans.com/snap/snap.js` with `data-client-key="<client key>"`, then `window.snap.pay(token, { onSuccess, onPending, onError, onClose })`. The same token re-opens the same payment.
+- **Status check:** `GET https://api.sandbox.midtrans.com/v2/{order_id}/status`, same Basic auth. Returns `transaction_status`, `fraud_status`, `gross_amount` (a string like `"9080000.00"`), `payment_type`, `transaction_id`, `settlement_time`, `status_code`. An order whose pop-up was closed before a payment method was chosen has no transaction yet (expect a 404; **check this in the sandbox** and treat it as "still pending").
+- **Statuses:** `pending`, `settlement`, `capture` (cards), `deny`, `cancel`, `expire`, `failure`, `refund`, `partial_refund`, `chargeback`, `authorize`. Paid means `status_code` 200 **and** `transaction_status` is `settlement`, or `capture` with `fraud_status` `accept`.
+- **Notification (webhook):** Midtrans POSTs JSON to the Payment Notification URL set in its dashboard (Settings → Configuration). The URL must be public: **a Vercel preview URL is behind Vercel's login, so the webhook only works on production.** `signature_key` = SHA-512 hex of `order_id + status_code + gross_amount + SERVER_KEY`, with `gross_amount` exactly as the string in the body. Notifications can arrive twice or out of order. Answer within 5 seconds; any 2xx stops retries.
+- **Sandbox testing:** card `4811 1111 1111 1114`, any future expiry, CVV `123`, OTP `112233`. QRIS on a desktop: copy the QR image's address into `https://simulator.sandbox.midtrans.com/v2/qris/index`. BCA VA: `https://simulator.sandbox.midtrans.com/bca/va/index`. **QRIS has a Rp 10.000.000 limit per transaction** (a Bank Indonesia rule), and most CoreSpec builds cost more, so **don't restrict `enabled_payments`**: let Snap list every method the sandbox account has. Check in the sandbox what Snap does with QRIS above the limit and say so in the summary.
+
+### Phase 17a — Orders and the Midtrans Sandbox checkout
+
+**Environment variables** (add to `.env.example` with empty values and comments; `docs/accounts.md` gets a "Checkout simulation" section with the setup steps):
+
+| Name | Kind | Notes |
+| --- | --- | --- |
+| `MIDTRANS_SERVER_KEY` | **secret**, server only | Vercel type Secret. Used only in `lib/checkout/midtrans.ts` (`import "server-only"`). |
+| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | public by design | Vercel type Config. Goes in the `snap.js` tag. |
+| `ORDER_WRITE_SECRET` | **secret**, server only | Random, 32 bytes or more. See "Trusted writes". |
+
+`lib/checkout/config.ts`: `checkoutConfig()` returns null unless all three **and** the Supabase settings are present. **Only the sandbox hosts appear in the code** (`app.sandbox.midtrans.com`, `api.sandbox.midtrans.com`); there is no production switch, so a real key can never charge anyone.
+
+**Database** (`supabase/migrations/20261117000100_orders.sql`):
+
+- `public.orders`: `id uuid` pk, `order_no text unique` (e.g. `CS-20261119-7K3F9Q`: this is the Midtrans `order_id`), `owner uuid` → `profiles` (on delete cascade), `build_name text`, `parts jsonb` (the `{category: itemId}` snapshot, checked by `build_parts_ok`), `items jsonb` (the price snapshot: `[{ id, category, brand, name, priceIDR, priceKind: "checked" | "estimate" }]`), `pc_idr`, `setup_idr`, `total_idr` (integers, `total_idr > 0`), `status text` in (`pending`, `paid`, `failed`, `expired`, `cancelled`) default `pending`, `payment_type text`, `midtrans_transaction_id text`, `snap_token text`, `created_at`, `updated_at`, `paid_at`.
+- RLS on. `select`: the owner reads their own, admins read all (use the existing admin check function). **No insert, update or delete grants for `anon` or `authenticated` at all.**
+- **Trusted writes without a service-role key:** a table `public.payment_config` (one row, `secret_hash text`, RLS on, no policies, no grants) holds the SHA-256 hex of `ORDER_WRITE_SECRET`. Two `security definer` functions with `search_path = ''`, each taking `p_secret text` first and raising unless `encode(sha256(convert_to(p_secret, 'utf8')), 'hex')` equals the stored hash (and refusing everything while the hash is null):
+  - `create_order(p_secret, p_owner, p_order_no, p_build_name, p_parts, p_items, p_pc_idr, p_setup_idr, p_total_idr)` → the new row. Also refuses when the owner already has 5 `pending` orders created in the last hour (spam cap).
+  - `set_order_payment(p_secret, p_order_no, p_status, p_payment_type, p_transaction_id, p_snap_token)` → the row. **Status rules live here:** `paid` is final; `pending` never replaces another status; `failed` / `expired` / `cancelled` never replace `paid`; `paid_at` is set once; a null argument leaves its column alone. Unknown `order_no` returns nothing (no error).
+  - Grant execute to `anon` and `authenticated` (the webhook has no session). Without the secret they are useless: test exactly that.
+- The migration leaves `secret_hash` null. Rei makes the secret and its hash locally; the hash (not the secret) is safe to share, and the chat stores it with one SQL statement.
+- Extend `supabase/tests/rls.sql` and `supabase/rls.test.ts`: anon reads no orders; a user reads only their own; an admin reads all; nobody can insert/update/delete directly; both functions refuse a wrong secret and a null hash; every status rule above; the spam cap. Add mutation tests for the two rules that matter most (owner-only read, wrong secret refused). Update `types/supabase.ts`.
+
+**Server code** (`lib/checkout/`, logic in pure functions with unit tests):
+
+- `order.ts` (pure): `buildOrderDraft(parts, name)` resolves the items from the catalogue, takes `shownPrice` and `priceSource` per item, and returns the snapshot and totals, or a refusal: `empty` (no items) or `incompatible` (`check(parts)` has at least one **error**; warnings and missing parts don't block). **Prices never come from the browser.** `toMidtransItems()` (names cut to 50 characters, quantity 1; test that the sum always equals `total_idr`), `newOrderNo()`, `mapMidtransStatus()` (the "Statuses" rule above → our five statuses, or null for "no change"), `verifySignature()` (SHA-512, `timingSafeEqual`).
+- `midtrans.ts` (server only): `createSnapToken(order)` and `fetchStatus(orderNo)` with `fetch`, a 8-second timeout and no caching. No Midtrans npm package.
+- `actions.ts` (`"use server"`):
+  - `startCheckout({ name, parts })`: `getSession()` (refuse guests) → `loadCatalogue()` → `buildOrderDraft` → `create_order` → `createSnapToken` (with `expiry` 60 minutes and `customer_details.first_name` = the display name only: **never send the user's email to Midtrans**) → store the token with `set_order_payment` → return `{ orderId, orderNo, token }`.
+  - `refreshOrder(orderId)`: the owner (or an admin) asks; the server calls `fetchStatus`, checks `gross_amount` equals the order's total, maps the status and calls `set_order_payment`. **This is the main path**: it works on localhost and on previews, where the webhook can't reach.
+  - `resumePayment(orderId)`: returns the stored token for the owner's `pending` order.
+- `app/api/midtrans/notification/route.ts` (`POST`, the first Route Handler in this repo: read the Next docs): parse the JSON, find nothing → 200; verify the signature with `MIDTRANS_SERVER_KEY` (bad signature → 403, logged without the body's secrets); check `gross_amount` against the order; then **confirm with `fetchStatus`** and apply that status. Always answer 200 once the signature is good. It isn't in `proxy.ts`'s matcher; keep it that way.
+
+**Pages and UI** (English UI as everywhere; the Indonesian line below is fixed wording):
+
+- **Builder:** a primary **"Checkout (simulation)"** button in the build summary. Disabled, with the reason next to it, when the build is empty or has compatibility **errors** ("Fix 2 compatibility errors to check out": this is the rule-based system gating the order, which the PI is about). Guests see it enabled and go to `/login?next=/checkout`. Hidden entirely when checkout isn't configured.
+- **`/checkout`** (needs a login; add `/checkout` and `/orders/:path*` to `proxy.ts`'s matcher and guard on the server with `requireSession`): the order summary for the current build from the browser's store: items grouped PC / Setup with Checked or Estimate labels, both subtotals, the total, the compatibility status, and a banner: **"Payment simulation. Midtrans Sandbox: no real money, nothing is sold or shipped."** with **"SIMULASI — bukan bukti transaksi"**. "Pay with Midtrans (sandbox)" calls `startCheckout`, loads `snap.js` **only now** (never on any other page) and opens the pop-up. `onSuccess` / `onPending` / `onClose` → go to `/orders/<id>`; `onError` → a toast and stay.
+- **`/orders`** ("My orders", in the account menu): order number, date, build name, total, status badge.
+- **`/orders/[id]`**: on load, a `pending` order calls `refreshOrder` once (and has a "Check payment status" button and "Continue payment"). Shows the status, the same item table from the **snapshot** (not today's prices), totals, payment method, the sandbox banner, a short "How to pay in the sandbox" box (the test card and the QRIS simulator link from the facts above, opening in a new tab), and a link to the build's share page. A missing or foreign order is a 404.
+- **`/admin/orders`**: every order, newest first, with the owner's display name, total and status; filter by status. Read-only.
+- `robots`: disallow `/checkout` and `/orders`; all three pages `noindex`.
+
+**Tests:** unit tests for everything in `order.ts` (including: a tampered price in the input changes nothing; an incompatible build is refused; the signature check with a known example). The Server Actions and the route handler get unit tests with `fetch` mocked: wrong amount, bad signature, duplicate and out-of-order notifications, 404 from the status API. e2e: with checkout off, no button and `/checkout` is a 404; with dummy settings, the button's three states (empty, errors, ready) and the guest redirect. A real payment can't run in CI: add a manual checklist to `docs/accounts.md`. axe stays at 0 on the new pages.
+
+### Phase 17b — The PDF receipt with the 3D pictures
+
+- On `/orders/[id]`, a **"Download receipt (PDF)"** button, for any status (the status is printed on it).
+- **Pictures:** the page already knows the order's `parts`, so render them: mount the PC `Viewer` and, when the order has setup items, the `DeskViewer`, at a fixed size (e.g. 1200 × 900, pixel ratio 2) in the default assembled camera position, not exploded, no error glow, on the app's dark background. Capture each canvas to PNG **straight after a render** (call `gl.render(scene, camera)` then `toDataURL` in the same tick, or use `preserveDrawingBuffer` on these two canvases only: don't change the builder's canvases). Wait until the models have loaded (the scenes already know) before capturing. If WebGL is missing or a capture fails, the PDF is still made, with "3D preview unavailable" in the picture's place.
+- **PDF:** made in the browser with **`pdf-lib`** (loaded only when the button is clicked; say in the summary how many KB it adds to that click and confirm no other page's JavaScript grew). A4 portrait, light background so it prints well:
+  - Header: the CoreSpec wordmark as text, "Receipt — payment simulation", order number, date and time (WIB), the buyer's display name.
+  - A diagonal watermark and a footer line on **every page**: **"SIMULASI — bukan bukti transaksi"**, and "Midtrans Sandbox. No real payment was made and nothing is sold or shipped."
+  - Status (Paid / Pending / …), payment method, Midtrans transaction id.
+  - The PC picture and the desk picture.
+  - The item table from the snapshot: category, brand and name, Checked / Estimate, price; PC subtotal, setup subtotal, total, in Rupiah as the app formats them.
+  - Compatibility line: "Compatible: all 15 rules passed" (or the warnings, in short).
+  - A QR code to the build's share link, with the link as text under it. A small QR library is fine (lazy, with the PDF); if none is small enough, print the link only and say so.
+- File name `corespec-receipt-<order_no>.pdf`. Keep the layout code in `lib/receipt/` (pure: data in, bytes out) with a unit test that the PDF has the order number, the watermark text on each page and the right total, for a PC-only order, a PC + setup order and a 20-item order that needs a second page.
+- e2e: with a stubbed order, the button downloads a file starting with `%PDF`. Test the capture at phone width too: the pictures must come out the same size whatever the screen.
+
+### Phase 17c — Docs, diagrams and handoff
+
+- `npm run diagrams`: add `orders` (and `payment_config`) to the ERD; add "Checkout (simulation)", "Download receipt" (User) and "View orders" (Admin) to the use case diagram; a new activity diagram "Simulasi pembayaran" for `docs/pi/`. Update `docs/pi/angka.md` (tables, tests, pages).
+- `docs/accounts.md`: the Midtrans setup steps, the env vars, the manual test checklist. `docs/demo-script.md`: a checkout segment (pick the Budget 1080p preset → checkout → pay with the test card → receipt PDF). `/privacy`: one paragraph on what goes to Midtrans (order number, item names, amounts, display name; no email).
+- `HANDOFF.md`: a session 4 report in the usual format, with the new false positives for the secret scan (`MIDTRANS_SERVER_KEY`, `ORDER_WRITE_SECRET`, `snap_token`, `signature_key` as names).
+
+### Phase 18 — Live chat with a rule-based bot
+
+> **How to use:** `Read REI.md "Phase 18", then plan Phase 18a.` Work on the branch **`feat/phase-18-chat`** (it starts from `feat/phase-17-checkout`, so all of Phase 17 is in it). **Never push to `feat/phase-17-checkout`**: its preview is Rei's Thursday demo and must not change. Open a separate draft PR, `feat/phase-18-chat` → `main`.
+
+**Goal:** before the 19 Nov bimbingan, a logged-in user can open a chat, get instant answers from a **rule-based bot** for common questions, and talk to the **admin**, who answers from an inbox. Both sides update **live**.
+
+**Deadline and cuts:** 18a and 18b on the Phase 18 preview by Wednesday 18 Nov, morning WIB. If time runs short, cut in this order: unread badges → quick-reply chips → closing a conversation. Never cut: the database rules (RLS, length cap, rate limit), the bot's tests, and the polling fallback.
+
+All of section 9's rules still apply (no service-role key, new SQL in a new migration that the chat runs, Rei types keys, read the Next docs before new Next APIs). On top of that:
+
+- **Chat needs accounts on.** Without the Supabase settings there is no chat UI, no Realtime code and no outside request; `accounts-off.spec.ts` stays green.
+- **Pages that don't show the chat don't grow.** The Realtime client loads only when a logged-in user opens the chat panel or the admin opens `/admin/chat`. Report the KB that adds.
+
+### Facts checked in the Supabase docs on 18 Nov 2026
+
+- **Use Realtime Broadcast from the database**, not Postgres Changes: Supabase recommends Broadcast for most cases and Postgres Changes only for testing or few users. A trigger on the table calls `realtime.send(payload, event, topic, is_private)` (or `realtime.broadcast_changes(...)`), which writes to `realtime.messages`, and Realtime sends it to subscribed clients.
+- **Private channels:** the client subscribes with `supabase.channel(topic, { config: { private: true } })` after `await supabase.realtime.setAuth(token)`. Who may join a topic is decided by **RLS policies on `realtime.messages`**, using `(select realtime.topic())` for the topic name. Policies are cached per connection.
+- Messages sent with `is_private = true` only reach private channels.
+
+### Design
+
+**Topics:**
+- `chat:<conversation_id>`: one per user conversation. The owner and admins may join.
+- `chat:admin`: admins only. Every new message in any conversation is also sent here, so the inbox updates live.
+
+**Clients only listen.** They never send over Realtime. Every write goes through a Server Action, so the database checks run, and **no insert policy on `realtime.messages`** is needed. Only add select policies.
+
+**Getting the token to the browser.** CoreSpec's session lives in httpOnly cookies, and so far no Supabase code runs in the browser. Realtime needs the user's access token client-side. A Server Action `getRealtimeToken()` returns the current access token, or null for guests, through the existing `getSession()` (which renews it). The client calls `setAuth` with it and asks again shortly before it expires or when the channel errors. This is the **one exception** to "no Supabase in the browser". It's read-only: the browser client is never used for queries. Write it down in `docs/accounts.md`, and say in the summary what it changes.
+
+**Fallback:** if the channel isn't `SUBSCRIBED` within 10 seconds, or drops, the panel polls a Server Action every 5 seconds until Realtime is back. The demo must work on campus wifi.
+
+### Phase 18a — Database and the bot
+
+**Migration `supabase/migrations/20261118000100_chat.sql`** (rerunnable):
+
+- `public.conversations`:
+  - `id uuid` pk, `owner uuid unique` → `profiles` (on delete cascade). One conversation per user.
+  - `status` in (`open`, `closed`), default `open`.
+  - `last_message_at`, `user_last_read_at`, `admin_last_read_at`, `created_at`.
+- `public.chat_messages`:
+  - `id uuid` pk, `conversation_id` → conversations (cascade).
+  - `sender_role` in (`user`, `admin`, `bot`), `sender_id uuid` (null for bot).
+  - `body text`, 1–1000 characters after trimming.
+  - `bot_rule text` (which rule answered, for bot messages; null otherwise), `created_at`.
+  - Index on `(conversation_id, created_at)`.
+- **RLS (select):** the owner reads their own conversation and its messages; admins read all.
+- **Writes:**
+  - No direct insert, update or delete grants for anyone except as below.
+  - A user inserts only `sender_role = 'user'`, with `sender_id = auth.uid()`, into their own conversation.
+  - An admin inserts only `sender_role = 'admin'`, with `sender_id = auth.uid()`, into any conversation.
+  - Use insert policies plus a `before insert` trigger that forces `created_at = now()` and refuses anything else.
+  - `get_or_create_conversation()`: `security definer`, for the caller only. Re-opens a closed conversation.
+  - `mark_chat_read(conversation_id)`: sets the caller's read time; owner or admin only.
+  - `set_conversation_status(conversation_id, status)`: admin only.
+- **Bot messages** are written through `post_bot_reply(p_secret, conversation_id, body, bot_rule)`. It's `security definer`, checks the secret like `create_order` does (reuse `check_order_secret`, so it's the same `ORDER_WRITE_SECRET`; no new env var), and only accepts a reply in a conversation whose latest message is from the user. Users can't fake bot messages.
+- **Rate limit (database):**
+  - A user may send at most 5 messages in 30 seconds and 60 per day; the 6th raises `chat_rate_limit` with a friendly message.
+  - Admins: no limit.
+  - Bot: at most 1 reply per user message, enforced by the "latest message is from the user" rule.
+- **Broadcast trigger:** `after insert` on `chat_messages`, `security definer`, `search_path = ''`. It calls `realtime.send` with the message row as JSON, event `message`, to **both** `chat:<conversation_id>` and `chat:admin`, private. It also updates `conversations.last_message_at`.
+- **`realtime.messages` select policies:**
+  - Authenticated users may join `chat:<id>` when that conversation's owner is `auth.uid()`, or when they're an admin.
+  - Only admins may join `chat:admin`.
+  - Use `(select realtime.topic())` and check `realtime.messages.extension = 'broadcast'`.
+  - No other policies on that table.
+- **Tests:**
+  - PGlite has no `realtime` schema: add a stand-in to `supabase/tests/supabase-shim.sql` (`realtime.messages`, `realtime.topic()` reading a setting, `realtime.send()` inserting a row) and keep it out of the real project.
+  - Extend `rls.sql` (and its counts in `docs/pi/angka.md`): who reads which conversations and messages; users can't post as admin or bot, or into another user's conversation; the length cap; the rate limit; bot replies need the secret and a user's message last; topic join rules for user, other user, admin and anon.
+  - **The `realtime.messages` policies can't be tested in PGlite the same way as on Supabase.** Test the policy expressions through the shim, and add a short manual check (two browsers) to `docs/accounts.md`.
+  - Two new mutation tests: "another user's messages readable" and "bot reply without the secret accepted".
+
+**The bot (`lib/chat/bot.ts`, pure functions, tested like the compatibility rules):**
+
+- `matchBotRule(text)` returns `{ rule, reply, quickReplies }` or null. It normalises the text (lowercase, strip accents and punctuation) and matches keywords in **English and Indonesian**. Rules, in priority order:
+  1. `human` (admin, human, manusia, cs, operator): "I'll let the admin know. An admin will reply soon (Admin akan membalas segera)." Marks the conversation as needing a human.
+  2. `prices` (price, harga, mahal, murah, real, asli): explains Checked vs Estimate, the check date, and that prices are never scraped.
+  3. `compatibility` (compatible, kompatibel, error, incompatible, cocok, socket, psu, watt): how the 15 rules work, error vs warning, and a link to the builder.
+  4. `checkout` (checkout, bayar, pay, payment, pembayaran, midtrans, simulasi): it's a Midtrans **Sandbox** simulation, no real money, nothing is sold or shipped, plus the test card.
+  5. `receipt` (struk, receipt, pdf, nota, invoice): where to download it, and the "SIMULASI — bukan bukti transaksi" mark.
+  6. `share` (share, bagikan, link, kirim): how share links work.
+  7. `account` (login, akun, account, password, daftar, register): what an account adds; the bot never asks for or handles passwords.
+  8. `greeting` (halo, hai, hi, hello, pagi, siang, malam, p): a greeting plus the quick replies.
+- **No match:** "Thanks! An admin will reply soon (Admin akan membalas segera)." Send it **at most once per 10 minutes** per conversation, so the bot doesn't repeat itself.
+- **The bot stays quiet while an admin is active:** no bot reply if an admin message is in the last 10 minutes.
+- Replies are English (the UI language), with the Indonesian line where given. Keep them short (≤ 300 characters), with no links outside CoreSpec and no contact details.
+- `quickReplies`: 4–5 chips that send a canned question: "Are the prices real?", "Why is my build incompatible?", "How does checkout work?", "Download receipt", "Talk to admin".
+- **Unit tests:** every rule fires on its English and Indonesian keywords; priority order (e.g. "harga checkout" picks one, deterministically); accents and casing; no match → null; the 10-minute rules; reply length cap.
+- **Server Action `sendChatMessage(body)`:** session → `get_or_create_conversation` → insert the user message (RLS) → `matchBotRule` + the quiet rules → `post_bot_reply`. Return the new rows. Errors (`chat_rate_limit`, length) come back as friendly messages.
+
+### Phase 18b — Chat UI and the admin inbox
+
+**User side:**
+- A **chat button** (bottom right, above the safe area on phones) for logged-in users only, on every page except `/admin/*`.
+  - Don't let it cover the builder's sticky summary bar or the Snap pop-up. On `/checkout` it's hidden while paying.
+  - Guests see nothing. The `/about` page gets one line: "Log in to chat with the admin."
+- The panel is a sheet on phones (full height, like the mobile picker: `100dvh`, safe areas, only the list scrolls) and a 380 × 560 card on desktop.
+  - Header: "CoreSpec chat", a status dot (Live / Reconnecting), and a note: "A bot answers common questions; the admin replies when online."
+  - Bubbles by sender: you, Admin, Bot (with a small "Bot" label).
+  - Quick-reply chips when the conversation is empty or after a bot reply.
+  - Text box with a counter (1000) and Enter to send (Shift+Enter for a new line).
+  - Errors shown inline.
+- **Loading:** the first open loads the history (last 50 messages, "Load earlier" for more), subscribes to `chat:<id>`, and marks it read. A new message while the panel is closed shows an unread dot on the button. Keep it simple: check when the user navigates, not with a background socket.
+- **Accessibility:**
+  - The panel is a dialog with a label; focus moves to the text box.
+  - New messages are announced through a polite live region.
+  - Escape closes the panel; focus returns to the button.
+  - axe 0.
+
+**Admin side, `/admin/chat`** (plus a link on `/admin` with the count of unread conversations):
+- Left: conversations, newest first, with the user's display name, last message preview, an unread badge, and "Needs admin" when the `human` rule fired or the bot had no answer. Filter: All / Needs admin / Open / Closed.
+- Right: the thread, a reply box, and Close / Reopen.
+- Subscribed to `chat:admin`: new messages move their conversation to the top live.
+- On phones: the list, and tapping opens the thread full screen with a back button.
+
+**Tests:**
+- Unit: the Server Actions with Supabase mocked (rate-limit message, length, bot quiet rules, guest refused).
+- e2e with accounts off: no chat button, `/admin/chat` is a 404.
+- e2e with dummy settings: the button is hidden for guests.
+- The logged-in panel can't run in CI. Build `/styleguide/chat`, showing the panel and the inbox with sample messages in every state (empty, quick replies, bot, admin, error, reconnecting). Run axe and a phone-width screenshot check there.
+- Add a manual two-browser checklist to `docs/accounts.md`: user sends → bot answers instantly → admin inbox shows it live → admin replies → user sees it live without refreshing; a second user can't see it; a 6th fast message is refused; with wifi off and on, it reconnects.
+
+### Phase 18c — Docs and diagrams (short)
+
+- `npm run diagrams`:
+  - ERD: add `conversations` and `chat_messages`.
+  - Use case: User "Chat dengan admin / bot"; Admin "Membalas chat".
+  - New activity diagram `docs/pi/aktivitas-live-chat.png`, with lanes Pengguna, Server, Basis data, Admin, and the bot's rule matching as its own decision.
+- `docs/pi/angka.md`: tables, functions, bot rules (8 + fallback) with a table of their keywords, test counts, RLS check count.
+- `docs/demo-script.md`: a chat segment (2 browsers: phone as user, laptop as admin).
+- `/privacy`: chat messages are stored in the database and readable by admins.
+- `HANDOFF.md`: Phase 18 section.
+
 ---
 
-**Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
+**Session 4: Phase 19 (section 10) runs on `feat/phase-19-models`; start with Phase 19a.** _Earlier:_ **Session 3: Phase 17 is done (PR #6). Phase 18 runs on `feat/phase-18-chat`; start with Phase 18a.** _Earlier:_ **Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
+
+_Session 2 instruction, kept for history:_ **Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
 
 ---
 
 _Session 1 instruction, kept for history:_ **Start now with Phase 0. Plan → implement → verify → summary → commit, then wait for "next".**
+
+---
+
+## 10. Session 4 — Phase 19: new 3D models for the desk view
+
+> **How to use:** `Read REI.md section 10, then plan Phase 19a.` Work on **`feat/phase-19-models`** (it starts from `feat/phase-18-chat`, so Phases 17 and 18 are in it). Open a draft PR `feat/phase-19-models` → `main`. Don't push to the 17 or 18 branches.
+
+**Why:** at the 19 Nov bimbingan the supervisor didn't like the desk view's boxes (especially the desk and the chair) and asked for better 3D, at least for the items in the presets and suggested setups. The ujian demo will be a **recording** made a few days before the ujian (early December), so the desk view has to look good on video.
+
+**What's already done (chat, 22 Nov):** 16 models made from scratch with Blender Python scripts, in `models-src/`. They're our own work, so there's no licence problem: credit them as "CoreSpec (Syah Reihan Pratama Nandi)", **CC0 1.0**. The scripts are in `tools/blender/` (run with Blender's Python module `bpy`, see 19c), and the previews are in `docs/models/previews/`. Every file follows the `docs/models.md` checklist: metres, origin at the bottom centre, x = width, y = up, z = toward the person, no Draco, no textures, no logos.
+
+| Model id | Use for | Fit | Triangles | Materials |
+| --- | --- | --- | --- | --- |
+| `desk-four-leg` | fixed desks (`adjustable` false) — **category model** for `desk` | stretch | ~2.5k | `wood` (top), `leg`, `black` |
+| `desk-sit-stand` | sit-stand desks (`adjustable` true) | stretch | ~2.5k | `wood`, `leg`, `steel`, `black` |
+| `chair-gaming` | chairs with `type` Gaming (racing back, pillows, coral piping) | contain | ~8.8k | `black`, `fabric`, `dark`, `steel`, `accent` |
+| `chair-office` | chairs with `type` Ergonomic (mesh back) — **category model** for `chair` | contain | ~8.7k | `black`, `fabric`, `mesh`, `dark`, `steel` |
+| `monitor-flat` | flat monitors on their own stand — **category model** for `monitor` | stretch | ~2.2k | `black`, `screen`, `dark`, `accent` |
+| `monitor-curved` | `curved` monitors on their own stand (slim Y-legs) | stretch | ~2.6k | same |
+| `monitor-panel` | **any monitor hanging on an arm** (no stand) | stretch | ~1.7k | same |
+| `arm-single` | **category model** for `arm`: articulated gas-spring arm, clamp at the back (−z), VESA plate at the front (+z) | stretch | ~2.5k | `black`, `dark`, `steel` |
+| `speaker-bookshelf` | **category model** for `speakers` (one speaker; the layout draws two) | stretch | ~1k | `dark`, `black`, `steel` |
+| `light-bar` | lighting with `kind` "Light bar" | stretch | ~1k | `dark`, `black`, `light` |
+| `desk-lamp` | lighting with `kind` "Lamp" | contain | ~0.7k | `dark`, `steel`, `black`, `light` |
+| `mousepad` | **category model** for `mousepad` | stretch | ~0.5k | `pad`, `dark` |
+| `headset` | **category model** for `headset` (with boom mic) | contain | ~4.7k | `dark`, `fabric`, `pad`, `steel`, `black`, `accent` |
+| `mouse` | **category model** for `mouse` (light strip at the back) | stretch | ~2.1k | `dark`, `black`, `steel`, `accent` |
+| `microphone` | **category model** for `microphone` (desk stand) | contain | ~3.2k | `black`, `steel`, `dark`, `mesh`, `light` |
+| `webcam` | **category model** for `webcam` (clip over the screen) | contain | ~1.8k | `black`, `dark`, `steel`, `screen`, `light` |
+
+LED strips keep their procedural look. The keyboard model is unchanged.
+
+**Fix round (22 Nov, after 19a):** `microphone` re-exported (tripod legs now run from a hub down to the feet, thicker). New `monitor-panel-curved` (same panel, curved, no stand): use it for a **curved monitor on an arm** (the code rule next to `monitor-panel`). Both come from `tools/blender/build_fix1.py`.
+
+**Headset fix (23 Nov, branch `models/headset-hook`):** `headset.glb` rebuilt by `tools/blender/build_fix2.py` as a **headset hanging on an under-desk hook**, shaped for the layout's hook spot (the box the layout makes from the hook block + the sideways headset block): model x = away from the desk's right side (hook plate at x 0–30, headset at 30–120), y = up (hook top = headset top), z = along the desk side (cups at ±z). No boom mic. It replaces both blocks of that item, hook included. Use basis identity and **fit `stretch`** (it was `contain`, which shrank it and left it floating). The old model also had the lower half of the headband ring left in (a bar between the cups): fixed.
+
+**PC case for the desk view (22 Nov, branch `models/pc-case`):** `case-mid-tower` (`tools/blender/build_case.py`, ~7.1k triangles): mid-tower, front mesh at +z, **glass side on +x**, simple internals behind the glass (board, GPU with fan rings, tower cooler, RAM, PSU shroud, 3 front + 1 rear fan with `accent` rings). Rules: **desk view only** (the PC view keeps drawing the real parts; add a way for a model to apply to one view only, e.g. `"views": ["desk"]`), fit `stretch` to the chosen case's dims (ITX cases too). Turn it so the glass faces the desk (mirror if the PC sits on the other side). Materials: `glass` must render transparent (about 15% opacity, low roughness, no depth write so the internals show), `accent` glows (emissive, like RGB; per-item `finish` can change it), `mesh` for the front.
+
+### Phase 19a — Wire the models in
+
+1. **`data/models.json`**: one entry per model above (`basis` identity, `fit` as in the table, `defaultFor` where marked). `data/credits.json`: one "CoreSpec, CC0 1.0, made with Blender scripts in tools/blender" entry the models share (or one each, whatever `/credits` handles best). Then `npm run models` and check every compressed file against the budgets (each < 400 KB, the heaviest build < 2.5 MB); report the sizes.
+2. **Choosing the model is data, not code, wherever possible.** Add `modelId` to the items that need the non-default model: sit-stand desks → `desk-sit-stand`; Gaming chairs → `chair-gaming`; curved monitors → `monitor-curved`; Light bars → `light-bar`; Lamps → `desk-lamp`. A test in `lib/data.test.ts` checks the rule holds for every item (so a new item added through the admin panel can't drift silently: if that's a problem, put the rule in `resolveModel` instead, and explain which you chose).
+3. **The one rule that is code:** a monitor drawn on an arm uses `monitor-panel` (the layout doesn't draw a stand then). And the arm's model fills the arm's box from the clamp to the VESA plate (the layout already knows `poleZ` and `vesaZ`; make the arm item's box span that depth so the stretched model reaches the screen).
+4. **Desk-view palette for models.** Today `recolour` only knows the PC tones. Let models in the desk view use the desk tones too, and add the ones these models need: `wood` (light oak default), `leg` (dark steel), `fabric` (dark grey), `mesh` (dark grey, slightly lighter than fabric), `pad` (near-black cloth), `accent` (CoreSpec coral by default), `screen` (the existing emissive screen tone), `light` (the existing emissive light tone). Update the `recolour` docs. Check light and dark themes if the desk view has both.
+5. **Fit check:** every preset and suggested setup, in the desk view at desktop and phone width: nothing floats, sinks into the desk, or pokes through another item; the chair still turns; the warning glow still lights the right model (glow on models, not only boxes — check how the PC view does it). Exploded view and any other desk-view states still work.
+6. Tests: model resolution for each rule above, recolour with desk tones, the budget test, the e2e smoke that the desk view renders with models (no console errors), axe 0. Report the KB the desk view downloads for each preset before and after.
+
+### Phase 19b — Per-item colours ("finish")
+
+The research for the presets showed colourways matter (white vs oak desks, orange Cougar stitching, red AOC trim). Add an optional **`finish`** to setup items: a map from **material name** to colour (`"#RRGGBB"`), applied on top of `recolour` for that item only. Items without it keep the palette.
+
+- Validation: keys must be material names the item's model actually has; values `#RRGGBB`. Unit tests.
+- **Admin panel:** on a setup item's edit page, a "Finish" section listing the item's model's material names, each with a colour input and "reset to default". Saved like other item fields (DB column `finish jsonb` on `items`, new migration, RLS unchanged, audit log entry). The JSON catalogue keeps working when accounts are off.
+- The PDF receipt's 3D pictures use the finish too (they reuse the scene).
+- **Finishes for the preset items** (from Rei's research, 22 Nov):
+
+| Item | finish |
+| --- | --- |
+| `desk-ikea-lagkapten-adils-120-60` | `wood` light oak `#C9A57B`, `leg` black `#1E1E20`, `black` `#1E1E20` |
+| `desk-ikea-trotten-sit-stand-120-70` | `wood` white `#E8E6E1`, `leg` anthracite `#3A3B3F`, `steel` `#4A4B50` |
+| `desk-ikea-mittzon-sit-stand-140-80` | `wood` walnut `#5C3B28`, `leg` black `#1E1E20`, `steel` `#2A2A2D` |
+| `chair-cougar-armor-one` | `accent` orange `#F26B1D` |
+| `chair-ikea-markus` | `fabric` dark grey `#3A3B3E`, `mesh` dark grey `#45464A` |
+| `monitor-aoc-24g4` | `accent` red `#D0202A` |
+| `monitor-lg-ultragear-27gr75q` | `accent` dark purplish red `#7E2848` |
+| `headset-hyperx-cloud-ii` | `accent` red `#C4161C` |
+| `headset-hyperx-cloud-stinger-2` | `accent` `#1E1E20` (all black) |
+| `headset-logitech-g435-lightspeed` | `dark` black `#1C1C1E`, `accent` neon yellow `#D7F205`, `fabric` `#2A2A2D` |
+| `mouse-logitech-g102-lightsync` | `accent` RGB cyan `#3FD0FF` |
+| `mouse-logitech-g304-lightspeed` | `accent` `#26262A` (no RGB) |
+| `mouse-logitech-g502-x` | `accent` `#26262A` (no RGB) |
+| `speakers-creative-pebble-plus` | `steel` copper `#B87333` |
+| `speakers-logitech-z120` | (leave default; the white back isn't a separate part) |
+| `microphone-rode-podmic` | `mesh` grille `#6E6F73` |
+| `lighting-benq-screenbar-halo` | `dark` `#3A3B3F` |
+
+Everything else in the presets is black/dark and keeps the default.
+
+### Phase 19c — Docs, PI material, handoff
+
+- `tools/blender/README.md`: how to rebuild the models (`pip install bpy` for the matching Python, then `python tools/blender/build_roundN.py`; outputs land in an `out/` folder next to the scripts — change `OUT` to a repo-relative path while you're there), which script makes which model, and the axis convention. Don't make the build part of CI.
+- `docs/models.md`: the new models, the selection rules, the desk tones, and `finish`.
+- `/credits`: shows the CoreSpec models.
+- `docs/pi/`: a figure for the PI with the new desk view for each preset (screenshots at 1600 px wide, light background if the desk view supports it, otherwise as is), plus `docs/pi/angka.md` (number of models, triangles, KB).
+- `docs/demo-script.md`: the desk-view segment now shows the new models; note that the demo will be recorded.
+- `HANDOFF.md`: a Phase 19 section.
+
+### Rules for Phase 19
+
+- Don't edit the `.glb` files by hand. If a model needs a change, say what and the chat changes the script and re-exports (or change the script yourself and re-export, if `bpy` installs on Rei's PC).
+- Keep everything else from sections 6–9: branch + PR, new migration for `finish`, the chat runs it, rls.sql rerun, Rei tests on his phones before merge.

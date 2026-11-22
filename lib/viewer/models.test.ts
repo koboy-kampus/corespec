@@ -14,14 +14,28 @@ import models from "@/data/models.json";
 import { ALL_CATEGORIES } from "@/lib/categories";
 import { ALL_ITEMS, getItem } from "@/lib/parts";
 import {
+  ACCENT,
+  DESK_TONES,
+  modelLook,
+  TONES,
+} from "@/components/viewer/palette";
+import {
   BUILD_BUDGET_BYTES,
+  MODEL_TONES,
   checkModels,
   checkSizes,
   heaviestBuildBytes,
 } from "@/scripts/model-rules.mjs";
 import type { Item } from "@/types/parts";
-import { fitModel } from "./fit-model";
-import { MODELS, modelChain, resolveModel } from "./models";
+import { fitModel, planarUv } from "./fit-model";
+import {
+  CREDITS,
+  MODELS,
+  OWN_AUTHOR,
+  modelChain,
+  resolveModel,
+  splitCredits,
+} from "./models";
 
 const pub = (url: string) => join(process.cwd(), "public", url);
 const builtBytes = Object.fromEntries(
@@ -175,15 +189,124 @@ describe("resolveModel", () => {
     expect(resolveModel({ ...cpu, modelId: "nope" })?.id).toBe("cpu");
   });
 
-  it("3. returns null for the procedural box", () => {
-    expect(resolveModel(pcCase)).toBeNull();
-    expect(modelChain(pcCase)).toEqual([]);
+  it("3. returns null for the procedural box (the PC view's case)", () => {
+    expect(resolveModel(pcCase, undefined, "pc")).toBeNull();
+    expect(modelChain(pcCase, undefined, "pc")).toEqual([]);
   });
 
   it("works for setup items and for parts without a category model", () => {
     expect(resolveModel({ ...cooler, modelId: "ram" })?.id).toBe("ram");
     const keyboard = ALL_ITEMS.find((i) => i.category === "keyboard")!;
     expect(resolveModel({ ...keyboard, modelId: "cpu" })?.id).toBe("cpu");
+  });
+});
+
+describe("variants (Phase 19)", () => {
+  const entry = {
+    id: "keyboard-test",
+    file: "models-src/keyboard-test.glb",
+    credit: "keyboard-test",
+    basis: [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ],
+    fit: "contain",
+  };
+  const credit = {
+    id: "keyboard-test",
+    file: "/models/keyboard-test.glb",
+    source: "models-src/keyboard-test.glb",
+    usedFor: "Keyboard",
+    title: "Keyboard",
+    author: "Someone",
+    url: "https://example.com/keyboard",
+    licence: "CC0 1.0",
+    licenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    changes: "",
+  };
+  const chair = (type: string) =>
+    ALL_ITEMS.find(
+      (i) => i.category === "chair" && (i as { type?: string }).type === type,
+    )!;
+
+  it("picks the variant an item's fields match, before the category model", () => {
+    expect(modelChain(chair("Gaming")).map((m) => m.id)).toEqual([
+      "chair-gaming",
+      "chair-office",
+    ]);
+    expect(modelChain(chair("Ergonomic")).map((m) => m.id)).toEqual([
+      "chair-office",
+    ]);
+  });
+
+  it("still lets an item's own modelId win over a variant", () => {
+    expect(
+      resolveModel({ ...chair("Gaming"), modelId: "chair-office" })?.id,
+    ).toBe("chair-office");
+  });
+
+  it("uses only the placement's model when there is one, and ignores a placement without one", () => {
+    const monitor = ALL_ITEMS.find((i) => i.category === "monitor")!;
+    expect(modelChain(monitor, "on-arm").map((m) => m.id)).toEqual([
+      "monitor-panel",
+    ]);
+    expect(modelChain(chair("Gaming"), "on-arm")[0].id).toBe("chair-gaming");
+  });
+
+  it("prefers the placement variant whose match fits (a curved monitor on an arm), and never uses it off the arm", () => {
+    const curved = ALL_ITEMS.find(
+      (i) => i.category === "monitor" && (i as { curved?: boolean }).curved,
+    )!;
+    expect(modelChain(curved, "on-arm").map((m) => m.id)).toEqual([
+      "monitor-panel-curved",
+    ]);
+    expect(modelChain(curved).map((m) => m.id)).toEqual([
+      "monitor-curved",
+      "monitor-flat",
+    ]);
+  });
+
+  it("rejects a variant without a rule, with both rules, or with a bad match", () => {
+    const v = { ...entry, id: "keyboard-test", variantFor: "keyboard" };
+    const run = (extra: object) =>
+      checkModels([{ ...v, ...extra }], [credit], categories);
+    expect(run({})).toEqual([
+      'models.json "keyboard-test": a variant needs a "match", a "layout", or both',
+    ]);
+    // Both: a placement narrowed by a field (a curved monitor on an arm).
+    expect(run({ match: { a: 1 }, layout: "on-arm" })).toEqual([]);
+    expect(run({ match: {} })[0]).toMatch(/match must be field → value pairs/);
+    expect(run({ match: { size: ["XL"] } })[0]).toMatch(/match must be/);
+    expect(run({ layout: "on-wall" })[0]).toMatch(
+      /layout must be one of on-arm/,
+    );
+    expect(run({ match: { wired: true }, defaultFor: "keyboard" })[0]).toMatch(
+      /either a category default or a variant/,
+    );
+    expect(
+      checkModels([{ ...entry, match: { a: 1 } }], [credit], categories),
+    ).toEqual([
+      'models.json "keyboard-test": "match" and "layout" need "variantFor"',
+    ]);
+    expect(run({ match: { wired: true } })).toEqual([]);
+  });
+
+  it("accepts desk tones in recolour, and still rejects made-up ones", () => {
+    const run = (recolour: Record<string, string>) =>
+      checkModels([{ ...entry, recolour }], [credit], categories);
+    expect(run({ top: "wood", trim: "accent", back: "mesh" })).toEqual([]);
+    expect(run({ top: "walnut" })).toEqual([
+      'models.json "keyboard-test": recolour "top" → "walnut" is not a palette tone',
+    ]);
+  });
+
+  it("counts variants in the heaviest build", () => {
+    const models = [
+      { ...entry, id: "d", defaultFor: "desk" },
+      { ...entry, id: "v", variantFor: "desk", match: { adjustable: true } },
+    ];
+    expect(heaviestBuildBytes(models, { d: 100, v: 300 }, [])).toBe(300);
   });
 });
 
@@ -244,6 +367,26 @@ describe("fitModel", () => {
   });
 });
 
+describe("planarUv", () => {
+  it("projects UVs from the front over the mesh's own extent, and keeps existing ones", () => {
+    const g = new BoxGeometry(600, 300, 10);
+    g.deleteAttribute("uv");
+    planarUv(g);
+    const uv = g.getAttribute("uv");
+    expect(uv.count).toBe(g.getAttribute("position").count);
+    const us = Array.from({ length: uv.count }, (_, i) => uv.getX(i));
+    const vs = Array.from({ length: uv.count }, (_, i) => uv.getY(i));
+    expect(Math.min(...us)).toBeCloseTo(0);
+    expect(Math.max(...us)).toBeCloseTo(1);
+    expect(Math.min(...vs)).toBeCloseTo(0);
+    expect(Math.max(...vs)).toBeCloseTo(1);
+    const own = new BoxGeometry(1, 1, 1);
+    const before = own.getAttribute("uv");
+    planarUv(own);
+    expect(own.getAttribute("uv")).toBe(before);
+  });
+});
+
 describe("mirrored models", () => {
   it("keeps faces pointing outward when the basis is a mirror", () => {
     const root = new Group();
@@ -264,5 +407,146 @@ describe("mirrored models", () => {
         6;
     }
     expect(volume).toBeCloseTo(338 * 64 * 140, -2);
+  });
+});
+
+describe("model colours in each view (Phase 19)", () => {
+  it("resolves every tone a model may use, in both views", () => {
+    for (const tone of MODEL_TONES)
+      for (const view of ["pc", "desk"] as const)
+        expect(modelLook(tone, view), `${tone} in ${view}`).toBeDefined();
+    expect(modelLook("walnut", "desk")).toBeUndefined();
+  });
+
+  it("takes the desk view's own tones first there, and the PC's in the PC view", () => {
+    expect(modelLook("dark", "desk")).toBe(DESK_TONES.dark);
+    expect(modelLook("dark", "pc")).toBe(TONES.dark);
+    expect(modelLook("wood", "desk")?.color).toBe("#c4a07a"); // light oak
+    expect(modelLook("accent", "desk")?.color).toBe(ACCENT); // CoreSpec coral
+    expect(modelLook("screen", "desk")?.emissive).toBeDefined();
+    expect(modelLook("light", "desk")?.emissiveIntensity).toBeGreaterThan(1);
+  });
+
+  it("maps each Phase 19 model's materials to tones of the same name", () => {
+    const phase19 = credits.filter((c) => c.author.startsWith("CoreSpec"));
+    expect(phase19).toHaveLength(18);
+    // The PC case's accent is its RGB lighting, which glows.
+    const except: Record<string, string> = { "case-mid-tower/accent": "rgb" };
+    for (const c of phase19)
+      for (const [mat, tone] of Object.entries(MODELS[c.id].recolour))
+        expect(tone, `${c.id}: ${mat}`).toBe(except[`${c.id}/${mat}`] ?? mat);
+  });
+});
+
+describe("models for one view only (Phase 19: the desk view's PC case)", () => {
+  const pcCase = getItem("case-nzxt-h5-flow")!;
+  const entry = {
+    id: "case-test",
+    file: "models-src/case-test.glb",
+    credit: "case-test",
+    basis: [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ],
+  };
+  const credit = {
+    id: "case-test",
+    file: "/models/case-test.glb",
+    source: "models-src/case-test.glb",
+    usedFor: "Case",
+    title: "Case",
+    author: "Someone",
+    url: "https://example.com/case",
+    licence: "CC0 1.0",
+    licenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    changes: "",
+  };
+  const errors = (views: unknown) =>
+    checkModels([{ ...entry, views } as never], [credit], categories);
+
+  it("accepts a list of different views, or none", () => {
+    expect(errors(undefined)).toEqual([]);
+    expect(errors(["desk"])).toEqual([]);
+    expect(errors(["pc", "desk"])).toEqual([]);
+  });
+
+  it("refuses an unknown view, an empty list, a repeat or a plain string", () => {
+    for (const bad of [["kitchen"], [], ["desk", "desk"], "desk"])
+      expect(errors(bad), JSON.stringify(bad)[0]).toEqual([
+        expect.stringMatching(/views must be a list of different views/),
+      ]);
+  });
+
+  it("draws the case model in the desk view only; every case gets it there", () => {
+    expect(modelChain(pcCase, undefined, "desk").map((m) => m.id)).toEqual([
+      "case-mid-tower",
+    ]);
+    expect(modelChain(pcCase, undefined, "pc")).toEqual([]);
+    for (const c of ALL_ITEMS.filter((i) => i.category === "case"))
+      expect(resolveModel(c, undefined, "desk")?.id, c.id).toBe(
+        "case-mid-tower",
+      );
+    // No other model is limited to one view.
+    expect(
+      Object.values(MODELS)
+        .filter((m) => m.views)
+        .map((m) => m.id),
+    ).toEqual(["case-mid-tower"]);
+  });
+
+  it("is fitted to the case's own size, glass and RGB in the desk palette", () => {
+    const m = MODELS["case-mid-tower"];
+    expect(m.fit).toBe("stretch");
+    expect(m.recolour.glass).toBe("glass");
+    expect(m.recolour.accent).toBe("rgb");
+    const glass = modelLook("glass", "desk")!;
+    expect(glass.opacity).toBeGreaterThan(0.1);
+    expect(glass.opacity).toBeLessThan(0.2);
+    expect(glass.roughness).toBeLessThan(0.1);
+    const rgb = modelLook("rgb", "desk")!;
+    expect(rgb.emissive).toBe(ACCENT);
+    expect(rgb.emissiveIntensity).toBeGreaterThan(0.5);
+  });
+});
+
+describe("desk-view greys (Phase 19)", () => {
+  it("are neutral, so they don't read mauve under the coral back light", () => {
+    for (const tone of [
+      "desk",
+      "leg",
+      "dark",
+      "black",
+      "steel",
+      "fabric",
+      "pad",
+      "mesh",
+    ] as const) {
+      const hex = DESK_TONES[tone].color;
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      expect(Math.max(r, g, b) - Math.min(r, g, b), tone).toBeLessThanOrEqual(
+        2,
+      );
+      // Not warmer than neutral: red never above blue.
+      expect(r, tone).toBeLessThanOrEqual(b);
+    }
+  });
+
+  it("leave the PC view's tones as they were", () => {
+    expect(TONES.dark.color).toBe("#38343c");
+    expect(TONES.black.color).toBe("#141215");
+  });
+});
+
+describe("/credits (Phase 19c)", () => {
+  it("lists other people's models one by one and CoreSpec's together", () => {
+    const { others, own } = splitCredits(CREDITS);
+    expect(others.map((c) => c.id)).toEqual(["cpu", "ram", "gpu", "keyboard"]);
+    expect(own).toHaveLength(18);
+    expect(own.every((c) => c.licence === "CC0 1.0")).toBe(true);
+    // One link and one licence serve them all.
+    expect(new Set(own.map((c) => c.url)).size).toBe(1);
+    expect(new Set(own.map((c) => c.licenceUrl)).size).toBe(1);
+    expect(own.every((c) => c.author === OWN_AUTHOR)).toBe(true);
   });
 });

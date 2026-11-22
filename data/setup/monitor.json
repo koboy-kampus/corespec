@@ -18,7 +18,10 @@
     "panel": "IPS",
     "adaptiveSync": "FreeSync",
     "curved": false,
-    "weightKg": 3
+    "weightKg": 3,
+    "finish": {
+      "accent": "#D0202A"
+    }
   },
   {
     "id": "monitor-dell-p2422h",
@@ -60,7 +63,10 @@
     "panel": "IPS",
     "adaptiveSync": "FreeSync",
     "curved": false,
-    "weightKg": 4.3
+    "weightKg": 4.3,
+    "finish": {
+      "accent": "#7E2848"
+    }
   },
   {
     "id": "monitor-samsung-odyssey-g5-27-c27g55t",

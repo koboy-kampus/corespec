@@ -20,6 +20,8 @@ export interface ItemRow {
   dims: { l: number; w: number; h: number } | null;
   specs: Record<string, unknown>;
   model_id: string | null;
+  /** Phase 19b (20261122000100_item_finish.sql): material → "#RRGGBB". */
+  finish: Record<string, string> | null;
   active: boolean;
   position: number;
 }
@@ -33,7 +35,7 @@ export interface ListingRow {
 }
 
 export const ITEM_COLUMNS =
-  "id, category, brand, name, tier, price_idr, dims, specs, model_id, active, position";
+  "id, category, brand, name, tier, price_idr, dims, specs, model_id, finish, active, position";
 export const LISTING_COLUMNS =
   "item_id, marketplace, url, price_idr, checked_at";
 
@@ -52,6 +54,7 @@ export function itemToRow(item: Item, position: number): ItemRow {
     dims: item.dims ? { l: item.dims.l, w: item.dims.w, h: item.dims.h } : null,
     specs,
     model_id: item.modelId ?? null,
+    finish: ("finish" in item && item.finish) || null,
     active: item.active !== false,
     position,
   };
@@ -85,6 +88,7 @@ export function rowToItem(
     tier: row.tier,
     dims: row.dims ?? undefined,
     modelId: row.model_id ?? undefined,
+    finish: row.finish ?? undefined,
     active: row.active,
   });
   if (!item) return undefined;
@@ -135,6 +139,7 @@ export function canonicalItem(item: Item): string {
   const rec = { ...(item as unknown as Record<string, unknown>) };
   if (rec.active !== false) delete rec.active;
   if (rec.modelId === undefined) delete rec.modelId;
+  if (rec.finish === undefined) delete rec.finish;
   if (rec.dims === undefined) delete rec.dims;
   const listings = sortListings(item.listings ?? []);
   if (listings.length) rec.listings = listings;

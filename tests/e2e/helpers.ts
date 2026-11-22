@@ -75,3 +75,35 @@ export async function settledShot(locator: Locator): Promise<Buffer> {
   }
   throw new Error("element never stopped changing");
 }
+
+/**
+ * Runs axe-core (the same file the a11y suite injects) on the page, or on the
+ * element `selector` matches, and returns "rule: target" for each violation.
+ */
+export async function axeViolations(
+  page: Page,
+  selector?: string,
+): Promise<string[]> {
+  await page.addScriptTag({
+    path: `${process.cwd()}/node_modules/axe-core/axe.min.js`,
+  });
+  return page.evaluate(async (sel) => {
+    const axe = (
+      window as unknown as {
+        axe: {
+          run: (
+            ctx: Element | Document,
+            opts: object,
+          ) => Promise<{
+            violations: { id: string; nodes: { target: string[] }[] }[];
+          }>;
+        };
+      }
+    ).axe;
+    const ctx = sel ? document.querySelector(sel)! : document;
+    const res = await axe.run(ctx, { resultTypes: ["violations"] });
+    return res.violations.map(
+      (v) => `${v.id}: ${v.nodes[0]?.target.join(" ") ?? ""}`,
+    );
+  }, selector ?? null);
+}

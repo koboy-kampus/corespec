@@ -32,6 +32,46 @@ export const TONES = [
 ];
 
 /**
+ * Desk-view tones (Phase 19, lib/viewer/desk-layout.ts `DeskTone`). A model may
+ * use these too; in the PC view they fall back to their desk look.
+ */
+export const DESK_TONES = [
+  "wood",
+  "leg",
+  "fabric",
+  "mesh",
+  "pad",
+  "accent",
+  "screen",
+  "light",
+  "glass",
+  "rgb",
+];
+
+/**
+ * The views a model can be limited to (`"views"` in data/models.json). Unset =
+ * both. The desk view's PC case is "desk" only: the PC view draws the real parts.
+ */
+export const VIEWS = ["pc", "desk"];
+
+/** Every tone a model's material may map to. */
+export const MODEL_TONES = [...TONES, ...DESK_TONES];
+
+/**
+ * Variant models chosen by the desk layout rather than by an item's fields
+ * (Phase 19): "on-arm" = a monitor hanging on an arm, drawn without its stand.
+ */
+export const LAYOUT_VARIANTS = ["on-arm"];
+
+/**
+ * True when an item has every field in `match` with exactly that value.
+ * @param {Record<string, unknown>} item
+ * @param {Record<string, string | number | boolean>} match
+ */
+export const matchesRule = (item, match) =>
+  Object.entries(match).every(([k, v]) => item[k] === v);
+
+/**
  * @typedef {{
  *   id: string,
  *   file: string,
@@ -41,6 +81,10 @@ export const TONES = [
  *   fit?: string,
  *   keepTextures?: string,
  *   defaultFor?: string,
+ *   variantFor?: string,
+ *   match?: Record<string, string | number | boolean>,
+ *   layout?: string,
+ *   views?: string[],
  *   note?: string,
  * }} ModelEntry
  * @typedef {{ id: string, file: string, source: string, licence: string,
@@ -90,7 +134,7 @@ export function checkModels(models, credits, categories) {
     if (m.fit !== undefined && !FITS.includes(m.fit))
       bad(`fit must be one of ${FITS.join(", ")} (got "${m.fit}")`);
     for (const [name, tone] of Object.entries(m.recolour ?? {}))
-      if (!TONES.includes(tone))
+      if (!MODEL_TONES.includes(tone))
         bad(`recolour "${name}" → "${tone}" is not a palette tone`);
     if (m.keepTextures !== undefined && !String(m.keepTextures).trim())
       bad("keepTextures needs a one-line reason");
@@ -103,6 +147,44 @@ export function checkModels(models, credits, categories) {
         );
       defaults.set(m.defaultFor, m.id);
     }
+    if (m.variantFor !== undefined) {
+      if (m.defaultFor !== undefined)
+        bad("a model is either a category default or a variant, not both");
+      if (!categories.includes(m.variantFor))
+        bad(`variantFor "${m.variantFor}" is not a category`);
+      const hasMatch = m.match !== undefined;
+      const hasLayout = m.layout !== undefined;
+      if (!hasMatch && !hasLayout)
+        bad('a variant needs a "match", a "layout", or both');
+      if (
+        hasMatch &&
+        (typeof m.match !== "object" ||
+          m.match === null ||
+          !Object.keys(m.match).length ||
+          !Object.values(m.match).every((v) =>
+            ["string", "number", "boolean"].includes(typeof v),
+          ))
+      )
+        bad(
+          'match must be field → value pairs, e.g. { "adjustable": true } or { "type": "Gaming" }',
+        );
+      if (
+        hasLayout &&
+        !LAYOUT_VARIANTS.includes(/** @type {string} */ (m.layout))
+      )
+        bad(`layout must be one of ${LAYOUT_VARIANTS.join(", ")}`);
+    } else if (m.match !== undefined || m.layout !== undefined)
+      bad('"match" and "layout" need "variantFor"');
+    if (
+      m.views !== undefined &&
+      (!Array.isArray(m.views) ||
+        !m.views.length ||
+        new Set(m.views).size !== m.views.length ||
+        !m.views.every((v) => VIEWS.includes(v)))
+    )
+      bad(
+        `views must be a list of different views from ${VIEWS.join(", ")}, e.g. ["desk"] (leave it out for both)`,
+      );
 
     const credit = credits.find((c) => c.id === m.credit);
     if (!credit) {
@@ -168,7 +250,8 @@ export function checkSizes(models, bytes, items) {
 
 /**
  * Bytes of models the heaviest build would load: per category, the largest model
- * any of its items can show (its own or the category default).
+ * any of its items can show (its own, a variant or the category default). For
+ * speakers the one file draws both, so it's counted once like any other.
  * @param {ModelEntry[]} models
  * @param {Record<string, number>} bytes
  * @param {{ category: string, modelId?: string }[]} items
@@ -178,12 +261,14 @@ export function heaviestBuildBytes(models, bytes, items) {
   const perCategory = new Map();
   const size = (/** @type {string | undefined} */ id) =>
     id ? (bytes[id] ?? 0) : 0;
-  for (const m of models)
-    if (m.defaultFor)
+  for (const m of models) {
+    const category = m.defaultFor ?? m.variantFor;
+    if (category)
       perCategory.set(
-        m.defaultFor,
-        Math.max(perCategory.get(m.defaultFor) ?? 0, size(m.id)),
+        category,
+        Math.max(perCategory.get(category) ?? 0, size(m.id)),
       );
+  }
   for (const item of items)
     if (item.modelId)
       perCategory.set(

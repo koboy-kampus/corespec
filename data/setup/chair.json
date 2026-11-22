@@ -12,7 +12,11 @@
       "h": 1290
     },
     "placement": "floor",
-    "type": "Ergonomic"
+    "type": "Ergonomic",
+    "finish": {
+      "fabric": "#3A3B3E",
+      "mesh": "#45464A"
+    }
   },
   {
     "id": "chair-cougar-armor-one",
@@ -27,7 +31,10 @@
       "h": 1330
     },
     "placement": "floor",
-    "type": "Gaming"
+    "type": "Gaming",
+    "finish": {
+      "accent": "#F26B1D"
+    }
   },
   {
     "id": "chair-dxracer-formula-series",

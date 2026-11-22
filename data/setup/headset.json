@@ -13,7 +13,10 @@
     },
     "placement": "desk-edge",
     "connection": "3.5mm",
-    "wireless": false
+    "wireless": false,
+    "finish": {
+      "accent": "#1E1E20"
+    }
   },
   {
     "id": "headset-steelseries-arctis-nova-1",
@@ -45,7 +48,11 @@
     },
     "placement": "desk-edge",
     "connection": "2.4GHz",
-    "wireless": true
+    "wireless": true,
+    "finish": {
+      "dark": "#1C1C1E",
+      "accent": "#D7F205"
+    }
   },
   {
     "id": "headset-hyperx-cloud-ii",
@@ -61,7 +68,10 @@
     },
     "placement": "desk-edge",
     "connection": "USB",
-    "wireless": false
+    "wireless": false,
+    "finish": {
+      "accent": "#C4161C"
+    }
   },
   {
     "id": "headset-soundcore-life-q30",

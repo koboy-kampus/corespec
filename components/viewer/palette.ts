@@ -29,7 +29,8 @@ export const CASE_TONE = { color: "#221f23", roughness: 0.55, metalness: 0.55 };
 /**
  * Desk view tones (Phase 12). A touch lighter than the PC parts, so black items
  * still read against the dark page; the screen and lights glow from their own
- * material, with no post-processing.
+ * material, with no post-processing. The greys are neutral (Phase 19): under
+ * the coral back light, a mauve grey read as purple.
  */
 export const DESK_TONES: Record<
   DeskTone,
@@ -43,13 +44,31 @@ export const DESK_TONES: Record<
     opacity?: number;
   }
 > = {
-  desk: { color: "#6a676c", roughness: 0.75, metalness: 0.05 },
-  leg: { color: "#545257", roughness: 0.4, metalness: 0.75 },
-  dark: { color: "#46434a", roughness: 0.5, metalness: 0.35 },
-  black: { color: "#2b292e", roughness: 0.55, metalness: 0.25 },
-  steel: { color: "#7a787c", roughness: 0.35, metalness: 0.8 },
-  fabric: { color: "#38353b", roughness: 0.9, metalness: 0.05 },
-  pad: { color: "#242226", roughness: 0.95, metalness: 0 },
+  desk: { color: "#68686a", roughness: 0.75, metalness: 0.05 },
+  leg: { color: "#525254", roughness: 0.4, metalness: 0.75 },
+  dark: { color: "#434345", roughness: 0.5, metalness: 0.35 },
+  black: { color: "#29292b", roughness: 0.55, metalness: 0.25 },
+  steel: { color: "#78797a", roughness: 0.35, metalness: 0.8 },
+  fabric: { color: "#363638", roughness: 0.9, metalness: 0.05 },
+  pad: { color: "#232324", roughness: 0.95, metalness: 0 },
+  // Phase 19, for the desk-view models: an oak top, a chair's mesh back, and
+  // coral trim (the brand accent). A finish (Phase 19b) can change them per item.
+  wood: { color: "#c4a07a", roughness: 0.7, metalness: 0.02 },
+  mesh: { color: "#424244", roughness: 0.85, metalness: 0.05 },
+  accent: { color: ACCENT, roughness: 0.5, metalness: 0.1 },
+  /**
+   * A model's clear glass (the PC case's side): mostly see-through, glossy.
+   * Drawn without writing depth, so what's behind it still shows.
+   */
+  glass: { color: "#b4bcc8", roughness: 0.05, metalness: 0.1, opacity: 0.15 },
+  /** RGB lighting (the PC case's fans): glows in its colour, coral by default; a finish changes it. */
+  rgb: {
+    color: ACCENT,
+    roughness: 0.4,
+    metalness: 0.1,
+    emissive: ACCENT,
+    emissiveIntensity: 1.1,
+  },
   /** The emissive map (a soft gradient) comes from the scene. */
   screen: {
     color: "#05060a",
@@ -79,3 +98,47 @@ export const DESK_TONES: Record<
     emissiveIntensity: 0.25,
   },
 };
+
+/** How a model's material looks: its tone's colour and finish, plus any glow of its own. */
+export type ModelLook = {
+  color: string;
+  roughness: number;
+  metalness: number;
+  emissive?: string;
+  emissiveIntensity?: number;
+  /** Below 1: see-through, drawn without writing depth (glass). */
+  opacity?: number;
+};
+
+/**
+ * Which palette a model's tones come from. The desk view looks in the desk
+ * tones first, the PC view in the PC tones first; each falls back to the
+ * other, so any tone in data/models.json draws in either view.
+ */
+export type ModelPalette = "pc" | "desk";
+
+export function modelLook(
+  tone: string,
+  palette: ModelPalette,
+): ModelLook | undefined {
+  const pc = TONES[tone as keyof typeof TONES];
+  const desk = DESK_TONES[tone as keyof typeof DESK_TONES];
+  return palette === "desk" ? (desk ?? pc) : (pc ?? desk);
+}
+
+/** An item's finish (Phase 19b): model material name → "#RRGGBB". */
+export type Finish = Readonly<Record<string, string>>;
+
+/**
+ * The colour an item's finish gives one of its model's materials, if any.
+ * Glowing materials (a screen, a lamp) keep their look: their light comes
+ * from the scene.
+ */
+export function finishColour(
+  finish: Finish | undefined,
+  material: string,
+  tone: string | undefined,
+): string | undefined {
+  if (!finish || tone === "screen" || tone === "light") return undefined;
+  return Object.hasOwn(finish, material) ? finish[material] : undefined;
+}

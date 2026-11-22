@@ -12,7 +12,11 @@ import {
   type ListingView,
 } from "@/components/admin/listing-forms";
 import { SectionHeader } from "@/components/ui/section-header";
-import { itemFormValues } from "@/lib/admin/catalogue-form";
+import {
+  finishChoices,
+  itemFormValues,
+  MODEL_IDS,
+} from "@/lib/admin/catalogue-form";
 import { isStaleCheck, readAdminCatalogue } from "@/lib/admin/catalogue-data";
 import { deleteBlock, isSeedItem, presetsUsing } from "@/lib/admin/item-delete";
 import { requireAdmin } from "@/lib/auth/dal";
@@ -22,7 +26,6 @@ import { presets } from "@/lib/presets";
 import { shownPrice } from "@/lib/prices";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Marketplace } from "@/types/parts";
-import models from "@/data/models.json";
 import { AdminSkeleton } from "../../skeleton";
 
 export const metadata: Metadata = {
@@ -159,7 +162,8 @@ async function ItemPage({
             category={item.category}
             initial={itemFormValues(item)}
             presetLocked={presetLocked}
-            modelIds={Object.keys(models)}
+            modelIds={MODEL_IDS}
+            finishMaterials={finishChoices(item)}
           />
 
           <ItemDelete

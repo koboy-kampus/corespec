@@ -10,10 +10,16 @@ import {
   type ReactNode,
 } from "react";
 import { Outlines, useGLTF } from "@react-three/drei";
-import { fitModel } from "@/lib/viewer/fit-model";
+import { fitModel, planarUv } from "@/lib/viewer/fit-model";
 import type { Vec3 } from "@/lib/viewer/layout";
 import { DRACO_DECODER_PATH, MODELS, type ModelId } from "@/lib/viewer/models";
-import { TONES } from "./palette";
+import {
+  finishColour,
+  modelLook,
+  type Finish,
+  type ModelPalette,
+} from "./palette";
+import { screenTexture } from "./screen-texture";
 
 /**
  * When true, a loading model suspends up to the nearest outer <Suspense> instead
@@ -40,38 +46,66 @@ function FittedModel({
   id,
   size,
   glow,
+  palette,
+  finish,
+  mirrorX,
 }: {
   id: ModelId;
   size: Vec3;
   glow?: string;
+  palette: ModelPalette;
+  finish?: Finish;
+  mirrorX?: boolean;
 }) {
   const spec = MODELS[id];
   // Loaded on first use, Draco-decoded with the self-hosted decoder. useGLTF caches
   // by URL, so items sharing a model (every RAM stick) load its file once.
   const { scene } = useGLTF(spec.url, DRACO_DECODER_PATH);
   const [sx, sy, sz] = size;
-  const meshes = useMemo(
-    () => fitModel(scene, spec.basis, [sx, sy, sz], spec.fit),
-    [scene, spec, sx, sy, sz],
-  );
+  const meshes = useMemo(() => {
+    const fitted = fitModel(scene, spec.basis, [sx, sy, sz], spec.fit);
+    // Screens get flat UVs for their gradient (see planarUv).
+    for (const m of fitted)
+      if (spec.recolour[m.materialName] === "screen") planarUv(m.geometry);
+    return fitted;
+  }, [scene, spec, sx, sy, sz]);
   useEffect(() => () => meshes.forEach((m) => m.geometry.dispose()), [meshes]);
 
-  return (
+  const drawn = (
     <>
       {meshes.map((m, i) => {
         // A model that keeps its own textures uses its own material (unless it glows).
         if (spec.keepTextures && m.material && !glow)
           return <mesh key={i} geometry={m.geometry} material={m.material} />;
         const tone = spec.recolour[m.materialName];
-        const look = tone ? TONES[tone] : m;
+        const look = (tone && modelLook(tone, palette)) || m;
+        const own = "emissive" in look ? look : undefined;
+        // The item's own colour for this material (its finish), on top of the
+        // tone's roughness and metalness. Glowing materials have none.
+        const finished = finishColour(finish, m.materialName, tone);
+        const colour = finished ?? look.color;
+        // Glass: see-through, and it writes no depth so what's behind shows.
+        const opacity = "opacity" in look ? (look.opacity ?? 1) : 1;
+        // A screen glows with the same soft gradient as the procedural one, and
+        // a flagged monitor's screen keeps it; the rest turns amber.
+        const screen = tone === "screen";
+        const tint = screen ? undefined : glow;
+        const map = screen ? screenTexture() : null;
+        // RGB glows in its own colour, so a finish changes the glow too.
+        const emissive =
+          tint ?? (own?.emissive && finished ? finished : own?.emissive);
         return (
           <mesh key={i} geometry={m.geometry}>
             <meshStandardMaterial
-              color={look.color}
+              color={colour}
               roughness={look.roughness}
               metalness={look.metalness}
-              emissive={glow ?? "#000000"}
-              emissiveIntensity={glow ? 0.25 : 0}
+              emissive={emissive ?? "#000000"}
+              emissiveIntensity={tint ? 0.25 : (own?.emissiveIntensity ?? 0)}
+              emissiveMap={map}
+              transparent={opacity < 1}
+              opacity={opacity}
+              depthWrite={opacity >= 1}
             />
             {glow ? <Outlines thickness={2.5} color={glow} /> : null}
           </mesh>
@@ -79,6 +113,8 @@ function FittedModel({
       })}
     </>
   );
+  // Mirrored left to right (three.js flips the faces' winding to match).
+  return mirrorX ? <group scale={[-1, 1, 1]}>{drawn}</group> : drawn;
 }
 
 /** The first model in `ids` that loads, else the next one, else `fallback`. */
@@ -87,21 +123,44 @@ function ModelChain({
   size,
   glow,
   fallback,
+  palette,
+  finish,
+  mirrorX,
 }: {
   ids: ModelId[];
   size: Vec3;
   glow?: string;
   fallback: ReactNode;
+  palette: ModelPalette;
+  finish?: Finish;
+  mirrorX?: boolean;
 }) {
   const suspendUp = useContext(SuspendModelsUp);
   const [first, ...rest] = ids;
   if (!first || !MODELS[first]) return <>{fallback}</>;
   const next = rest.length ? (
-    <ModelChain ids={rest} size={size} glow={glow} fallback={fallback} />
+    <ModelChain
+      ids={rest}
+      size={size}
+      glow={glow}
+      fallback={fallback}
+      palette={palette}
+      finish={finish}
+      mirrorX={mirrorX}
+    />
   ) : (
     fallback
   );
-  const model = <FittedModel id={first} size={size} glow={glow} />;
+  const model = (
+    <FittedModel
+      id={first}
+      size={size}
+      glow={glow}
+      palette={palette}
+      finish={finish}
+      mirrorX={mirrorX}
+    />
+  );
   return (
     <ModelBoundary fallback={next}>
       {suspendUp ? model : <Suspense fallback={fallback}>{model}</Suspense>}
@@ -119,6 +178,9 @@ export function ModelBlock({
   size,
   glow,
   fallback,
+  palette = "pc",
+  finish,
+  mirrorX,
 }: {
   ids: ModelId[];
   pos: Vec3;
@@ -126,10 +188,27 @@ export function ModelBlock({
   glow?: string;
   /** The procedural look, drawn around the block's centre. */
   fallback: ReactNode;
+  /** Which view's tones the model's materials take (see `modelLook`). */
+  palette?: ModelPalette;
+  /** The item's finish (Phase 19b): material name → colour. */
+  finish?: Finish;
+  /**
+   * Draw the model mirrored left to right (x), not its fallback: the desk
+   * view's PC on the desk's right turns its front to the left.
+   */
+  mirrorX?: boolean;
 }) {
   return (
     <group position={pos}>
-      <ModelChain ids={ids} size={size} glow={glow} fallback={fallback} />
+      <ModelChain
+        ids={ids}
+        size={size}
+        glow={glow}
+        fallback={fallback}
+        palette={palette}
+        finish={finish}
+        mirrorX={mirrorX}
+      />
     </group>
   );
 }

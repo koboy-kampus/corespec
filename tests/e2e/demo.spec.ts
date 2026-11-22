@@ -52,6 +52,15 @@ test("the 5-minute demo script works end to end", async ({ page, browser }) => {
   await page.getByRole("button", { name: "Add suggested setup" }).click();
   await expect(page.getByTestId("desk-view").locator("canvas")).toBeVisible();
 
+  // 6b. The Phase 19 models: turn the desk view with the keys, then R resets it.
+  const deskKeys = page
+    .getByTestId("desk-view")
+    .locator('[tabindex="0"]')
+    .first();
+  await deskKeys.focus();
+  for (const key of ["ArrowLeft", "ArrowLeft", "ArrowLeft", "r"])
+    await page.keyboard.press(key);
+
   // 7. A narrow desk and big speakers: the desk-width warning.
   await page.getByRole("button", { name: /^Desk IKEA/ }).click();
   await picker.getByRole("button", { name: /MICKE 105×50/ }).click();
