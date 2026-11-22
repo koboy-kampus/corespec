@@ -196,6 +196,29 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     await db.close();
   });
 
+  // Phase 19b: the finish rules.
+  it("catch a finish rule being dropped", async () => {
+    const db = await freshDb();
+    await db.exec(
+      "alter table public.items drop constraint items_finish_check;",
+    );
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /a finish colour must be #RRGGBB/,
+    );
+    await db.close();
+  });
+
+  it("catch a PC part being allowed a finish", async () => {
+    const db = await freshDb();
+    await db.exec(
+      "alter table public.items drop constraint items_finish_setup_check;",
+    );
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /only setup items have a finish/,
+    );
+    await db.close();
+  });
+
   // Item delete: each of these loosens one rule and rls.sql must notice.
   it("catch item_usage_count answering a non-admin", async () => {
     const db = await freshDb();

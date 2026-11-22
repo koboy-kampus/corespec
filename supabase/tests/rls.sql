@@ -582,6 +582,63 @@ begin
   exception when check_violation then null;
   end;
 
+  -- Finishes (20261122000100_item_finish.sql): a setup item's model colours.
+  insert into public.items (id, category, brand, name, tier, price_idr, specs, finish)
+  values ('chair-rls-finish', 'chair', 'RLS', 'Finished chair', 'mid', 1500000,
+    '{"placement": "floor", "type": "Gaming"}', '{"accent": "#F26B1D"}');
+  update public.items set finish = '{"accent": "#26262A", "fabric": "#3a3b3e"}'
+  where id = 'chair-rls-finish';
+  get diagnostics n = row_count;
+  assert n = 1, 'FAIL: an admin sets an item''s finish';
+  update public.items set finish = null where id = 'chair-rls-finish';
+  get diagnostics n = row_count;
+  assert n = 1, 'FAIL: an admin resets an item''s finish';
+  begin
+    update public.items set finish = '{"accent": "red"}' where id = 'chair-rls-finish';
+    raise exception 'FAIL: a finish colour must be #RRGGBB';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.items set finish = '{"accent": "#F26B1D; x"}' where id = 'chair-rls-finish';
+    raise exception 'FAIL: a finish colour must be #RRGGBB';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.items set finish = '{"accent": 16737053}' where id = 'chair-rls-finish';
+    raise exception 'FAIL: a finish colour must be #RRGGBB';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.items set finish = '["#F26B1D"]' where id = 'chair-rls-finish';
+    raise exception 'FAIL: a finish must be an object of material → colour';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.items set finish = '{"<script>": "#F26B1D"}' where id = 'chair-rls-finish';
+    raise exception 'FAIL: a finish key must be a material name';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.items set finish = (
+      select jsonb_object_agg('m' || g, '#000000') from generate_series(1, 13) g
+    ) where id = 'chair-rls-finish';
+    raise exception 'FAIL: a finish has at most 12 materials';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.items set finish = '{"black": "#000000"}' where id = 'cpu-rls-active';
+    raise exception 'FAIL: only setup items have a finish';
+  exception when check_violation then null;
+  end;
+  select * into e from public.audit_log
+  where table_name = 'items' and row_id = 'chair-rls-finish' and action = 'update'
+  order by id asc limit 1;
+  assert e.actor = '00000000-0000-4000-8000-00000000000c'
+    and e.diff -> 'finish' -> 'old' ->> 'accent' = '#F26B1D'
+    and e.diff -> 'finish' -> 'new' ->> 'accent' = '#26262A',
+    'FAIL: a finish change is logged with its old and new value';
+  delete from public.items where id = 'chair-rls-finish';
+
   -- Listings: add, edit ("mark checked today"), delete.
   insert into public.listings (item_id, marketplace, url, price_idr, checked_at)
   values ('cpu-rls-active', 'tokopedia', 'https://www.tokopedia.com/shop/rls-cpu', 1990000,
