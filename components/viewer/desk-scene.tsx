@@ -90,8 +90,23 @@ function DeskLights() {
       <ambientLight intensity={0.9} />
       <hemisphereLight args={["#ffffff", "#2a2629", 0.9]} />
       {/* Key light from in front and above, where the person sits. */}
-      <directionalLight position={[2, 7, 9]} intensity={2.6} />
+      <directionalLight position={[2, 7, 9]} intensity={3.1} />
       <directionalLight position={[-7, 4, 3]} intensity={0.6} />
+      {/*
+        Rim lights from behind and above (Phase 19, for the recorded demo): a
+        cool white edge on the tops and outlines of dark items (the chair, the
+        desk legs, the speakers, the case) so they part from the dark page.
+      */}
+      <directionalLight
+        position={[4, 6, -8]}
+        intensity={1.7}
+        color="#dfe7ff"
+      />
+      <directionalLight
+        position={[-5, 4, -7]}
+        intensity={0.9}
+        color="#dfe7ff"
+      />
       {/* A faint coral rim from behind, the brand colour without tinting the desk. */}
       <directionalLight
         position={[-6, 3, -6]}
