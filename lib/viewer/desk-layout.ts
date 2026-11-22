@@ -94,7 +94,7 @@ export interface DeskItemLayout {
   placement?: ModelPlacement;
   /**
    * Mirrored left to right (its blocks already are; its model is drawn
-   * mirrored too): the PC right of the desk's middle, glass toward the desk.
+   * mirrored too): the PC right of the desk's middle, front toward the desk.
    */
   mirror?: boolean;
 }
@@ -393,12 +393,13 @@ function lampBlocks(l: number, w: number, h: number): DeskBlock[] {
 }
 
 /**
- * The PC, standing as on a real desk: its front toward the person (+z), its
- * length running back (z), and its glass side toward the desk (+x; the layout
- * mirrors it when the PC stands right of the desk's middle). A frame, the smoked
- * glass, and a few dim shapes behind it (board, graphics card, cooler, PSU
- * cover) hinting at the parts inside. Everything stays inside w × h × l.
- * The desk view draws the PC case model over these when it loads (Phase 19).
+ * The PC beside the desk: its glass side toward the person (+z), so the parts
+ * inside show, and its front toward the desk (+x; the layout mirrors it when
+ * the PC stands right of the desk's middle). Case length along x, width along
+ * z. A frame, the smoked glass, and a few dim shapes behind it (board,
+ * graphics card, cooler, PSU cover) hinting at the parts inside; everything
+ * stays inside l × h × w. The desk view draws the PC case model over these
+ * when it loads (Phase 19).
  */
 function pcBlocks(c: Case): DeskBlock[] {
   const { l, w, h } = c.dims!;
@@ -407,33 +408,33 @@ function pcBlocks(c: Case): DeskBlock[] {
   const back = -w / 2 + t; // inside face of the far panel
   const shroud = Math.min(h * 0.2, 110);
   return [
-    block(-w / 2 + t / 2, 0, 0, [t, h, l], "dark"), // far side panel
-    block(t / 2, 0, 0, [w - t, t, l], "dark"), // floor
-    block(t / 2, h - t, 0, [w - t, t, l], "dark"), // roof
-    block(t / 2, t, l / 2 - t / 2, [w - t, h - 2 * t, t], "dark"), // front
-    block(t / 2, t, -l / 2 + t / 2, [w - t, h - 2 * t, t], "dark"), // back
-    block(w / 2 - 2, t, 0, [3, h - 2 * t, l - 2 * t], "smoke"), // glass
-    // Inside, seen through the glass.
-    block(0, t, 0, [inner * 0.9, shroud, l - 2 * t], "dark"), // PSU cover
+    block(0, 0, -w / 2 + t / 2, [l, h, t], "dark"), // far side panel
+    block(0, 0, t / 2, [l, t, w - t], "dark"), // floor
+    block(0, h - t, t / 2, [l, t, w - t], "dark"), // roof
+    block(l / 2 - t / 2, t, t / 2, [t, h - 2 * t, w - t], "dark"), // front
+    block(-l / 2 + t / 2, t, t / 2, [t, h - 2 * t, w - t], "dark"), // back
+    block(0, t, w / 2 - 2, [l - 2 * t, h - 2 * t, 3], "smoke"), // glass
+    // Inside, seen through the glass (toward the back, -x).
+    block(0, t, 0, [l - 2 * t, shroud, inner * 0.9], "dark"), // PSU cover
     block(
-      back + 3,
-      t + shroud + h * 0.06,
       -l * 0.05,
-      [6, h * 0.62, l * 0.6],
+      t + shroud + h * 0.06,
+      back + 3,
+      [l * 0.6, h * 0.62, 6],
       "pcb",
     ),
     block(
-      back + 6 + inner * 0.25,
-      t + shroud + h * 0.12,
       -l * 0.02,
-      [inner * 0.45, Math.min(48, h * 0.1), l * 0.62],
+      t + shroud + h * 0.12,
+      back + 6 + inner * 0.25,
+      [l * 0.62, Math.min(48, h * 0.1), inner * 0.45],
       "black",
     ),
     block(
-      back + 6 + inner * 0.2,
-      t + shroud + h * 0.4,
       -l * 0.12,
-      [inner * 0.38, Math.min(90, h * 0.2), Math.min(80, l * 0.2)],
+      t + shroud + h * 0.4,
+      back + 6 + inner * 0.2,
+      [Math.min(80, l * 0.2), Math.min(90, h * 0.2), inner * 0.38],
       "steel",
     ),
   ];
@@ -865,12 +866,12 @@ export function layoutDesk(setup: ResolvedSetup, pcCase?: Case): DeskLayout {
       ctx,
       "pc",
       pcCase.id,
-      [w, h, l],
-      [W / 2 - w / 2, back + l / 2],
+      [l, h, w],
+      [W / 2 - l / 2, back + w / 2],
       pcBlocks(pcCase),
       isSmallCase(pcCase),
     );
-    // Its glass faces the desk's middle: mirror it when it stands right of it.
+    // Its front faces the desk's middle: mirror it when it stands right of it.
     if (pc.origin[0] > 0) {
       pc.blocks = mirrorX(pc.blocks);
       pc.mirror = true;

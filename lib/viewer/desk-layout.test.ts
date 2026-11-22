@@ -311,10 +311,10 @@ describe("items on and around the desk", () => {
     for (const c of [nr200, terra, lancool]) {
       const l = layoutDesk({ desk: mittzon }, c);
       const b = bounds(l, "pc");
-      // Standing as on a real desk: width across, length running back.
-      expect(b.max[0] - b.min[0]).toBeCloseTo(c.dims!.w);
+      // Side on to the person: length across, width running back.
+      expect(b.max[0] - b.min[0]).toBeCloseTo(c.dims!.l);
       expect(b.max[1] - b.min[1]).toBeCloseTo(c.dims!.h);
-      expect(b.max[2] - b.min[2]).toBeCloseTo(c.dims!.l);
+      expect(b.max[2] - b.min[2]).toBeCloseTo(c.dims!.w);
       expect(item(l, "pc").blocks.some((x) => x.tone === "smoke")).toBe(true);
     }
   });
@@ -517,26 +517,28 @@ describe("camera helpers", () => {
   });
 });
 
-describe("the PC stands with its glass toward the desk (Phase 19)", () => {
-  const glassX = (l: DeskLayout) =>
-    item(l, "pc").blocks.find((b) => b.tone === "smoke")!.pos[0];
+describe("the PC shows its glass to the person, its front to the desk (Phase 19)", () => {
+  const of = (l: DeskLayout, tone: string) =>
+    item(l, "pc").blocks.find((b) => b.tone === tone)!.pos;
 
-  it("on the floor left of the desk: glass on its right, not mirrored", () => {
+  it("on the floor left of the desk: glass toward the person, parts toward the back (left), not mirrored", () => {
     const l = layoutDesk({ desk: mittzon }, lancool);
     expect(item(l, "pc").origin[0]).toBeLessThan(0);
-    expect(glassX(l)).toBeGreaterThan(0);
+    expect(of(l, "smoke")[2]).toBeGreaterThan(0);
+    expect(of(l, "pcb")[0]).toBeLessThan(0);
     expect(item(l, "pc").mirror).toBeUndefined();
   });
 
-  it("on the desk's right: mirrored, so the glass faces left (the desk's middle)", () => {
+  it("on the desk's right: mirrored, so its front faces left (the desk's middle); glass still toward the person", () => {
     const l = layoutDesk({ desk: mittzon }, terra);
     expect(item(l, "pc").spot).toBe("desk");
     expect(item(l, "pc").origin[0]).toBeGreaterThan(0);
-    expect(glassX(l)).toBeLessThan(0);
+    expect(of(l, "smoke")[2]).toBeGreaterThan(0);
+    expect(of(l, "pcb")[0]).toBeGreaterThan(0);
     expect(item(l, "pc").mirror).toBe(true);
     // Mirroring keeps it in the same box.
     const b = bounds(l, "pc");
-    expect(b.max[0] - b.min[0]).toBeCloseTo(terra.dims!.w);
+    expect(b.max[0] - b.min[0]).toBeCloseTo(terra.dims!.l);
   });
 });
 

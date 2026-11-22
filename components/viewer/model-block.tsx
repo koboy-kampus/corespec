@@ -194,7 +194,7 @@ export function ModelBlock({
   finish?: Finish;
   /**
    * Draw the model mirrored left to right (x), not its fallback: the desk
-   * view's PC on the desk's right shows its glass side to the left.
+   * view's PC on the desk's right turns its front to the left.
    */
   mirrorX?: boolean;
 }) {

@@ -421,9 +421,9 @@
     "defaultFor": "case",
     "views": ["desk"],
     "basis": [
-      [1, 0, 0],
+      [0, 0, 1],
       [0, 1, 0],
-      [0, 0, 1]
+      [1, 0, 0]
     ],
     "fit": "stretch",
     "recolour": {
@@ -434,6 +434,6 @@
       "glass": "glass",
       "accent": "rgb"
     },
-    "note": "Desk view only: a mid-tower with a glass side (+x) and simple RGB internals, front mesh at +z. Stretched to the chosen case; the layout turns the glass toward the desk."
+    "note": "Desk view only: a mid-tower, glass side at +x, front mesh at +z, RGB strips and fan rings. The basis turns the glass toward the person and the front toward the desk (a mirrored basis); stretched to the chosen case."
   }
 ]
