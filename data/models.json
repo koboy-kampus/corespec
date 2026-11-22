@@ -345,7 +345,7 @@
       [0, 1, 0],
       [0, 0, 1]
     ],
-    "fit": "contain",
+    "fit": "stretch",
     "recolour": {
       "dark": "dark",
       "fabric": "fabric",
@@ -354,7 +354,7 @@
       "pad": "pad",
       "black": "black"
     },
-    "note": "Headset with a boom mic, lying on the desk."
+    "note": "Headset hanging on an under-desk hook (the hook is part of the model), no boom mic."
   },
   {
     "id": "mouse",
