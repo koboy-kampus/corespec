@@ -201,6 +201,11 @@ describe("the replies", () => {
     );
   });
 
+  it("say an admin verifies paid orders (Phase 20a)", () => {
+    expect(matchBotRule("checkout")?.reply).toMatch(/admin verifies/);
+    expect(matchBotRule("struk")?.reply).toMatch(/admin verifies/);
+  });
+
   it("never ask for a password", () => {
     expect(matchBotRule("password")?.reply).toMatch(
       /never asks for your password/,

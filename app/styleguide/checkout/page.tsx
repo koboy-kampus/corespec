@@ -5,6 +5,7 @@ import {
   SimulationBanner,
   STATUS_LABEL,
   StatusBadge,
+  StatusWithVerification,
 } from "@/components/checkout/order-parts";
 import { loadCatalogue } from "@/lib/catalogue/load";
 import { ReceiptButton } from "@/components/receipt/receipt-button";
@@ -41,6 +42,18 @@ export default async function Page() {
         {(Object.keys(STATUS_LABEL) as OrderStatus[]).map((s) => (
           <StatusBadge key={s} status={s} />
         ))}
+      </div>
+      <div className="flex flex-wrap gap-6">
+        <StatusWithVerification
+          order={{ status: "paid", verified_at: null, verified_by_name: null }}
+        />
+        <StatusWithVerification
+          order={{
+            status: "paid",
+            verified_at: "2026-11-19T03:20:00.000Z",
+            verified_by_name: "Admin Rei",
+          }}
+        />
       </div>
       <OrderItemsTable
         items={draft.items}
@@ -98,6 +111,9 @@ function sampleOrder(draft: OrderDraft, status: OrderStatus) {
       ? "00000000-0000-4000-8000-000000000000"
       : null,
     paid_at: paid ? "2026-11-19T03:07:00.000Z" : null,
+    // The paid sample is verified, so its receipt shows the name and stamp.
+    verified_at: paid ? "2026-11-19T03:20:00.000Z" : null,
+    verified_by_name: paid ? "Admin Rei" : null,
     items: draft.items,
     pc_idr: draft.pcIDR,
     setup_idr: draft.setupIDR,

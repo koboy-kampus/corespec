@@ -7,7 +7,7 @@ import { OrderLimitError, OrderNoTakenError, type OrderStore } from "./service";
 
 /** Columns the site reads (everything). */
 export const ORDER_COLUMNS =
-  "id, order_no, owner, build_name, parts, items, pc_idr, setup_idr, total_idr, status, payment_type, midtrans_transaction_id, snap_token, created_at, updated_at, paid_at";
+  "id, order_no, owner, build_name, parts, items, pc_idr, setup_idr, total_idr, status, payment_type, midtrans_transaction_id, snap_token, created_at, updated_at, paid_at, verified_at, verified_by, verified_by_name";
 
 /**
  * Orders in Supabase. Reads run as the visitor (RLS: their own, or all for an

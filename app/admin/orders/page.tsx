@@ -3,11 +3,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { VerifyOrderButton } from "@/components/admin/verify-order";
 import { STATUS_LABEL, StatusBadge } from "@/components/checkout/order-parts";
 import { SectionHeader } from "@/components/ui/section-header";
 import { requireAdmin } from "@/lib/auth/dal";
 import { isCheckoutConfigured } from "@/lib/checkout/config";
-import { readAllOrders } from "@/lib/checkout/read";
+import {
+  countNeedsVerification,
+  readAllOrders,
+  type AdminOrderFilter,
+} from "@/lib/checkout/read";
+import { needsVerification } from "@/lib/checkout/verification";
 import { formatWIB } from "@/lib/checkout/when";
 import { formatIDR } from "@/lib/format";
 import type { OrderStatus } from "@/types/supabase";
@@ -28,15 +34,25 @@ export default function Page({ searchParams }: PageProps<"/admin/orders">) {
 }
 
 const STATUSES = Object.keys(STATUS_LABEL) as OrderStatus[];
+const NEEDS = "needs-verification";
 
 async function Orders({
   searchParams,
 }: Pick<PageProps<"/admin/orders">, "searchParams">) {
-  const { supabase } = await requireAdmin();
+  const { supabase, viewer } = await requireAdmin();
   const sp = await searchParams;
   const raw = Array.isArray(sp.status) ? sp.status[0] : sp.status;
-  const status = STATUSES.find((s) => s === raw);
-  const { orders, names, error } = await readAllOrders(supabase, status);
+  const toVerify = await countNeedsVerification(supabase);
+  // No filter chosen: "Needs verification" when there's any, else every order.
+  const filter: AdminOrderFilter | undefined =
+    raw === NEEDS
+      ? NEEDS
+      : (STATUSES.find((s) => s === raw) ??
+        (raw === undefined && toVerify ? NEEDS : undefined));
+  const status = filter === NEEDS ? undefined : filter;
+  const { orders, names, error } = await readAllOrders(supabase, filter);
+  const filterLabel =
+    filter === NEEDS ? "Needs verification" : status && STATUS_LABEL[status];
 
   const chip = (label: string, href: string, active: boolean) => (
     <Link
@@ -65,13 +81,18 @@ async function Orders({
         as="h1"
         eyebrow="Admin"
         title="Orders"
-        subtitle="Every payment simulation (Midtrans Sandbox), newest first. Read-only: statuses only change through Midtrans."
+        subtitle="Every payment simulation (Midtrans Sandbox), newest first. Statuses only change through Midtrans; an admin verifies each paid order, and the receipt shows who did."
         layout="split"
       />
       <nav aria-label="Filter by status" className="flex flex-wrap gap-2">
-        {chip("All", "/admin/orders", !status)}
+        {chip(
+          toVerify ? `Needs verification (${toVerify})` : "Needs verification",
+          `/admin/orders?status=${NEEDS}`,
+          filter === NEEDS,
+        )}
+        {chip("All", "/admin/orders?status=all", !filter)}
         {STATUSES.map((s) =>
-          chip(STATUS_LABEL[s], `/admin/orders?status=${s}`, status === s),
+          chip(STATUS_LABEL[s], `/admin/orders?status=${s}`, filter === s),
         )}
       </nav>
       {error ? (
@@ -80,16 +101,18 @@ async function Orders({
         </p>
       ) : !orders.length ? (
         <p className="text-body text-fg-2">
-          {status
-            ? `No ${STATUS_LABEL[status].toLowerCase()} orders.`
-            : "No orders yet."}
+          {filter === NEEDS
+            ? "Every paid order is verified."
+            : status
+              ? `No ${STATUS_LABEL[status].toLowerCase()} orders.`
+              : "No orders yet."}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-card border border-line">
-          <table className="w-full min-w-[720px] text-left text-[14px] leading-5">
+          <table className="w-full min-w-[960px] text-left text-[14px] leading-5">
             <caption className="sr-only">
-              {status ? `${STATUS_LABEL[status]} orders` : "Every order"},
-              newest first
+              {filterLabel ? `${filterLabel}: orders` : "Every order"}, newest
+              first
             </caption>
             <thead className="border-b border-line bg-surface label-micro text-fg-3">
               <tr>
@@ -111,6 +134,12 @@ async function Orders({
                 <th scope="col" className="px-4 py-3 font-medium">
                   Status
                 </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Verified by
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Verified at
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -120,7 +149,12 @@ async function Orders({
                     scope="row"
                     className="px-4 py-3 spec font-normal text-fg"
                   >
-                    {o.order_no}
+                    <Link
+                      href={`/admin/orders/${o.id}`}
+                      className="underline-offset-2 hover:text-accent hover:underline"
+                    >
+                      {o.order_no}
+                    </Link>
                   </th>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {formatWIB(o.created_at)}
@@ -136,6 +170,28 @@ async function Orders({
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={o.status} />
+                  </td>
+                  <td className="max-w-44 px-4 py-3">
+                    {needsVerification(o) ? (
+                      <VerifyOrderButton
+                        orderId={o.id}
+                        orderNo={o.order_no}
+                        adminName={viewer.displayName}
+                      />
+                    ) : o.verified_at ? (
+                      <span className="block truncate text-fg">
+                        {o.verified_by_name}
+                      </span>
+                    ) : (
+                      <span className="text-fg-3">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {o.verified_at ? (
+                      formatWIB(o.verified_at)
+                    ) : (
+                      <span className="text-fg-3">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

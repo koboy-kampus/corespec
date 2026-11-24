@@ -6,10 +6,12 @@ import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Badge } from "@/components/ui/badge";
+import { auditLabel } from "@/lib/admin/audit";
 import { isStaleCheck, readAdminCatalogue } from "@/lib/admin/catalogue-data";
 import { requireAdmin } from "@/lib/auth/dal";
 import { getCatalogue } from "@/lib/catalogue/load";
 import { isCheckoutConfigured } from "@/lib/checkout/config";
+import { countNeedsVerification } from "@/lib/checkout/read";
 import { formatShortDate } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { unreadCount } from "@/lib/chat/inbox";
@@ -52,12 +54,22 @@ const LINKS = [
   },
 ] as const;
 
-/** Only when the checkout simulation is configured (Phase 17a). */
-const ORDERS_LINK = {
-  href: "/admin/orders",
-  title: "Orders",
-  text: "Every payment simulation, read-only.",
-} as const;
+/**
+ * Only when the checkout simulation is configured (Phase 17a). The text says
+ * how many paid orders wait for an admin's verification (Phase 20a).
+ */
+function ordersLink(needsVerification: number | null) {
+  return {
+    href: "/admin/orders",
+    title: "Orders",
+    text:
+      needsVerification === null
+        ? "Every payment simulation; verify the paid ones."
+        : needsVerification
+          ? `${needsVerification} paid order${needsVerification === 1 ? "" : "s"} need${needsVerification === 1 ? "s" : ""} verification.`
+          : "Every paid order is verified.",
+  };
+}
 
 /** Live chat (Phase 18): the text says how many conversations are unread. */
 function chatLink(unread: number | null) {
@@ -73,30 +85,25 @@ function chatLink(unread: number | null) {
   };
 }
 
-const ACTION_LABEL = { insert: "Added", update: "Changed", delete: "Deleted" };
-const TABLE_LABEL: Record<string, string> = {
-  items: "Item",
-  listings: "Listing",
-  site_settings: "Setting",
-  profiles: "Role",
-};
-
 async function Overview() {
   const { supabase } = await requireAdmin();
-  const [{ data }, catalogue, audit, source, chat] = await Promise.all([
-    supabase.rpc("admin_stats"),
-    readAdminCatalogue(supabase),
-    supabase
-      .from("audit_log")
-      .select("id, at, action, table_name, row_id, diff")
-      .order("id", { ascending: false })
-      .limit(12),
-    getCatalogue(),
-    supabaseAdminChat(supabase)
-      .inbox()
-      .then(unreadCount)
-      .catch(() => null),
-  ]);
+  const checkout = isCheckoutConfigured();
+  const [{ data }, catalogue, audit, source, chat, toVerify] =
+    await Promise.all([
+      supabase.rpc("admin_stats"),
+      readAdminCatalogue(supabase),
+      supabase
+        .from("audit_log")
+        .select("id, at, action, table_name, row_id, diff")
+        .order("id", { ascending: false })
+        .limit(12),
+      getCatalogue(),
+      supabaseAdminChat(supabase)
+        .inbox()
+        .then(unreadCount)
+        .catch(() => null),
+      checkout ? countNeedsVerification(supabase) : null,
+    ]);
   const s = data?.[0];
   const now = new Date();
   const staleListings = catalogue.listings.filter((l) =>
@@ -149,7 +156,7 @@ async function Overview() {
       <div className="grid gap-3 sm:grid-cols-3">
         {[
           ...LINKS,
-          ...(isCheckoutConfigured() ? [ORDERS_LINK] : []),
+          ...(checkout ? [ordersLink(toVerify ?? null)] : []),
           chatLink(chat),
         ].map((l) => (
           <Card key={l.href} padding="none" interactive>
@@ -177,28 +184,30 @@ async function Overview() {
         </h2>
         {audit.data?.length ? (
           <ol className="divide-y divide-line rounded-card border border-line">
-            {audit.data.map((e) => (
-              <li
-                key={e.id}
-                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3 text-[14px] leading-5"
-              >
-                <Badge variant="neutral">
-                  {TABLE_LABEL[e.table_name] ?? e.table_name}
-                </Badge>
-                <span className="text-fg">
-                  {ACTION_LABEL[e.action]}{" "}
-                  <span className="spec text-[13px]">{e.row_id}</span>
-                </span>
-                {e.action === "update" ? (
-                  <span className="text-fg-3">
-                    {Object.keys(e.diff).join(", ")}
+            {audit.data.map((e) => {
+              const l = auditLabel(e);
+              return (
+                <li
+                  key={e.id}
+                  className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3 text-[14px] leading-5"
+                >
+                  <Badge
+                    variant={e.action === "order.verify" ? "ok" : "neutral"}
+                  >
+                    {l.kind}
+                  </Badge>
+                  <span className="text-fg">
+                    {l.verb} <span className="spec text-[13px]">{l.row}</span>
                   </span>
-                ) : null}
-                <span className="ml-auto text-[13px] text-fg-3">
-                  {formatShortDate(e.at)}
-                </span>
-              </li>
-            ))}
+                  {l.detail ? (
+                    <span className="text-fg-3">{l.detail}</span>
+                  ) : null}
+                  <span className="ml-auto text-[13px] text-fg-3">
+                    {formatShortDate(e.at)}
+                  </span>
+                </li>
+              );
+            })}
           </ol>
         ) : (
           <p className="text-[14px] leading-5 text-fg-3">Nothing yet.</p>

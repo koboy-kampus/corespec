@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { StatusBadge } from "@/components/checkout/order-parts";
+import { StatusWithVerification } from "@/components/checkout/order-parts";
 import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/ui/section-header";
 import { requireSession } from "@/lib/auth/dal";
@@ -104,7 +104,7 @@ async function Orders() {
                 {formatIDR(o.total_idr)}
               </td>
               <td className="px-4 py-3">
-                <StatusBadge status={o.status} />
+                <StatusWithVerification order={o} />
               </td>
             </tr>
           ))}

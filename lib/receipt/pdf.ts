@@ -16,7 +16,7 @@ import { formatWIB } from "@/lib/checkout/when";
 import { formatIDR } from "@/lib/format";
 import type { Category } from "@/types/parts";
 import type { OrderItem } from "@/types/supabase";
-import { compatLine } from "./text";
+import { compatLine, verificationLines } from "./text";
 import type { Picture, ReceiptData } from "./types";
 
 /**
@@ -40,6 +40,7 @@ const LINE = rgb(0.85, 0.84, 0.84);
 const SHADE = rgb(0.96, 0.955, 0.95);
 const CORAL = rgb(0.996, 0.18, 0.294); // the app's accent, #fe2e4b
 const OK = rgb(0.09, 0.5, 0.29);
+const WHITE = rgb(1, 1, 1);
 
 const DARK = rgb(0.059, 0.055, 0.055); // the app's background, #0f0e0e
 
@@ -286,20 +287,46 @@ function header(w: Writer, d: ReceiptData) {
   const factsTop = w.y;
   drawQr(w, d.shareUrl, M + W - qrSize, factsTop - 10, qrSize);
   const colW = (W - qrSize - 20) / 3;
-  for (const row of rows) {
-    w.y -= 26;
+  const verification = verificationLines(d);
+  // 24pt a row (26 before Phase 20a): the verification row fits without
+  // shrinking the pictures.
+  const FACT_ROW = 24;
+  for (const [r, row] of rows.entries()) {
+    w.y -= FACT_ROW;
     let col = 0;
     for (const f of row) {
       const x = M + col * colW;
       const span = f.span ?? 1;
+      const size = f.font === mono ? 9.5 : 10.5;
+      const font = f.font ?? regular;
       w.text(f.label.toUpperCase(), x, w.y + 12, { size: 7, color: MUTED });
       w.text(f.value, x, w.y, {
-        size: f.font === mono ? 9.5 : 10.5,
-        font: f.font ?? regular,
+        size,
+        font,
         width: span * colW - 10,
         color: f.label === "Status" && d.status === "paid" ? OK : INK,
       });
+      if (f.label === "Status" && verification.verified)
+        stamp(w, x + font.widthOfTextAtSize(f.value, size) + 8, w.y);
       col += span;
+    }
+    // Admin verification (Phase 20a), under the status row.
+    if (r === 1) {
+      w.y -= FACT_ROW;
+      w.text("VERIFIKASI ADMIN", M, w.y + 12, { size: 7, color: MUTED });
+      // One row: who, then when beside it (the name gives way if it's long).
+      const [who, when] = verification.lines;
+      const rowW = 3 * colW - 10;
+      const whenW = when
+        ? regular.widthOfTextAtSize(drawable(when, w.f.charset), 9.5)
+        : 0;
+      w.text(who, M, w.y, {
+        size: 10.5,
+        font: verification.verified ? bold : regular,
+        color: verification.verified ? INK : MUTED,
+        width: when ? rowW - whenW - 14 : rowW,
+      });
+      if (when) w.text(when, M + rowW, w.y, { size: 9.5, align: "right" });
     }
   }
   w.y = Math.min(w.y - 8, factsTop - 10 - qrSize) - 14;
@@ -312,6 +339,24 @@ function header(w: Writer, d: ReceiptData) {
   // (The simulation wording is under the title, in the watermark and in every
   // page's footer, so there's no banner box taking room from the pictures.)
   w.y -= 16;
+}
+
+/** The "VERIFIED" stamp beside the status: a box in the accent colour. */
+function stamp(w: Writer, x: number, baseline: number) {
+  const size = 7.5;
+  const t = "VERIFIED";
+  const tw = w.f.bold.widthOfTextAtSize(t, size);
+  const [padX, h] = [5, 13];
+  w.page.drawRectangle({
+    x,
+    y: baseline - 3.5,
+    width: tw + 2 * padX,
+    height: h,
+    color: CORAL,
+    borderColor: CORAL,
+    borderWidth: 0.75,
+  });
+  w.text(t, x + padX, baseline, { size, font: w.f.bold, color: WHITE });
 }
 
 /**

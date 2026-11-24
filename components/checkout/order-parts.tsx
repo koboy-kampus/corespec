@@ -1,4 +1,4 @@
-import { ExternalLink, FlaskConical } from "lucide-react";
+import { BadgeCheck, Clock, ExternalLink, FlaskConical } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORY_LABEL, isPcCategory } from "@/lib/categories";
@@ -10,9 +10,10 @@ import {
   SIMULATION_STAMP,
 } from "@/lib/checkout/sandbox";
 import { paymentTypeLabel, STATUS_LABEL } from "@/lib/checkout/labels";
+import { verificationLine } from "@/lib/checkout/verification";
 import { formatIDR } from "@/lib/format";
 import type { Category } from "@/types/parts";
-import type { OrderItem, OrderStatus } from "@/types/supabase";
+import type { OrderItem, OrderRow, OrderStatus } from "@/types/supabase";
 
 /**
  * The checkout simulation's shared pieces (Phase 17a), used by /checkout (in
@@ -52,6 +53,48 @@ const STATUS_VARIANT = {
 
 export function StatusBadge({ status }: { status: OrderStatus }) {
   return <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;
+}
+
+/**
+ * The admin verification line under the status (Phase 20a): "Verified by
+ * {name} · {date} WIB", "Paid · awaiting admin verification", or nothing.
+ */
+export function VerificationNote({
+  order,
+  className,
+}: {
+  order: Pick<OrderRow, "status" | "verified_at" | "verified_by_name">;
+  className?: string;
+}) {
+  const line = verificationLine(order);
+  if (!line) return null;
+  const Icon = order.verified_at ? BadgeCheck : Clock;
+  return (
+    <span
+      className={cn(
+        "flex items-start gap-1.5 text-[12px] leading-4",
+        order.verified_at ? "text-ok" : "text-fg-3",
+        className,
+      )}
+    >
+      <Icon className="mt-px size-3.5 shrink-0" aria-hidden />
+      <span>{line}</span>
+    </span>
+  );
+}
+
+/** The status badge with the verification line under it. */
+export function StatusWithVerification({
+  order,
+}: {
+  order: Pick<OrderRow, "status" | "verified_at" | "verified_by_name">;
+}) {
+  return (
+    <span className="flex flex-col items-start gap-1">
+      <StatusBadge status={order.status} />
+      <VerificationNote order={order} />
+    </span>
+  );
 }
 
 /**

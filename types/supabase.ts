@@ -36,7 +36,16 @@ export type OrderRow = {
   created_at: string;
   updated_at: string;
   paid_at: string | null;
+  /** Set once, by verify_order (Phase 20a): when an admin verified the paid order. */
+  verified_at: string | null;
+  /** The verifying admin; null once that account is deleted (the name stays). */
+  verified_by: string | null;
+  /** The admin's display name when they verified it (printed on the receipt). */
+  verified_by_name: string | null;
 };
+
+/** audit_log.action: the trigger's three, plus verify_order's (Phase 20a). */
+export type AuditAction = "insert" | "update" | "delete" | "order.verify";
 
 export type ConversationStatus = "open" | "closed";
 export type ChatSenderRole = "user" | "admin" | "bot";
@@ -194,7 +203,7 @@ export interface Database {
           id: number;
           at: string;
           actor: string | null;
-          action: "insert" | "update" | "delete";
+          action: AuditAction;
           table_name: string;
           row_id: string;
           diff: Record<string, unknown>;
@@ -304,6 +313,7 @@ export interface Database {
         };
         Returns: ChatMessageRow;
       };
+      verify_order: { Args: { p_order_id: string }; Returns: OrderRow };
       can_join_chat_topic: { Args: { p_topic: string }; Returns: boolean };
     };
     Enums: { [_ in never]: never };

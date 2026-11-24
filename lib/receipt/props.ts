@@ -15,6 +15,8 @@ type OrderForReceipt = Pick<
   | "payment_type"
   | "midtrans_transaction_id"
   | "paid_at"
+  | "verified_at"
+  | "verified_by_name"
   | "items"
   | "pc_idr"
   | "setup_idr"
@@ -42,6 +44,8 @@ export function receiptProps(
       paymentType: order.payment_type,
       transactionId: order.midtrans_transaction_id,
       paidAt: order.paid_at,
+      verifiedByName: order.verified_by_name,
+      verifiedAt: order.verified_at,
       items: order.items,
       pcIDR: order.pc_idr,
       setupIDR: order.setup_idr,

@@ -10,7 +10,7 @@ import {
   paymentTypeLabel,
   SandboxHowTo,
   SimulationBanner,
-  StatusBadge,
+  StatusWithVerification,
 } from "@/components/checkout/order-parts";
 import { requireSession } from "@/lib/auth/dal";
 import { loadCatalogue } from "@/lib/catalogue/load";
@@ -66,7 +66,7 @@ async function Order({ params }: Pick<PageProps<"/orders/[id]">, "params">) {
       </span>,
     ],
     ["Created", formatWIB(order.created_at)],
-    ["Status", <StatusBadge key="s" status={order.status} />],
+    ["Status", <StatusWithVerification key="s" order={order} />],
     ["Payment method", paymentTypeLabel(order.payment_type)],
     ...(order.paid_at
       ? ([["Paid", formatWIB(order.paid_at)]] as [string, string][])

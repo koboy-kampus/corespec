@@ -149,6 +149,8 @@ function order(
     paymentType: "credit_card",
     transactionId: "3f1a2b4c-0000-4000-8000-000000000000",
     paidAt: "2026-11-19T03:07:00.000Z",
+    verifiedByName: null,
+    verifiedAt: null,
     items,
     pcIDR,
     setupIDR,
@@ -281,10 +283,43 @@ describe("buildReceiptPdf", () => {
         ],
       },
       pictures: { pc: png(1200, 900), desk: png(1200, 900) },
+      // Verified: the tallest header (two verification lines).
+      verifiedByName: "Admin Rei",
+      verifiedAt: "2026-11-19T03:20:00.000Z",
     });
     const pages = await pageTexts(await buildReceiptPdf(d));
     expect(pages).toHaveLength(1);
     expect(pages[0]).toContain(formatIDR(d.totalIDR));
+  });
+
+  it("a verified order names the admin and the time, with the VERIFIED stamp", async () => {
+    const d = order(PC, {
+      verifiedByName: "Admin Rei",
+      verifiedAt: "2026-11-19T03:20:00.000Z",
+    });
+    const pages = await pageTexts(await buildReceiptPdf(d));
+    expect(pages).toHaveLength(1);
+    const all = pages.flat();
+    expect(all).toContain("Diverifikasi oleh: Admin Rei");
+    expect(all).toContain("Waktu verifikasi: 19 Nov 2026, 10:20 WIB");
+    expect(all).toContain("VERIFIED");
+    expect(all).not.toContain("Belum diverifikasi admin");
+    // The simulation marks stay exactly as they were.
+    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+  });
+
+  it("an unverified order says so, without the stamp", async () => {
+    for (const status of ["paid", "pending"] as const) {
+      const all = (
+        await pageTexts(await buildReceiptPdf(order(PC, { status })))
+      ).flat();
+      expect(all, status).toContain("Belum diverifikasi admin");
+      expect(all, status).not.toContain("VERIFIED");
+      expect(
+        all.some((t) => t.startsWith("Diverifikasi oleh")),
+        status,
+      ).toBe(false);
+    }
   });
 
   it("a broken picture becomes 'unavailable' rather than failing the PDF", async () => {

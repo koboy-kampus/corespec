@@ -77,7 +77,7 @@ export const BOT_RULES: readonly BotRule[] = [
     id: "receipt",
     keywords: ["struk", "receipt", "pdf", "nota", "invoice"],
     reply:
-      'Open My orders (/orders), pick an order and press Download receipt (PDF). Every receipt is marked "SIMULASI — bukan bukti transaksi": it isn\'t proof of a real purchase.',
+      'Open My orders (/orders), pick an order and press Download receipt (PDF). An admin verifies each paid order, and the receipt then shows their name. Every receipt is marked "SIMULASI — bukan bukti transaksi": it isn\'t proof of a real purchase.',
   },
   {
     id: "checkout",
@@ -92,7 +92,7 @@ export const BOT_RULES: readonly BotRule[] = [
       "simulation",
     ],
     reply:
-      "Checkout is a payment simulation with Midtrans Sandbox: no real money moves and nothing is sold or shipped. To try it, use the test card 4811 1111 1111 1114, any future expiry, CVV 123 and OTP 112233.",
+      "Checkout is a payment simulation with Midtrans Sandbox: no real money moves and nothing is sold or shipped. To try it, use the test card 4811 1111 1111 1114, any future expiry, CVV 123 and OTP 112233. Once it's paid, an admin verifies the order.",
   },
   {
     id: "share",

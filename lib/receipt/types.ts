@@ -26,6 +26,10 @@ export interface ReceiptData {
   transactionId: string | null;
   /** ISO time it was paid, if it was. */
   paidAt: string | null;
+  /** The admin who verified the paid order (a snapshot of their name), or null. */
+  verifiedByName: string | null;
+  /** ISO time an admin verified it, or null when not verified (Phase 20a). */
+  verifiedAt: string | null;
   /** The snapshot from checkout. */
   items: readonly OrderItem[];
   pcIDR: number;
