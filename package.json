@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "receipt:samples": "playwright test -c playwright.samples.config.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "models": "node scripts/build-models.mjs",

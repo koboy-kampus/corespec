@@ -20,6 +20,7 @@ import {
   type ModelPalette,
 } from "./palette";
 import { screenTexture } from "./screen-texture";
+import { isDarkColour, Studio, STUDIO_EDGE } from "./studio";
 
 /**
  * When true, a loading model suspends up to the nearest outer <Suspense> instead
@@ -58,6 +59,8 @@ function FittedModel({
   mirrorX?: boolean;
 }) {
   const spec = MODELS[id];
+  // The receipt's studio capture outlines dark materials (Phase 20b).
+  const studio = useContext(Studio);
   // Loaded on first use, Draco-decoded with the self-hosted decoder. useGLTF caches
   // by URL, so items sharing a model (every RAM stick) load its file once.
   const { scene } = useGLTF(spec.url, DRACO_DECODER_PATH);
@@ -107,7 +110,22 @@ function FittedModel({
               opacity={opacity}
               depthWrite={opacity >= 1}
             />
-            {glow ? <Outlines thickness={2.5} color={glow} /> : null}
+            {glow ? (
+              <Outlines thickness={2.5} color={glow} />
+            ) : studio &&
+              opacity >= 1 &&
+              !screen &&
+              !own?.emissive &&
+              isDarkColour(colour) ? (
+              <Outlines
+                screenspace
+                thickness={STUDIO_EDGE.px}
+                color={STUDIO_EDGE.color}
+                transparent
+                opacity={STUDIO_EDGE.opacity}
+                toneMapped={false}
+              />
+            ) : null}
           </mesh>
         );
       })}

@@ -42,7 +42,8 @@ const CORAL = rgb(0.996, 0.18, 0.294); // the app's accent, #fe2e4b
 const OK = rgb(0.09, 0.5, 0.29);
 const WHITE = rgb(1, 1, 1);
 
-const DARK = rgb(0.059, 0.055, 0.055); // the app's background, #0f0e0e
+/** Behind each picture: the studio background's middle (Phase 20b), #e7e9ec. */
+const PICTURE_BG = rgb(0.906, 0.914, 0.925);
 
 interface Fonts {
   regular: PDFFont;
@@ -341,6 +342,10 @@ function header(w: Writer, d: ReceiptData) {
   w.y -= 16;
 }
 
+/** JPEG files start with FF D8 FF. */
+const isJpeg = (b: Uint8Array) =>
+  b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+
 /** The "VERIFIED" stamp beside the status: a box in the accent colour. */
 function stamp(w: Writer, x: number, baseline: number) {
   const size = 7.5;
@@ -379,11 +384,14 @@ async function pictures(w: Writer, doc: PDFDocument, d: ReceiptData) {
   for (const [i, [caption, png]] of slots.entries()) {
     const x = x0 + i * (pw + gap);
     const y = w.y - ph;
-    w.page.drawRectangle({ x, y, width: pw, height: ph, color: DARK });
+    w.page.drawRectangle({ x, y, width: pw, height: ph, color: PICTURE_BG });
     let drawn = false;
     if (png) {
       try {
-        const img = await doc.embedPng(png);
+        // JPEG from the studio capture (Phase 20b); PNG still works.
+        const img = isJpeg(png)
+          ? await doc.embedJpg(png)
+          : await doc.embedPng(png);
         w.page.drawImage(img, { x, y, width: pw, height: ph });
         drawn = true;
       } catch {
@@ -393,7 +401,7 @@ async function pictures(w: Writer, doc: PDFDocument, d: ReceiptData) {
     if (!drawn)
       w.text("3D preview unavailable", x + pw / 2, y + ph / 2 - 4, {
         size: 10,
-        color: rgb(0.75, 0.73, 0.73),
+        color: MUTED,
         align: "center",
       });
     w.text(caption, x, y - 11, { size: 8, color: MUTED });

@@ -57,6 +57,21 @@ async function pageTexts(bytes: Uint8Array): Promise<string[][]> {
   });
 }
 
+/** Page 1's raw drawing operators. */
+async function pageOps(bytes: Uint8Array): Promise<string> {
+  const doc = await PDFDocument.load(bytes);
+  const contents = doc.getPages()[0].node.get(PDFName.of("Contents"));
+  const refs = contents instanceof PDFArray ? contents.asArray() : [contents];
+  return refs
+    .map((ref) => {
+      const stream = doc.context.lookup(ref as PDFRef);
+      return stream instanceof PDFRawStream
+        ? Buffer.from(decodePDFRawStream(stream).decode()).toString("latin1")
+        : "";
+    })
+    .join("\n");
+}
+
 /** The size of every image in the PDF. */
 async function imageSizes(bytes: Uint8Array) {
   const doc = await PDFDocument.load(bytes);
@@ -320,6 +335,33 @@ describe("buildReceiptPdf", () => {
         status,
       ).toBe(false);
     }
+  });
+
+  it("embeds the studio's JPEG pictures as they are, on a light box (Phase 20b)", async () => {
+    // A valid 1 × 1 JPEG.
+    const jpeg = new Uint8Array(
+      Buffer.from(
+        "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=",
+        "base64",
+      ),
+    );
+    const bytes = await buildReceiptPdf(order(PC, { pictures: { pc: jpeg } }));
+    const all = (await pageTexts(bytes)).flat();
+    expect(all).not.toContain("3D preview unavailable");
+    const doc = await PDFDocument.load(bytes);
+    const jpegs = doc.context
+      .enumerateIndirectObjects()
+      .map(([, o]) => o)
+      .filter(
+        (o) =>
+          o instanceof PDFRawStream &&
+          o.dict.get(PDFName.of("Filter")) === PDFName.of("DCTDecode"),
+      );
+    expect(jpegs).toHaveLength(1);
+    // The box behind the picture is the studio's light grey, not the app's black.
+    const ops = await pageOps(bytes);
+    expect(ops).toContain("0.906 0.914 0.925 rg");
+    expect(ops).not.toContain("0.059 0.055 0.055 rg");
   });
 
   it("a broken picture becomes 'unavailable' rather than failing the PDF", async () => {

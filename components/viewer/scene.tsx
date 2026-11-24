@@ -33,6 +33,7 @@ import { SuspendModelsUp } from "./model-block";
 import { PartMesh } from "./part-mesh";
 import { PartTooltip } from "./part-tooltip";
 import { hasWebGL, usePresence } from "./scene-common";
+import { PcStudioFloor, PcStudioLights, StudioProvider } from "./studio";
 
 export interface SceneProps {
   parts: ResolvedBuild;
@@ -75,6 +76,11 @@ export interface SceneProps {
   onCapture?: (png: string | null) => void;
   /** A fixed pixel ratio (the receipt's capture), instead of the screen's. */
   pixelRatio?: number;
+  /**
+   * The receipt's light studio look (Phase 20b): brighter neutral lights, a
+   * light floor, outlined dark parts. Only the receipt's capture sets it.
+   */
+  studio?: boolean;
 }
 
 type Item =
@@ -201,6 +207,7 @@ function SceneCanvas({
   onReady,
   onCapture,
   pixelRatio,
+  studio = false,
 }: SceneProps) {
   const scene = useMemo(() => layoutBuild(parts), [parts]);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -293,17 +300,25 @@ function SceneCanvas({
       fallback={fallback}
       aria-hidden
     >
-      <Lights />
+      {studio ? <PcStudioLights /> : <Lights />}
       <Turntable spinning={mode === "showcase" && !reducedMotion && !paused}>
         <group scale={MM_TO_UNITS}>
+          {studio ? (
+            <PcStudioFloor
+              y={-scene.case.size[1] / 2}
+              footprint={[scene.case.size[0], scene.case.size[2]]}
+            />
+          ) : null}
           {/* One keyed list, so a removed part keeps its instance while it animates out. */}
           {onReady || onCapture ? (
             <SuspendModelsUp.Provider value>
-              <Suspense fallback={null}>
-                {items.map((i) => render(i, false))}
-                {onReady ? <FirstFrame onReady={onReady} /> : null}
-                {onCapture ? <CaptureFrame onCapture={onCapture} /> : null}
-              </Suspense>
+              <StudioProvider on={studio}>
+                <Suspense fallback={null}>
+                  {items.map((i) => render(i, false))}
+                  {onReady ? <FirstFrame onReady={onReady} /> : null}
+                  {onCapture ? <CaptureFrame onCapture={onCapture} /> : null}
+                </Suspense>
+              </StudioProvider>
             </SuspendModelsUp.Provider>
           ) : (
             [

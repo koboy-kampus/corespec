@@ -10,7 +10,7 @@ export interface CompatSummary {
   warnings: string[];
 }
 
-/** A captured 3D picture (PNG bytes), or null when it couldn't be made. */
+/** A captured 3D picture (JPEG or PNG bytes), or null when it couldn't be made. */
 export type Picture = Uint8Array | null;
 
 /** Everything the PDF receipt prints. Pure data: no catalogue, no DOM. */
