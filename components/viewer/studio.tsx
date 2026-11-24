@@ -6,7 +6,12 @@ import type { Texture } from "three";
 import { radialMap } from "./radial-map";
 import { STUDIO_FLOOR } from "./studio-palette";
 
-export { isDarkColour, STUDIO_EDGE, STUDIO_FLOOR } from "./studio-palette";
+export {
+  isDarkColour,
+  STUDIO_DESK_FRAMING,
+  STUDIO_EDGE,
+  STUDIO_FLOOR,
+} from "./studio-palette";
 
 /**
  * The receipt's light "studio" look (Phase 20b). Only the PDF receipt's

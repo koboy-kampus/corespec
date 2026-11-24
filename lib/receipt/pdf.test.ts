@@ -8,7 +8,6 @@ import {
   PDFRef,
 } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { SIMULATION_STAMP } from "@/lib/checkout/sandbox";
 import { formatIDR } from "@/lib/format";
 import type { OrderItem } from "@/types/supabase";
 import { buildReceiptPdf, drawable, FOOTER_NOTE } from "./pdf";
@@ -197,13 +196,19 @@ describe("buildReceiptPdf", () => {
     expect(pages).toHaveLength(1);
     const all = pages.flat();
     expect(all).toContain("CS-20261119-7K3F9Q");
-    expect(all).toContain("Receipt — payment simulation");
+    expect(all).toContain("Receipt");
+    // Phase 20: one grey test-mode line in the footer, no simulation stamp,
+    // subtitle or watermark.
+    expect(FOOTER_NOTE).toBe(
+      "Midtrans Sandbox (test mode) — not proof of a real purchase.",
+    );
+    expect(all.filter((t) => /SIMULASI|simulation/i.test(t))).toEqual([]);
     expect(all).toContain(formatIDR(d.totalIDR));
     expect(all).toContain("Rp 14.950.000".replace(" ", " "));
     expect(all).toContain("Paid");
     expect(all).toContain("Card");
     expect(all).toContain("19 Nov 2026, 10:05 WIB");
-    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+    expectOnEveryPage(pages, FOOTER_NOTE);
     // No setup: only the PC picture, and it says it's unavailable.
     expect(all.filter((t) => t === "3D preview unavailable")).toHaveLength(1);
     expect(all).not.toContain("Desk setup");
@@ -242,7 +247,7 @@ describe("buildReceiptPdf", () => {
     expect(all).toContain("Not chosen yet");
     expect(all).toContain("Desk setup");
     expect(all).not.toContain("3D preview unavailable");
-    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+    expectOnEveryPage(pages, FOOTER_NOTE);
     expect(await imageSizes(bytes)).toEqual(["1200x900", "1200x900"]);
   });
 
@@ -267,7 +272,7 @@ describe("buildReceiptPdf", () => {
     const bytes = await buildReceiptPdf(d);
     const pages = await pageTexts(bytes);
     expect(pages.length).toBeGreaterThanOrEqual(2);
-    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+    expectOnEveryPage(pages, FOOTER_NOTE);
     const all = pages.flat();
     expect(all).toContain("CS-20261119-7K3F9Q");
     expect(all).toContain(formatIDR(d.totalIDR));
@@ -319,8 +324,8 @@ describe("buildReceiptPdf", () => {
     expect(all).toContain("Waktu verifikasi: 19 Nov 2026, 10:20 WIB");
     expect(all).toContain("VERIFIED");
     expect(all).not.toContain("Belum diverifikasi admin");
-    // The simulation marks stay exactly as they were.
-    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+    // The footer's test-mode note stays.
+    expectOnEveryPage(pages, FOOTER_NOTE);
   });
 
   it("an unverified order says so, without the stamp", async () => {

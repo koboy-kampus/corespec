@@ -15,13 +15,13 @@ import { useBuildDerived, useBuildHydration } from "@/hooks/use-build";
 import { startCheckout } from "@/lib/checkout/actions";
 import { buildOrderDraft } from "@/lib/checkout/order";
 import { useBuildStore } from "@/store/build";
-import { OrderItemsTable, SandboxHowTo, SimulationBanner } from "./order-parts";
+import { OrderItemsTable } from "./order-parts";
 import { useSnap } from "./use-snap";
 
 /**
  * /checkout (Phase 17a): the current build from this browser, priced exactly
  * as the server will price it (the same buildOrderDraft), then "Pay with
- * Midtrans (sandbox)". The server recalculates everything; nothing on this
+ * Midtrans" (Sandbox, test mode). The server recalculates everything; nothing on this
  * page is trusted.
  */
 export function CheckoutView() {
@@ -98,7 +98,6 @@ export function CheckoutView() {
   return (
     <div className="flex flex-col gap-6">
       {script}
-      <SimulationBanner />
 
       <div className="flex flex-col gap-1">
         <p className="label-micro text-fg-3">Build</p>
@@ -139,7 +138,7 @@ export function CheckoutView() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button size="lg" icon={<CreditCard />} onClick={onPay} disabled={busy}>
-          {busy ? "Opening Midtrans…" : "Pay with Midtrans (sandbox)"}
+          {busy ? "Opening Midtrans…" : "Pay with Midtrans"}
         </Button>
         <Button asChild variant="ghost" icon={<ArrowLeft />}>
           <Link href="/builder">Edit the build</Link>
@@ -150,13 +149,15 @@ export function CheckoutView() {
           {error}
         </p>
       ) : null}
+      {/* The one test-mode note in the app's own pages (Phase 20). */}
+      <p className="text-[12px] leading-4 text-fg-3">
+        Payments run on Midtrans Sandbox (test mode). No real money is charged.
+      </p>
       <p className="text-[12px] leading-4 text-fg-3">
         The server recalculates every price from the catalogue when you pay.
         Midtrans gets the order number, the item names and prices, and your
         display name. Never your email.
       </p>
-
-      <SandboxHowTo />
     </div>
   );
 }

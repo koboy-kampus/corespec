@@ -8,6 +8,13 @@ import { Color } from "three";
 /** Light grey for the floor, between the background gradient's two ends. */
 export const STUDIO_FLOOR = "#e9ebef";
 
+/**
+ * The receipt's desk picture: the home view's camera distance times this, so
+ * the setup fills the picture (about 17% tighter). The PC picture keeps its
+ * framing.
+ */
+export const STUDIO_DESK_FRAMING = 0.83;
+
 /** The outline on dark materials: a soft grey, a pixel or so wide. */
 export const STUDIO_EDGE = { color: "#9a9fa8", opacity: 0.55, px: 1.25 };
 

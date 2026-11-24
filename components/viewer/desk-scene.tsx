@@ -40,7 +40,12 @@ import { screenTexture } from "./screen-texture";
 import { DESK_TONES, WARN } from "./palette";
 import { PartTooltip } from "./part-tooltip";
 import { radialMap } from "./radial-map";
-import { DeskStudioLights, StudioProvider, STUDIO_FLOOR } from "./studio";
+import {
+  DeskStudioLights,
+  StudioProvider,
+  STUDIO_DESK_FRAMING,
+  STUDIO_FLOOR,
+} from "./studio";
 import { hasWebGL, usePresence } from "./scene-common";
 
 export interface DeskSceneProps {
@@ -385,11 +390,12 @@ function DeskCanvas({
         const { target, dist } = seatedHome(layout, aspect, fov);
         return {
           target: target.map((v) => v * MM_TO_UNITS) as Vec3,
-          dist: dist * MM_TO_UNITS,
+          // The receipt's picture comes in closer, so the setup fills it.
+          dist: dist * MM_TO_UNITS * (studio ? STUDIO_DESK_FRAMING : 1),
         };
       },
     }),
-    [layout],
+    [layout, studio],
   );
 
   const chairTargets = useMemo(() => chairFadeTargets(layout), [layout]);

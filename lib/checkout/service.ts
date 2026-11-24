@@ -76,8 +76,7 @@ const fail = (code: CheckoutError, error: string): Failure => ({
   error,
 });
 
-const MIDTRANS_DOWN =
-  "Couldn't reach Midtrans's sandbox. Try again in a moment.";
+const MIDTRANS_DOWN = "Couldn't reach Midtrans. Try again in a moment.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** True for a well-formed order id (a UUID); anything else is "not found". */

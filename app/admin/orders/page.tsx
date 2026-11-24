@@ -81,7 +81,7 @@ async function Orders({
         as="h1"
         eyebrow="Admin"
         title="Orders"
-        subtitle="Every payment simulation (Midtrans Sandbox), newest first. Statuses only change through Midtrans; an admin verifies each paid order, and the receipt shows who did."
+        subtitle="Every order, newest first. Statuses only change through Midtrans; an admin verifies each paid order, and the receipt shows who did."
         layout="split"
       />
       <nav aria-label="Filter by status" className="flex flex-wrap gap-2">

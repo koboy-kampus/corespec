@@ -91,17 +91,16 @@ export default function Page() {
       ) : null}
 
       {checkout ? (
-        <DocSection title="The checkout simulation">
+        <DocSection title="Checkout">
           <p>
-            Checkout is a payment simulation with Midtrans&apos;s sandbox: no
-            real money moves and nothing is sold or shipped. When you pay, we
-            send Midtrans the order number, the names and prices of the items,
-            the total and your display name. We never send your email address.
-            The payment page itself comes from Midtrans, so what you type there
-            (in the sandbox, only test card numbers) goes to Midtrans, not to
-            us. Your orders are stored in your account with their items, totals
-            and payment status; admins can see every order with its display
-            name. Receipts are made in your browser and aren&apos;t uploaded.
+            Payments go through Midtrans. When you pay, we send Midtrans the
+            order number, the names and prices of the items, the total and your
+            display name. We never send your email address. The payment page
+            itself comes from Midtrans, so what you type there goes to Midtrans,
+            not to us. Your orders are stored in your account with their items,
+            totals and payment status; admins can see every order with its
+            display name. Receipts are made in your browser and aren&apos;t
+            uploaded.
           </p>
         </DocSection>
       ) : null}

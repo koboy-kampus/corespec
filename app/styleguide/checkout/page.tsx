@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import {
   OrderItemsTable,
-  SandboxHowTo,
-  SimulationBanner,
   STATUS_LABEL,
   StatusBadge,
   StatusWithVerification,
@@ -20,8 +18,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Internal: the checkout simulation's shared pieces (banner, item table,
- * status badges, sandbox how-to, the PDF receipt) with a preset's real prices, so the e2e suite
+ * Internal: the checkout's shared pieces (item table, status badges and
+ * verification lines, the PDF receipt) with a preset's real prices, so the e2e suite
  * can run axe on them without a login (the real pages need one).
  */
 export default async function Page() {
@@ -37,7 +35,6 @@ export default async function Page() {
   return (
     <div className="container-page flex max-w-3xl flex-col gap-6 py-10">
       <h1 className="text-h2 text-fg">Checkout pieces</h1>
-      <SimulationBanner />
       <div className="flex flex-wrap gap-2">
         {(Object.keys(STATUS_LABEL) as OrderStatus[]).map((s) => (
           <StatusBadge key={s} status={s} />
@@ -61,7 +58,6 @@ export default async function Page() {
         setupIDR={draft.setupIDR}
         totalIDR={draft.totalIDR}
       />
-      <SandboxHowTo />
       <section
         aria-labelledby="sample-receipt"
         className="flex flex-col gap-3"

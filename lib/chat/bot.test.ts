@@ -189,16 +189,16 @@ describe("the replies", () => {
     expect(FALLBACK_REPLY).toContain("Admin akan membalas segera");
   });
 
-  it("say checkout is a sandbox simulation and the receipt isn't proof", () => {
-    expect(matchBotRule("checkout")?.reply).toMatch(
-      /simulation.*Sandbox|Sandbox.*simulation/,
-    );
-    expect(matchBotRule("checkout")?.reply).toContain(
-      "nothing is sold or shipped",
-    );
-    expect(matchBotRule("struk")?.reply).toContain(
-      "SIMULASI — bukan bukti transaksi",
-    );
+  it("explain checkout and the receipt without simulation wording (Phase 20)", () => {
+    const checkout = matchBotRule("checkout")?.reply ?? "";
+    const receipt = matchBotRule("struk")?.reply ?? "";
+    expect(checkout).toContain("Checkout");
+    expect(checkout).toContain("Midtrans");
+    expect(receipt).toContain("Download receipt (PDF)");
+    for (const reply of [checkout, receipt])
+      expect(reply).not.toMatch(/simulat|SIMULASI|bukan bukti|sandbox/i);
+    // Asking "is this a simulation?" still gets the checkout answer.
+    expect(rule("ini simulasi?")).toBe("checkout");
   });
 
   it("say an admin verifies paid orders (Phase 20a)", () => {

@@ -1,5 +1,4 @@
 import {
-  degrees,
   PageSizes,
   PDFDocument,
   rgb,
@@ -11,7 +10,6 @@ import {
 import { encode } from "uqr";
 import { CATEGORY_LABEL, isPcCategory } from "@/lib/categories";
 import { paymentTypeLabel, STATUS_LABEL } from "@/lib/checkout/labels";
-import { SIMULATION_STAMP } from "@/lib/checkout/sandbox";
 import { formatWIB } from "@/lib/checkout/when";
 import { formatIDR } from "@/lib/format";
 import type { Category } from "@/types/parts";
@@ -22,12 +20,13 @@ import type { Picture, ReceiptData } from "./types";
 /**
  * The PDF receipt (Phase 17b): data in, bytes out. No DOM, no catalogue, so it
  * runs in the browser (loaded only when "Download receipt" is clicked) and in
- * the unit tests alike. A4 portrait on white, so it prints well; the watermark
- * and the footer are on every page.
+ * the unit tests alike. A4 portrait on white, so it prints well; the footer,
+ * with the one test-mode note (Phase 20), is on every page.
  */
 
+/** The receipt's one test-mode note, in every page's footer (Phase 20). */
 export const FOOTER_NOTE =
-  "Midtrans Sandbox. No real payment was made and nothing is sold or shipped.";
+  "Midtrans Sandbox (test mode) — not proof of a real purchase.";
 
 const [PAGE_W, PAGE_H] = PageSizes.A4;
 const M = 44; // margin
@@ -129,7 +128,6 @@ class Writer {
   newPage() {
     this.page = this.doc.addPage([PAGE_W, PAGE_H]);
     this.pages.push(this.page);
-    this.watermark();
     this.y = PAGE_H - M;
   }
 
@@ -194,38 +192,13 @@ class Writer {
     });
   }
 
-  private watermark() {
-    const size = 40;
-    const font = this.f.bold;
-    const t = drawable(SIMULATION_STAMP, this.f.charset);
-    const w = font.widthOfTextAtSize(t, size);
-    const angle = Math.atan2(PAGE_H, PAGE_W) * 0.62;
-    const [cx, cy] = [PAGE_W / 2, PAGE_H / 2];
-    // Centre the rotated line on the page (half the cap height across).
-    const h = size * 0.7;
-    this.page.drawText(t, {
-      x: cx - (Math.cos(angle) * w) / 2 + (Math.sin(angle) * h) / 2,
-      y: cy - (Math.sin(angle) * w) / 2 - (Math.cos(angle) * h) / 2,
-      size,
-      font,
-      color: CORAL,
-      opacity: 0.1,
-      rotate: degrees((angle * 180) / Math.PI),
-    });
-  }
-
   /** The footer on every page, once the page count is known. */
   footers(orderNo: string) {
     const n = this.pages.length;
     this.pages.forEach((page, i) => {
       this.page = page;
       this.rule(M + 26);
-      this.text(SIMULATION_STAMP, M, M + 12, {
-        size: 8,
-        font: this.f.bold,
-        color: CORAL,
-      });
-      this.text(FOOTER_NOTE, M, M + 1, { size: 7.5, color: MUTED });
+      this.text(FOOTER_NOTE, M, M + 12, { size: 7.5, color: MUTED });
       this.text(`${orderNo} · Page ${i + 1} of ${n}`, M + W, M + 12, {
         size: 7.5,
         color: MUTED,
@@ -246,15 +219,10 @@ function header(w: Writer, d: ReceiptData) {
     font: bold,
     color: CORAL,
   });
-  w.text("Receipt — payment simulation", M + W, top - 14, {
-    size: 13,
+  // On the logo's baseline.
+  w.text("Receipt", M + W, top - 20, {
+    size: 16,
     font: bold,
-    align: "right",
-  });
-  w.text(SIMULATION_STAMP, M + W, top - 28, {
-    size: 8.5,
-    font: bold,
-    color: CORAL,
     align: "right",
   });
   w.y = top - 42;
@@ -337,8 +305,8 @@ function header(w: Writer, d: ReceiptData) {
   });
   w.y -= 2;
   w.para(d.shareUrl, { size: 7.5, font: mono });
-  // (The simulation wording is under the title, in the watermark and in every
-  // page's footer, so there's no banner box taking room from the pictures.)
+  // (The test-mode note is in every page's footer, so there's no banner box
+  // taking room from the pictures.)
   w.y -= 16;
 }
 
@@ -531,7 +499,7 @@ function itemsTable(w: Writer, d: ReceiptData) {
 function drawQr(w: Writer, url: string, x: number, top: number, size: number) {
   const qr = encode(url, { ecc: "M", border: 0 });
   const cell = size / qr.size;
-  // A white quiet zone, so the watermark never touches the code.
+  // A white quiet zone around the code, so scanners find its edges.
   const pad = cell * 2;
   w.page.drawRectangle({
     x: x - pad,
@@ -564,8 +532,8 @@ function drawQr(w: Writer, url: string, x: number, top: number, size: number) {
 /** The receipt as PDF bytes. */
 export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  doc.setTitle(`CoreSpec receipt ${d.orderNo} (simulation)`);
-  doc.setSubject(SIMULATION_STAMP);
+  doc.setTitle(`CoreSpec receipt ${d.orderNo}`);
+  doc.setSubject(FOOTER_NOTE);
   doc.setAuthor("CoreSpec");
   doc.setCreator("CoreSpec");
   doc.setProducer("CoreSpec (pdf-lib)");

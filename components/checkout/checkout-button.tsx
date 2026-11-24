@@ -21,7 +21,7 @@ export function checkoutBlocker(
 }
 
 /**
- * The builder's "Checkout (simulation)" button (Phase 17a). The compatibility
+ * The builder's "Checkout" button (Phase 17a). The compatibility
  * rules gate it: disabled, with the reason next to it, while the build is
  * empty or has errors (warnings and missing parts are fine). Guests go to the
  * login page first. Hidden when checkout isn't configured.
@@ -51,17 +51,18 @@ export function CheckoutButton({
           aria-describedby={reasonId}
           icon={<CreditCard />}
         >
-          Checkout (simulation)
+          Checkout
         </Button>
       ) : (
         <Button asChild size="md" icon={<CreditCard />}>
-          <Link href={href}>Checkout (simulation)</Link>
+          <Link href={href}>Checkout</Link>
         </Button>
       )}
-      <p id={reasonId} className="text-[12px] leading-4 text-fg-3">
-        {blocker ??
-          "A Midtrans Sandbox payment: no real money, nothing is sold."}
-      </p>
+      {blocker ? (
+        <p id={reasonId} className="text-[12px] leading-4 text-fg-3">
+          {blocker}
+        </p>
+      ) : null}
     </div>
   );
 }

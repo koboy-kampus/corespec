@@ -7,7 +7,7 @@ import { requireSession } from "@/lib/auth/dal";
 import { isCheckoutConfigured } from "@/lib/checkout/config";
 
 export const metadata: Metadata = {
-  title: "Checkout (simulation)",
+  title: "Checkout",
   robots: { index: false },
 };
 
@@ -17,9 +17,9 @@ export default function Page() {
     <div className="container-page flex max-w-3xl flex-col gap-8 py-10 md:py-14">
       <SectionHeader
         as="h1"
-        eyebrow="Checkout · simulation"
+        eyebrow="Checkout"
         title="Checkout"
-        subtitle="Check the order, then pay in Midtrans's sandbox. Nothing is sold or shipped."
+        subtitle="Check the order, then pay with Midtrans."
       />
       <Suspense
         fallback={

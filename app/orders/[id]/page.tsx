@@ -8,8 +8,6 @@ import { ReceiptButton } from "@/components/receipt/receipt-button";
 import {
   OrderItemsTable,
   paymentTypeLabel,
-  SandboxHowTo,
-  SimulationBanner,
   StatusWithVerification,
 } from "@/components/checkout/order-parts";
 import { requireSession } from "@/lib/auth/dal";
@@ -86,10 +84,9 @@ async function Order({ params }: Pick<PageProps<"/orders/[id]">, "params">) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <p className="label-micro text-fg-3">Order · simulation</p>
+        <p className="label-micro text-fg-3">Order</p>
         <h1 className="text-h2 text-fg">{order.build_name}</h1>
       </div>
-      <SimulationBanner />
 
       <dl className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-card border border-line bg-surface p-5 text-[14px] leading-5 sm:grid-cols-2">
         {facts.map(([k, v]) => (
@@ -123,8 +120,6 @@ async function Order({ params }: Pick<PageProps<"/orders/[id]">, "params">) {
         <Share2 className="size-4" aria-hidden /> Open this build&apos;s share
         page
       </Link>
-
-      {order.status === "pending" ? <SandboxHowTo /> : null}
     </div>
   );
 }

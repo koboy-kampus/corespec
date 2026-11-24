@@ -64,7 +64,7 @@ function ordersLink(needsVerification: number | null) {
     title: "Orders",
     text:
       needsVerification === null
-        ? "Every payment simulation; verify the paid ones."
+        ? "Every order; verify the paid ones."
         : needsVerification
           ? `${needsVerification} paid order${needsVerification === 1 ? "" : "s"} need${needsVerification === 1 ? "s" : ""} verification.`
           : "Every paid order is verified.",

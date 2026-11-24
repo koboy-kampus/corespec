@@ -7,7 +7,6 @@ import { VerifyOrderButton } from "@/components/admin/verify-order";
 import {
   OrderItemsTable,
   paymentTypeLabel,
-  SimulationBanner,
   StatusWithVerification,
 } from "@/components/checkout/order-parts";
 import { ReceiptButton } from "@/components/receipt/receipt-button";
@@ -86,10 +85,9 @@ async function Order({
         <ArrowLeft className="size-3.5" aria-hidden /> Orders
       </Link>
       <div className="flex flex-col gap-2">
-        <p className="label-micro text-fg-3">Admin · order · simulation</p>
+        <p className="label-micro text-fg-3">Admin · order</p>
         <h1 className="text-h2 text-fg">{order.build_name}</h1>
       </div>
-      <SimulationBanner />
 
       <dl className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-card border border-line bg-surface p-5 text-[14px] leading-5 sm:grid-cols-2">
         {facts.map(([k, v]) => (

@@ -22,9 +22,9 @@ export default function Page() {
     <div className="container-page flex max-w-4xl flex-col gap-8 py-10 md:py-14">
       <SectionHeader
         as="h1"
-        eyebrow="Checkout · simulation"
+        eyebrow="Checkout"
         title="My orders"
-        subtitle="Payment simulations in Midtrans's sandbox. No real money, nothing is sold or shipped."
+        subtitle="Your orders and their payment status, newest first."
       />
       <Suspense
         fallback={
@@ -54,8 +54,7 @@ async function Orders() {
     return (
       <div className="flex flex-col items-start gap-4 rounded-card border border-line bg-surface p-6">
         <p className="text-body text-fg-2">
-          No orders yet. Check out a build from the builder to try the payment
-          simulation.
+          No orders yet. Check out a build from the builder to place one.
         </p>
         <Button asChild variant="secondary">
           <Link href="/builder">Open the builder</Link>
