@@ -93,7 +93,8 @@ export default function Page() {
       {checkout ? (
         <DocSection title="Checkout">
           <p>
-            Payments go through Midtrans. When you pay, we send Midtrans the
+            Payments go through Midtrans Sandbox (test mode): only test cards
+            work and no real money moves. When you pay, we send Midtrans the
             order number, the names and prices of the items, the total and your
             display name. We never send your email address. The payment page
             itself comes from Midtrans, so what you type there goes to Midtrans,
