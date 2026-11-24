@@ -1,8 +1,9 @@
 -- Row Level Security tests for CoreSpec: profiles, builds and the account/admin
 -- functions (Phase 16a), then the catalogue, listings, settings and the audit
 -- log (Phase 16b), then deleting items (20261115000100_item_delete.sql), then
--- orders and the checkout simulation (20261117000100_orders.sql), then the live
--- chat (20261118000100_chat.sql).
+-- orders and the checkout simulation (20261117000100_orders.sql), then admin
+-- verification of paid orders (20261125000100_order_verification.sql), then the
+-- live chat (20261118000100_chat.sql).
 --
 -- How to run: Supabase dashboard → SQL Editor → paste this whole file → Run.
 -- It creates three throwaway accounts, acts as anon, as each of them and as an
@@ -1189,6 +1190,271 @@ select public.create_order('rls-order-secret', '00000000-0000-4000-8000-00000000
   as "older pending orders don't count";
 
 reset role;
+
+-- ===========================================================================
+-- Admin verification (20261125000100_order_verification.sql)
+-- ===========================================================================
+
+-- As anon with the secret (like the server): one order in each status. The
+-- paid one is bob's; alice's RLS-A-1 is paid too. Their ids are kept as
+-- settings, because anon can't read orders.
+set local role anon;
+select set_config('request.jwt.claims', '{"role": "anon"}', true);
+
+do $$
+declare
+  o public.orders;
+  s text;
+begin
+  foreach s in array array['paid', 'pending', 'failed', 'expired', 'cancelled'] loop
+    o := public.create_order('rls-order-secret', '00000000-0000-4000-8000-00000000000b',
+      'RLS-V-' || upper(s), 'Bob PC', '{}', current_setting('rls.items')::jsonb, 3000000, 0, 3000000);
+    if s <> 'pending' then
+      perform public.set_order_payment('rls-order-secret', o.order_no, s, 'qris', 'T-V', null);
+    end if;
+    perform set_config('rls.v_' || s, o.id::text, true);
+    assert o.verified_at is null and o.verified_by is null and o.verified_by_name is null,
+      'FAIL: a new order isn''t verified';
+  end loop;
+
+  begin
+    perform public.verify_order(current_setting('rls.v_paid')::uuid);
+    raise exception 'FAIL: anon calls verify_order';
+  exception when insufficient_privilege then
+    if sqlerrm not like 'permission denied for function%' then
+      raise exception 'FAIL: anon calls verify_order (reached the function: %)', sqlerrm;
+    end if;
+  end;
+end;
+$$;
+
+reset role;
+
+-- A second admin, dave, who verifies and later deletes his account.
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-4000-8000-00000000000d', 'rls-dave@example.test',
+    '{"display_name": "Admin Dave"}'::jsonb);
+update public.profiles set role = 'admin'
+where id = '00000000-0000-4000-8000-00000000000d';
+
+-- alice (a user): can't verify her own paid order or anyone else's, can't
+-- write the verification columns, and can't write the audit log.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000a", "role": "authenticated"}', true);
+
+do $$
+begin
+  begin
+    perform public.verify_order((select id from public.orders where order_no = 'RLS-A-1'));
+    raise exception 'FAIL: a user verifies her own order';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.verify_order(current_setting('rls.v_paid')::uuid);
+    raise exception 'FAIL: a user verifies someone else''s order';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.orders
+    set verified_at = now(), verified_by_name = 'Alice'
+    where order_no = 'RLS-A-1';
+    raise exception 'FAIL: a user writes the verification columns directly';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.audit_log (actor, action, table_name, row_id)
+    values ('00000000-0000-4000-8000-00000000000a', 'order.verify', 'orders', 'RLS-A-1');
+    raise exception 'FAIL: a user inserts into audit_log';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$$;
+
+reset role;
+
+do $$
+begin
+  assert (select verified_at is null and verified_by_name is null
+          from public.orders where order_no = 'RLS-A-1'),
+    'FAIL: a refused verify changes nothing';
+end;
+$$;
+
+-- dave (an admin): verifies the paid order once; every other status is refused.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000d", "role": "authenticated"}', true);
+
+do $$
+declare
+  o public.orders;
+  s text;
+  h text;
+begin
+  -- Not even an admin writes the columns or the audit log directly.
+  begin
+    update public.orders
+    set verified_at = now(), verified_by = '00000000-0000-4000-8000-00000000000d',
+        verified_by_name = 'Admin Dave'
+    where id = current_setting('rls.v_paid')::uuid;
+    raise exception 'FAIL: an admin writes the verification columns directly';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.audit_log (actor, action, table_name, row_id)
+    values ('00000000-0000-4000-8000-00000000000d', 'order.verify', 'orders', 'RLS-V-PAID');
+    raise exception 'FAIL: an admin inserts into audit_log directly';
+  exception when insufficient_privilege then null;
+  end;
+
+  foreach s in array array['pending', 'failed', 'expired', 'cancelled'] loop
+    begin
+      perform public.verify_order(current_setting('rls.v_' || s)::uuid);
+      raise exception 'FAIL: a % order is verified', s;
+    exception when raise_exception then
+      get stacked diagnostics h = pg_exception_hint;
+      if h is distinct from 'not_paid' then
+        raise exception 'FAIL: a % order is verified (%)', s, sqlerrm;
+      end if;
+    end;
+  end loop;
+
+  begin
+    perform public.verify_order('00000000-0000-4000-8000-0000000000ff');
+    raise exception 'FAIL: verify_order accepts an unknown order';
+  exception when no_data_found then null;
+  end;
+
+  o := public.verify_order(current_setting('rls.v_paid')::uuid);
+  assert o.verified_by = '00000000-0000-4000-8000-00000000000d'
+    and o.verified_by_name = 'Admin Dave'
+    and o.verified_at is not null and o.verified_at <= now()
+    and o.status = 'paid',
+    'FAIL: an admin verifies a paid order (name, admin and time stored)';
+  assert (select verified_by_name from public.orders
+          where id = current_setting('rls.v_paid')::uuid) = 'Admin Dave',
+    'FAIL: the verification is stored';
+
+  assert exists (
+    select 1 from public.audit_log
+    where action = 'order.verify' and table_name = 'orders' and row_id = 'RLS-V-PAID'
+      and actor = '00000000-0000-4000-8000-00000000000d'
+      and diff ->> 'verified_by_name' = 'Admin Dave'
+      and diff ->> 'order_id' = current_setting('rls.v_paid')
+  ), 'FAIL: verify_order writes an audit row';
+
+  begin
+    perform public.verify_order(current_setting('rls.v_paid')::uuid);
+    raise exception 'FAIL: an order is verified twice';
+  exception when raise_exception then
+    get stacked diagnostics h = pg_exception_hint;
+    if h is distinct from 'already_verified' then
+      raise exception 'FAIL: an order is verified twice (%)', sqlerrm;
+    end if;
+  end;
+end;
+$$;
+
+reset role;
+
+-- carol (the other admin) gets "already verified by Admin Dave".
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000c", "role": "authenticated"}', true);
+
+do $$
+begin
+  begin
+    perform public.verify_order(current_setting('rls.v_paid')::uuid);
+    raise exception 'FAIL: a second admin verifies a verified order';
+  exception when raise_exception then
+    if sqlerrm <> 'Order RLS-V-PAID is already verified by Admin Dave' then
+      raise exception 'FAIL: a second verify says who verified it (%)', sqlerrm;
+    end if;
+  end;
+  assert (select count(*) from public.audit_log
+          where action = 'order.verify' and row_id = 'RLS-V-PAID') = 1,
+    'FAIL: a refused verify writes no audit row';
+end;
+$$;
+
+reset role;
+
+-- Later notifications (as anon, like the webhook) never clear a verification.
+set local role anon;
+select set_config('request.jwt.claims', '{"role": "anon"}', true);
+
+do $$
+declare
+  o public.orders;
+  s text;
+begin
+  foreach s in array array['paid', 'failed', 'expired', 'cancelled', 'pending'] loop
+    select * into o from public.set_order_payment('rls-order-secret', 'RLS-V-PAID', s, 'gopay', 'T-V2', 'tok-v');
+    assert o.status = 'paid' and o.verified_by_name = 'Admin Dave'
+      and o.verified_by = '00000000-0000-4000-8000-00000000000d' and o.verified_at is not null,
+      format('FAIL: a later %s notification keeps the verification', s);
+  end loop;
+end;
+$$;
+
+reset role;
+
+-- As the database owner: the table's own rules.
+do $$
+begin
+  begin
+    update public.orders set verified_at = now(), verified_by_name = 'X'
+    where id = current_setting('rls.v_pending')::uuid;
+    raise exception 'FAIL: an unpaid order can hold a verification';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.orders set verified_by_name = 'X'
+    where id = current_setting('rls.v_failed')::uuid;
+    raise exception 'FAIL: a verifier name without a time is accepted';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.orders set verified_by_name = null
+    where id = current_setting('rls.v_paid')::uuid;
+    raise exception 'FAIL: a verification without a name is accepted';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.audit_log (action, table_name, row_id)
+    values ('order.unverify', 'orders', 'RLS-V-PAID');
+    raise exception 'FAIL: audit_log accepts an unknown action';
+  exception when check_violation then null;
+  end;
+end;
+$$;
+
+-- dave deletes his account (carol is still an admin): the name stays on the
+-- order, verified_by becomes null, and the audit row stays.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub": "00000000-0000-4000-8000-00000000000d", "role": "authenticated"}', true);
+
+select public.delete_my_account();
+
+reset role;
+
+do $$
+begin
+  assert not exists (select 1 from public.profiles
+                     where id = '00000000-0000-4000-8000-00000000000d'),
+    'FAIL: the verifying admin deletes his account';
+  assert (select verified_by is null and verified_by_name = 'Admin Dave'
+            and verified_at is not null and status = 'paid'
+          from public.orders where id = current_setting('rls.v_paid')::uuid),
+    'FAIL: deleting the verifying admin keeps the name and clears verified_by';
+  assert exists (select 1 from public.audit_log
+                 where action = 'order.verify' and row_id = 'RLS-V-PAID'),
+    'FAIL: deleting the verifying admin keeps the audit row';
+end;
+$$;
 
 -- ===========================================================================
 -- Live chat (20261118000100_chat.sql). The order secret above is still set:
