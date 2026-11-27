@@ -94,4 +94,33 @@ describe("POST /api/midtrans/notification", () => {
     expect(res.status).toBe(200);
     expect(setPayment).toHaveBeenCalledWith("CS-NOPE", {});
   });
+
+  for (const [label, padded] of [
+    [
+      "a trailing newline",
+      `${KEY}
+`,
+    ],
+    ["a trailing space", `${KEY} `],
+    [
+      "surrounding whitespace",
+      ` 	${KEY}
+`,
+    ],
+  ] as const)
+    it(`still verifies a signed notification when the server key has ${label}`, async () => {
+      vi.stubEnv("MIDTRANS_SERVER_KEY", padded);
+      setPayment.mockResolvedValue(null);
+      const res = await post(
+        JSON.stringify(
+          signed({
+            order_id: "CS-TRIM",
+            status_code: "200",
+            gross_amount: "1.00",
+          }),
+        ),
+      );
+      expect(res.status).toBe(200);
+      expect(setPayment).toHaveBeenCalledWith("CS-TRIM", {});
+    });
 });

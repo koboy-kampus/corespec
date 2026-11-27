@@ -50,8 +50,10 @@ for (const phone of PHONES) {
         ).toBeHidden();
         expect(await fullyVisibleItems(dialog)).toBeGreaterThanOrEqual(4);
         // The sheet fills the screen and doesn't scroll itself; only the list does.
-        const box = (await dialog.boundingBox())!;
-        expect(box.height).toBeCloseTo(phone.height, 0);
+        // Polled: under load the sheet can still be finishing its open animation.
+        await expect
+          .poll(async () => (await dialog.boundingBox())!.height)
+          .toBeCloseTo(phone.height, 0);
         expect(
           await dialog.evaluate((d) => d.scrollHeight - d.clientHeight),
         ).toBe(0);
