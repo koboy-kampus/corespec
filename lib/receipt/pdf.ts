@@ -1,5 +1,4 @@
 import {
-  degrees,
   PageSizes,
   PDFDocument,
   rgb,
@@ -11,23 +10,23 @@ import {
 import { encode } from "uqr";
 import { CATEGORY_LABEL, isPcCategory } from "@/lib/categories";
 import { paymentTypeLabel, STATUS_LABEL } from "@/lib/checkout/labels";
-import { SIMULATION_STAMP } from "@/lib/checkout/sandbox";
 import { formatWIB } from "@/lib/checkout/when";
 import { formatIDR } from "@/lib/format";
 import type { Category } from "@/types/parts";
 import type { OrderItem } from "@/types/supabase";
-import { compatLine } from "./text";
+import { compatLine, verificationLines } from "./text";
 import type { Picture, ReceiptData } from "./types";
 
 /**
  * The PDF receipt (Phase 17b): data in, bytes out. No DOM, no catalogue, so it
  * runs in the browser (loaded only when "Download receipt" is clicked) and in
- * the unit tests alike. A4 portrait on white, so it prints well; the watermark
- * and the footer are on every page.
+ * the unit tests alike. A4 portrait on white, so it prints well; the footer,
+ * with the one test-mode note (Phase 20), is on every page.
  */
 
+/** The receipt's one test-mode note, in every page's footer (Phase 20). */
 export const FOOTER_NOTE =
-  "Midtrans Sandbox. No real payment was made and nothing is sold or shipped.";
+  "Midtrans Sandbox (test mode) — not proof of a real purchase.";
 
 const [PAGE_W, PAGE_H] = PageSizes.A4;
 const M = 44; // margin
@@ -40,8 +39,10 @@ const LINE = rgb(0.85, 0.84, 0.84);
 const SHADE = rgb(0.96, 0.955, 0.95);
 const CORAL = rgb(0.996, 0.18, 0.294); // the app's accent, #fe2e4b
 const OK = rgb(0.09, 0.5, 0.29);
+const WHITE = rgb(1, 1, 1);
 
-const DARK = rgb(0.059, 0.055, 0.055); // the app's background, #0f0e0e
+/** Behind each picture: the studio background's middle (Phase 20b), #e7e9ec. */
+const PICTURE_BG = rgb(0.906, 0.914, 0.925);
 
 interface Fonts {
   regular: PDFFont;
@@ -127,7 +128,6 @@ class Writer {
   newPage() {
     this.page = this.doc.addPage([PAGE_W, PAGE_H]);
     this.pages.push(this.page);
-    this.watermark();
     this.y = PAGE_H - M;
   }
 
@@ -192,38 +192,13 @@ class Writer {
     });
   }
 
-  private watermark() {
-    const size = 40;
-    const font = this.f.bold;
-    const t = drawable(SIMULATION_STAMP, this.f.charset);
-    const w = font.widthOfTextAtSize(t, size);
-    const angle = Math.atan2(PAGE_H, PAGE_W) * 0.62;
-    const [cx, cy] = [PAGE_W / 2, PAGE_H / 2];
-    // Centre the rotated line on the page (half the cap height across).
-    const h = size * 0.7;
-    this.page.drawText(t, {
-      x: cx - (Math.cos(angle) * w) / 2 + (Math.sin(angle) * h) / 2,
-      y: cy - (Math.sin(angle) * w) / 2 - (Math.cos(angle) * h) / 2,
-      size,
-      font,
-      color: CORAL,
-      opacity: 0.1,
-      rotate: degrees((angle * 180) / Math.PI),
-    });
-  }
-
   /** The footer on every page, once the page count is known. */
   footers(orderNo: string) {
     const n = this.pages.length;
     this.pages.forEach((page, i) => {
       this.page = page;
       this.rule(M + 26);
-      this.text(SIMULATION_STAMP, M, M + 12, {
-        size: 8,
-        font: this.f.bold,
-        color: CORAL,
-      });
-      this.text(FOOTER_NOTE, M, M + 1, { size: 7.5, color: MUTED });
+      this.text(FOOTER_NOTE, M, M + 12, { size: 7.5, color: MUTED });
       this.text(`${orderNo} · Page ${i + 1} of ${n}`, M + W, M + 12, {
         size: 7.5,
         color: MUTED,
@@ -244,15 +219,10 @@ function header(w: Writer, d: ReceiptData) {
     font: bold,
     color: CORAL,
   });
-  w.text("Receipt — payment simulation", M + W, top - 14, {
-    size: 13,
+  // On the logo's baseline.
+  w.text("Receipt", M + W, top - 20, {
+    size: 16,
     font: bold,
-    align: "right",
-  });
-  w.text(SIMULATION_STAMP, M + W, top - 28, {
-    size: 8.5,
-    font: bold,
-    color: CORAL,
     align: "right",
   });
   w.y = top - 42;
@@ -286,20 +256,46 @@ function header(w: Writer, d: ReceiptData) {
   const factsTop = w.y;
   drawQr(w, d.shareUrl, M + W - qrSize, factsTop - 10, qrSize);
   const colW = (W - qrSize - 20) / 3;
-  for (const row of rows) {
-    w.y -= 26;
+  const verification = verificationLines(d);
+  // 24pt a row (26 before Phase 20a): the verification row fits without
+  // shrinking the pictures.
+  const FACT_ROW = 24;
+  for (const [r, row] of rows.entries()) {
+    w.y -= FACT_ROW;
     let col = 0;
     for (const f of row) {
       const x = M + col * colW;
       const span = f.span ?? 1;
+      const size = f.font === mono ? 9.5 : 10.5;
+      const font = f.font ?? regular;
       w.text(f.label.toUpperCase(), x, w.y + 12, { size: 7, color: MUTED });
       w.text(f.value, x, w.y, {
-        size: f.font === mono ? 9.5 : 10.5,
-        font: f.font ?? regular,
+        size,
+        font,
         width: span * colW - 10,
         color: f.label === "Status" && d.status === "paid" ? OK : INK,
       });
+      if (f.label === "Status" && verification.verified)
+        stamp(w, x + font.widthOfTextAtSize(f.value, size) + 8, w.y);
       col += span;
+    }
+    // Admin verification (Phase 20a), under the status row.
+    if (r === 1) {
+      w.y -= FACT_ROW;
+      w.text("VERIFIKASI ADMIN", M, w.y + 12, { size: 7, color: MUTED });
+      // One row: who, then when beside it (the name gives way if it's long).
+      const [who, when] = verification.lines;
+      const rowW = 3 * colW - 10;
+      const whenW = when
+        ? regular.widthOfTextAtSize(drawable(when, w.f.charset), 9.5)
+        : 0;
+      w.text(who, M, w.y, {
+        size: 10.5,
+        font: verification.verified ? bold : regular,
+        color: verification.verified ? INK : MUTED,
+        width: when ? rowW - whenW - 14 : rowW,
+      });
+      if (when) w.text(when, M + rowW, w.y, { size: 9.5, align: "right" });
     }
   }
   w.y = Math.min(w.y - 8, factsTop - 10 - qrSize) - 14;
@@ -309,9 +305,31 @@ function header(w: Writer, d: ReceiptData) {
   });
   w.y -= 2;
   w.para(d.shareUrl, { size: 7.5, font: mono });
-  // (The simulation wording is under the title, in the watermark and in every
-  // page's footer, so there's no banner box taking room from the pictures.)
+  // (The test-mode note is in every page's footer, so there's no banner box
+  // taking room from the pictures.)
   w.y -= 16;
+}
+
+/** JPEG files start with FF D8 FF. */
+const isJpeg = (b: Uint8Array) =>
+  b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+
+/** The "VERIFIED" stamp beside the status: a box in the accent colour. */
+function stamp(w: Writer, x: number, baseline: number) {
+  const size = 7.5;
+  const t = "VERIFIED";
+  const tw = w.f.bold.widthOfTextAtSize(t, size);
+  const [padX, h] = [5, 13];
+  w.page.drawRectangle({
+    x,
+    y: baseline - 3.5,
+    width: tw + 2 * padX,
+    height: h,
+    color: CORAL,
+    borderColor: CORAL,
+    borderWidth: 0.75,
+  });
+  w.text(t, x + padX, baseline, { size, font: w.f.bold, color: WHITE });
 }
 
 /**
@@ -334,11 +352,14 @@ async function pictures(w: Writer, doc: PDFDocument, d: ReceiptData) {
   for (const [i, [caption, png]] of slots.entries()) {
     const x = x0 + i * (pw + gap);
     const y = w.y - ph;
-    w.page.drawRectangle({ x, y, width: pw, height: ph, color: DARK });
+    w.page.drawRectangle({ x, y, width: pw, height: ph, color: PICTURE_BG });
     let drawn = false;
     if (png) {
       try {
-        const img = await doc.embedPng(png);
+        // JPEG from the studio capture (Phase 20b); PNG still works.
+        const img = isJpeg(png)
+          ? await doc.embedJpg(png)
+          : await doc.embedPng(png);
         w.page.drawImage(img, { x, y, width: pw, height: ph });
         drawn = true;
       } catch {
@@ -348,7 +369,7 @@ async function pictures(w: Writer, doc: PDFDocument, d: ReceiptData) {
     if (!drawn)
       w.text("3D preview unavailable", x + pw / 2, y + ph / 2 - 4, {
         size: 10,
-        color: rgb(0.75, 0.73, 0.73),
+        color: MUTED,
         align: "center",
       });
     w.text(caption, x, y - 11, { size: 8, color: MUTED });
@@ -478,7 +499,7 @@ function itemsTable(w: Writer, d: ReceiptData) {
 function drawQr(w: Writer, url: string, x: number, top: number, size: number) {
   const qr = encode(url, { ecc: "M", border: 0 });
   const cell = size / qr.size;
-  // A white quiet zone, so the watermark never touches the code.
+  // A white quiet zone around the code, so scanners find its edges.
   const pad = cell * 2;
   w.page.drawRectangle({
     x: x - pad,
@@ -511,8 +532,8 @@ function drawQr(w: Writer, url: string, x: number, top: number, size: number) {
 /** The receipt as PDF bytes. */
 export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  doc.setTitle(`CoreSpec receipt ${d.orderNo} (simulation)`);
-  doc.setSubject(SIMULATION_STAMP);
+  doc.setTitle(`CoreSpec receipt ${d.orderNo}`);
+  doc.setSubject(FOOTER_NOTE);
   doc.setAuthor("CoreSpec");
   doc.setCreator("CoreSpec");
   doc.setProducer("CoreSpec (pdf-lib)");

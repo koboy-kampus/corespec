@@ -21,7 +21,8 @@ export type ReceiptOrder = Omit<ReceiptData, "pictures" | "shareUrl"> & {
   sharePath: string;
 };
 
-function pngBytes(dataUrl: string | null | undefined): Uint8Array | null {
+/** A captured picture's bytes (JPEG since Phase 20b), from its data URL. */
+function pictureBytes(dataUrl: string | null | undefined): Uint8Array | null {
   if (!dataUrl) return null;
   try {
     const bin = atob(dataUrl.slice(dataUrl.indexOf(",") + 1));
@@ -73,8 +74,10 @@ export function ReceiptButton({
           ...rest,
           shareUrl: new URL(sharePath, window.location.origin).href,
           pictures: {
-            pc: pngBytes(captures.pc),
-            ...("desk" in captures ? { desk: pngBytes(captures.desk) } : {}),
+            pc: pictureBytes(captures.pc),
+            ...("desk" in captures
+              ? { desk: pictureBytes(captures.desk) }
+              : {}),
           },
         });
         const url = URL.createObjectURL(

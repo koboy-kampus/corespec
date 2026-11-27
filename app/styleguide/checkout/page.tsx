@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import {
   OrderItemsTable,
-  SandboxHowTo,
-  SimulationBanner,
   STATUS_LABEL,
   StatusBadge,
+  StatusWithVerification,
 } from "@/components/checkout/order-parts";
 import { loadCatalogue } from "@/lib/catalogue/load";
 import { ReceiptButton } from "@/components/receipt/receipt-button";
@@ -19,8 +18,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Internal: the checkout simulation's shared pieces (banner, item table,
- * status badges, sandbox how-to, the PDF receipt) with a preset's real prices, so the e2e suite
+ * Internal: the checkout's shared pieces (item table, status badges and
+ * verification lines, the PDF receipt) with a preset's real prices, so the e2e suite
  * can run axe on them without a login (the real pages need one).
  */
 export default async function Page() {
@@ -36,11 +35,22 @@ export default async function Page() {
   return (
     <div className="container-page flex max-w-3xl flex-col gap-6 py-10">
       <h1 className="text-h2 text-fg">Checkout pieces</h1>
-      <SimulationBanner />
       <div className="flex flex-wrap gap-2">
         {(Object.keys(STATUS_LABEL) as OrderStatus[]).map((s) => (
           <StatusBadge key={s} status={s} />
         ))}
+      </div>
+      <div className="flex flex-wrap gap-6">
+        <StatusWithVerification
+          order={{ status: "paid", verified_at: null, verified_by_name: null }}
+        />
+        <StatusWithVerification
+          order={{
+            status: "paid",
+            verified_at: "2026-11-19T03:20:00.000Z",
+            verified_by_name: "Admin Rei",
+          }}
+        />
       </div>
       <OrderItemsTable
         items={draft.items}
@@ -48,7 +58,6 @@ export default async function Page() {
         setupIDR={draft.setupIDR}
         totalIDR={draft.totalIDR}
       />
-      <SandboxHowTo />
       <section
         aria-labelledby="sample-receipt"
         className="flex flex-col gap-3"
@@ -98,6 +107,9 @@ function sampleOrder(draft: OrderDraft, status: OrderStatus) {
       ? "00000000-0000-4000-8000-000000000000"
       : null,
     paid_at: paid ? "2026-11-19T03:07:00.000Z" : null,
+    // The paid sample is verified, so its receipt shows the name and stamp.
+    verified_at: paid ? "2026-11-19T03:20:00.000Z" : null,
+    verified_by_name: paid ? "Admin Rei" : null,
     items: draft.items,
     pc_idr: draft.pcIDR,
     setup_idr: draft.setupIDR,

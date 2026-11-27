@@ -1,6 +1,6 @@
 # CoreSpec dalam angka
 
-Keadaan per **23 November 2026**, cabang `feat/phase-19-models` (Fase 19c).
+Keadaan per **25 November 2026**, cabang `feat/phase-20-verify-receipt` (Fase 20).
 Angka katalog dan aturan diambil dari `data/` dan `lib/compat/`; angka
 pengujian dari pengukuran pada tanggal yang sama. Angka Lighthouse masih dari
 Fase 16 (12 November 2026); halaman yang diukur tidak berubah di Fase 17
@@ -9,14 +9,25 @@ Fase 16 (12 November 2026); halaman yang diukur tidak berubah di Fase 17
 Gambar di folder ini (dibuat dengan `npm run diagrams`, ukuran ±2.400–3.100 px
 lebar, tetap tajam pada lebar halaman Word 16 cm):
 
-| Berkas                              | Isi                                                           |
-| ----------------------------------- | ------------------------------------------------------------- |
-| `erd.png`                           | ERD basis data (notasi kaki gagak)                            |
-| `use-case.png`                      | Diagram use case: Tamu, Pengguna, Admin                       |
-| `aktivitas-cek-kompatibilitas.png`  | Diagram aktivitas: mengecek kompatibilitas                    |
-| `aktivitas-admin-ubah-listing.png`  | Diagram aktivitas: admin mengubah listing harga marketplace   |
-| `aktivitas-simulasi-pembayaran.png` | Diagram aktivitas: checkout dan simulasi pembayaran (Fase 17) |
-| `aktivitas-live-chat.png`           | Diagram aktivitas: live chat dengan bot dan admin (Fase 18)   |
+| Berkas                             | Isi                                                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| `erd.png`                          | ERD basis data (notasi kaki gagak)                                                       |
+| `use-case.png`                     | Diagram use case: Tamu, Pengguna, Admin                                                  |
+| `aktivitas-cek-kompatibilitas.png` | Diagram aktivitas: mengecek kompatibilitas                                               |
+| `aktivitas-admin-ubah-listing.png` | Diagram aktivitas: admin mengubah listing harga marketplace                              |
+| `aktivitas-pembayaran.png`         | Diagram aktivitas: pembayaran via Midtrans Sandbox sampai verifikasi admin (Fase 17, 20) |
+| `aktivitas-verifikasi-admin.png`   | Diagram aktivitas: admin memverifikasi pesanan paid (Fase 20)                            |
+| `aktivitas-live-chat.png`          | Diagram aktivitas: live chat dengan bot dan admin (Fase 18)                              |
+
+Contoh struk PDF (Fase 20, dibuat dengan `npm run receipt:samples`), masing-masing
+dengan PNG halaman pertamanya (± 1.456 px lebar):
+
+| Berkas                                          | Isi                                                               |
+| ----------------------------------------------- | ----------------------------------------------------------------- |
+| `struk-contoh-budget-1080p.pdf` / `.png`        | Preset Budget 1080p, diverifikasi oleh "Admin CoreSpec 1"         |
+| `struk-contoh-sweet-spot-1440p.pdf` / `.png`    | Preset 1440p Sweet Spot, diverifikasi                             |
+| `struk-contoh-creator-workstation.pdf` / `.png` | Preset Creator Workstation, diverifikasi (**sesudah** verifikasi) |
+| `struk-contoh-belum-verifikasi.pdf` / `.png`    | Pesanan yang sama, paid tetapi **belum** diverifikasi (sebelum)   |
 
 Tangkapan layar tampilan meja (Fase 19), 1.600 px lebar kecuali disebut lain.
 Situs hanya punya tema gelap, jadi latarnya gelap:
@@ -148,22 +159,25 @@ Lainnya di Fase 19:
   (1.600 px). "Sebelum" dibuat dari commit `f644275`, commit terakhir sebelum
   Fase 19a.
 
-## Basis data (Fase 16–19)
+## Basis data (Fase 16–20)
 
 - **11 tabel**: `auth.users` (dikelola Supabase Auth), `profiles`, `builds`,
   `items`, `listings`, `site_settings`, `audit_log`, sejak Fase 17 `orders`
   dan `payment_config`, dan sejak Fase 18 `conversations` dan
-  `chat_messages`. Lihat `erd.png`. Fase 19 menambah satu kolom, `items.finish`.
-- **10 berkas migrasi** SQL dan `seed.sql` (katalog dari JSON, aman dijalankan
+  `chat_messages`. Lihat `erd.png`. Fase 19 menambah satu kolom, `items.finish`;
+  Fase 20 menambah tiga kolom di `orders` (`verified_at`, `verified_by` →
+  `profiles`, `verified_by_name`).
+- **11 berkas migrasi** SQL dan `seed.sql` (katalog dari JSON, aman dijalankan
   ulang).
 - **Row Level Security** aktif di semua tabel. `supabase/tests/rls.sql` berisi
-  **201 pemeriksaan** (tamu, pengguna, admin): misalnya pengguna tidak bisa
+  **230 pemeriksaan** (tamu, pengguna, admin): misalnya pengguna tidak bisa
   menjadikan dirinya admin, tidak bisa membaca build atau pesanan orang lain,
   bukan admin tidak bisa mengubah item atau listing, dan tidak ada yang bisa
   menulis pesanan tanpa rahasia server, dan pengguna tidak bisa membaca chat
   orang lain atau menulis sebagai admin atau bot, dan finish yang salah bentuk
   atau finish pada komponen PC ditolak (10 pemeriksaan baru di Fase 19, jadi
-  191 + 10). Cara hitung: setiap `assert` dan
+  191 + 10), dan hanya admin yang bisa memverifikasi pesanan, hanya yang paid
+  dan hanya sekali (29 pemeriksaan baru di Fase 20, jadi 201 + 29). Cara hitung: setiap `assert` dan
   setiap `raise exception 'FAIL: …'` dihitung satu. Dengan cara yang sama,
   versi Fase 16c berisi 97; angka 84 yang tertulis sebelumnya memakai cara
   hitung lain yang tidak tercatat. Pemeriksaan ini hanya menghitung akun
@@ -180,18 +194,25 @@ Lainnya di Fase 19:
   `20261122000100_item_finish.sql`) dijalankan 22 November 2026, dan `rls.sql`
   dengan **201 pemeriksaan** lolos di proyek asli; 16 finish preset terpasang.
   Penghapusan `fabric` dari finish G435 (`20261123000100_g435_finish.sql`)
-  dilakukan langsung lewat SQL editor pada 23 November 2026.
-- **18 fungsi `security definer`**, semuanya dengan `search_path` kosong
-  (6 di antaranya untuk chat). Enam belas tidak bisa dipanggil tamu. Dua (`create_order`,
+  dilakukan langsung lewat SQL editor pada 23 November 2026. Migrasi
+  verifikasi admin (Fase 20, `20261125000100_order_verification.sql`)
+  dijalankan 25 November 2026, dan `rls.sql` dengan **230 pemeriksaan** lolos
+  di proyek asli.
+- **19 fungsi `security definer`**, semuanya dengan `search_path` kosong
+  (6 di antaranya untuk chat, 1 untuk verifikasi pesanan). Tujuh belas tidak
+  bisa dipanggil tamu. Dua (`create_order`,
   `set_order_payment`) memang bisa dipanggil siapa saja, karena notifikasi
   Midtrans datang tanpa sesi, tetapi keduanya menolak setiap panggilan tanpa
   `ORDER_WRITE_SECRET` yang hanya ada di server (basis data hanya menyimpan
   hash SHA-256-nya).
 
-## Pesanan dan simulasi pembayaran (Fase 17)
+## Pesanan dan pembayaran (Fase 17 dan 20)
 
-- **Simulasi**, bukan toko: Midtrans **Sandbox**, tanpa uang nyata, tidak ada
-  barang yang dijual atau dikirim. Kode hanya berisi alamat sandbox Midtrans.
+- **Midtrans Sandbox (mode uji)**: hanya kartu uji yang berlaku, tidak ada
+  uang sungguhan yang ditarik, tidak ada barang yang dijual atau dikirim. Kode
+  hanya berisi alamat sandbox Midtrans. Sejak Fase 20 tampilan aplikasi tidak
+  lagi memakai kata "simulasi"; yang tersisa satu baris abu-abu di bawah tombol
+  bayar dan satu baris di kaki struk (lihat Fase 20).
 - **5 status pesanan**: `pending`, `paid`, `failed`, `expired`, `cancelled`.
   `paid` bersifat final; `pending` tidak pernah menggantikan status lain.
 - **Harga dihitung ulang di server** dari katalog; browser hanya mengirim
@@ -203,12 +224,36 @@ Lainnya di Fase 19:
   tanpa pengaturan Midtrans semuanya 404 dan situs sama seperti sebelumnya.
 - **Struk PDF** dibuat di browser (pdf-lib): gambar 3D PC dan meja
   (1200 × 900 piksel, sama di ponsel dan laptop), item, total, kode QR ke
-  halaman build, dan tulisan "SIMULASI — bukan bukti transaksi" di setiap
-  halaman. Klik tombolnya memuat sekitar 470 KB JavaScript (gzip), termasuk
+  halaman build, dan (sejak Fase 20) satu baris abu-abu di kaki setiap halaman:
+  "Midtrans Sandbox (test mode) — not proof of a real purchase." Klik tombolnya memuat sekitar 470 KB JavaScript (gzip), termasuk
   three.js sekitar 281 KB yang sama dengan di builder; halaman lain tidak
   bertambah, kecuali `/builder` dan `/b/[kode]` sekitar 0,7 KB (sebelum gzip).
 - **Uji nyata di preview** (17 November 2026): dua pesanan dibayar dengan kartu
   uji sandbox dan berstatus Paid.
+
+## Verifikasi admin dan struk (Fase 20)
+
+- **Admin memverifikasi pesanan paid.** Fungsi `verify_order` (hanya admin,
+  hanya pesanan paid, hanya sekali) menyimpan waktu, admin dan **nama admin
+  saat itu**; nama tetap tercetak di struk walaupun akun admin itu kemudian
+  dihapus. Setiap verifikasi tercatat di log audit (`order.verify`). Tidak ada
+  pembatalan verifikasi di aplikasi.
+- **Dua admin**: "Admin CoreSpec 1" dan "Admin CoreSpec 2" (nama tampilan,
+  karena nama itulah yang tercetak di struk).
+- **Halaman:** `/admin/orders` (filter "Needs verification", terbuka otomatis
+  bila ada; tombol Verify dengan konfirmasi; kolom Verified by dan Verified
+  at), `/admin/orders/[id]` (detail, Verify, unduh struk), dan jumlah pesanan
+  yang menunggu verifikasi di kartu Orders `/admin`. Pengguna melihat "Paid ·
+  awaiting admin verification" atau "Verified by {nama} · {tanggal} WIB".
+- **Struk:** baris "Diverifikasi oleh: {nama}" dan "Waktu verifikasi: … WIB"
+  (atau "Belum diverifikasi admin"), dan cap VERIFIED di samping status.
+- **Gambar 3D di struk lebih terang** (hanya di struk; tampilan aplikasi tetap
+  gelap dan tidak berubah sama sekali, dibandingkan per piksel): latar studio
+  abu-abu muda, lantai dengan bayangan lembut, lampu netral lebih terang, garis
+  tepi abu-abu tipis hanya pada barang gelap, komponen di dalam casing terlihat
+  lewat kaca. Gambar disimpan sebagai JPEG (1200 × 900, kualitas 0,85).
+- **Ukuran struk PDF:** sebelum Fase 20 **324–365 KB**, sesudah **105–107 KB**
+  (empat contoh di atas).
 
 ## Live chat (Fase 18)
 
@@ -273,18 +318,18 @@ admin"; masing-masing mengenai satu aturan.
 
 | Jenis                                        | Jumlah                                        | Hasil         |
 | -------------------------------------------- | --------------------------------------------- | ------------- |
-| Unit (Vitest)                                | 515 tes dalam 35 berkas                       | lolos         |
-| End-to-end (Playwright), akun nonaktif       | 118 tes (10 dilewati: khusus mode akun aktif) | lolos         |
-| End-to-end, akun dan checkout aktif (tiruan) | 38 tes (7 dilewati)                           | lolos         |
+| Unit (Vitest)                                | 581 tes dalam 39 berkas                       | lolos         |
+| End-to-end (Playwright), akun nonaktif       | 119 tes (10 dilewati: khusus mode akun aktif) | lolos         |
+| End-to-end, akun dan checkout aktif (tiruan) | 122 tes (7 dilewati)                          | lolos         |
 | Aksesibilitas (axe, di dalam e2e)            | semua halaman dan dialog utama                | 0 pelanggaran |
 
 Pengujian unit juga menjalankan semua migrasi, `rls.sql` dan `seed.sql` di
-Postgres lokal (PGlite), termasuk 19 uji "mutasi" yang sengaja melonggarkan
+Postgres lokal (PGlite), termasuk 20 uji "mutasi" yang sengaja melonggarkan
 satu aturan keamanan dan memastikan `rls.sql` mendeteksinya (2 di antaranya
 untuk pesanan: pesanan orang lain terbaca, dan rahasia yang salah diterima;
 2 untuk chat: pesan orang lain terbaca, dan balasan bot tanpa rahasia
 diterima; 2 untuk finish: aturan warna dihapus, dan komponen PC boleh punya
-finish).
+finish; 1 untuk verifikasi: bukan admin bisa memverifikasi).
 Pembayaran sungguhan tidak bisa dijalankan otomatis; daftar cek manualnya ada
 di `docs/accounts.md`.
 

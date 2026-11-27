@@ -748,7 +748,7 @@ All of section 9's rules still apply (no service-role key, new SQL in a new migr
 
 ---
 
-**Session 4: Phase 19 (section 10) runs on `feat/phase-19-models`; start with Phase 19a.** _Earlier:_ **Session 3: Phase 17 is done (PR #6). Phase 18 runs on `feat/phase-18-chat`; start with Phase 18a.** _Earlier:_ **Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
+**Session 5: Phase 20 (section 11) runs on `feat/phase-20-verify-receipt`; start with Phase 20a.** _Earlier:_ **Session 4: Phase 19 (section 10) runs on `feat/phase-19-models`; start with Phase 19a.** _Earlier:_ **Session 3: Phase 17 is done (PR #6). Phase 18 runs on `feat/phase-18-chat`; start with Phase 18a.** _Earlier:_ **Session 3: start with Phase 17a. Plan → implement → verify → summary → commit, then wait for "next".**
 
 _Session 2 instruction, kept for history:_ **Session 2: start with Phase 9. Plan → implement → verify → summary → commit, then wait for "next".** After Phase 12b, continue with Phase 13 (tiers, then marketplace links), then Phase 14 (model pipeline v2).
 
@@ -846,3 +846,79 @@ Everything else in the presets is black/dark and keeps the default.
 
 - Don't edit the `.glb` files by hand. If a model needs a change, say what and the chat changes the script and re-exports (or change the script yourself and re-export, if `bpy` installs on Rei's PC).
 - Keep everything else from sections 6–9: branch + PR, new migration for `finish`, the chat runs it, rls.sql rerun, Rei tests on his phones before merge.
+
+---
+
+## 11. Session 5 — Phase 20: admin verification on the receipt, brighter receipt pictures
+
+> **How to use:** `Read REI.md section 11, then plan Phase 20a.` Work on **`feat/phase-20-verify-receipt`** (branched from `main` at `182369f`, which has Phases 17–19). Open a draft PR to `main`.
+
+**Why:** at the 23 Nov bimbingan the supervisor (1) said the 3D pictures on the PDF receipt look **too dark**, and (2) wants an **admin name on the receipt**, with **at least two admins** in the app. We read (2) as: a real receipt names the staff member who handled it, so an admin must **verify** a paid order and the receipt shows who did. Rei couldn't confirm this with her (the next bimbingan moved), so build it as described.
+
+**Deadline:** everything merged and live on production by **Sunday 29 Nov**. The ujian may happen in early December, so Rei must be ready before **5 Dec**, and the demo gets recorded a few days earlier. If time runs short, cut in this order: the `/admin/orders/[id]` page → the `/admin` overview counter. Never cut the database rules or the receipt line.
+
+All earlier rules still apply: branch + PR; new SQL in a new migration that the chat runs on the real project before merge; then rerun rls.sql; Rei tests on his two phones.
+
+### Phase 20a — Admin verification
+
+**Database** (`supabase/migrations/20261125000100_order_verification.sql`, rerunnable):
+- `orders` gets `verified_at timestamptz`, `verified_by uuid` → `profiles(id)` **on delete set null**, and `verified_by_name text`. The name is a snapshot of the admin's display name at verification time, so the receipt keeps it even if that admin is later renamed or deleted. Add a check: all three are null, or `verified_at` and `verified_by_name` are both set.
+- `verify_order(p_order_id uuid)`: `security definer`, `search_path = ''`, granted to `authenticated` only. It refuses anyone who isn't an admin (`is_admin()`), refuses orders that aren't `paid`, and refuses orders already verified ("already verified by X"). It sets the three columns, using the caller's display name (fall back to "Admin" if empty), writes an `audit_log` row (action `order.verify`, the order number) and returns the row.
+- **No direct updates:** `orders` still has no update grant for anyone. Verification only goes through the function. There's no un-verify in the app; mistakes are fixed by hand in SQL.
+- `set_order_payment` must keep working and must never clear the verification. A later notification for a verified paid order changes nothing (paid stays final).
+- `rls.sql`, new checks:
+  - a user can't verify (not their own order, not anyone's);
+  - an admin can verify a paid order; the name and time get stored;
+  - pending, failed and expired orders are refused;
+  - a second verify is refused;
+  - nobody can write the three columns directly;
+  - deleting the verifying admin keeps the name and clears `verified_by`;
+  - the audit row is written.
+- One mutation test: "a non-admin can verify".
+
+**Status in the UI:** keep the five statuses. Show verification as a second line or badge:
+- a paid order that isn't verified: **"Paid · awaiting admin verification"**;
+- a verified one: **"Verified by {name} · {date, WIB}"**.
+
+**Admin side:**
+- `/admin/orders`:
+  - a **"Needs verification"** filter (paid and not verified), set as the default when any exist;
+  - a **Verify** button on each paid, unverified row, with a confirmation ("Verify order CS-… as {your name}?");
+  - columns for "Verified by" and "Verified at".
+  - The Server Action calls `verify_order` and refreshes the list. Show the "already verified" error in a friendly way.
+- **`/admin/orders/[id]`** (read-only, admin only): the same detail as the user's order page plus the owner's display name, a Verify button and **Download receipt**. This lets the demo show "admin verifies → receipt shows the name" without logging in as the buyer.
+- `/admin` overview: a "Needs verification" count on the Orders card.
+
+**User side:**
+- `/orders/[id]` and `/orders` show the verification line.
+- The bot's `checkout` and `receipt` replies mention that an admin verifies paid orders.
+
+**Receipt PDF:**
+- Under the status, add **"Diverifikasi oleh: {name}"** and **"Waktu verifikasi: {date time} WIB"**, or **"Belum diverifikasi admin"** when not verified.
+- On a verified receipt, also add a small "VERIFIED" stamp near the status (a box in the receipt's accent colour; no image). Keep the "SIMULASI — bukan bukti transaksi" watermark and footer exactly as they are.
+- Unit tests: a verified receipt contains the name and the time; an unverified one contains "Belum diverifikasi admin".
+
+**Two admins:** no code needed. Rei registers a second account (or a friend's) and promotes it in **Admin → Users**. Give admins a sensible display name (e.g. "Admin Rei", "Admin 2"), because that name ends up on receipts. Mention this in the docs.
+
+### Phase 20b — Brighter receipt pictures
+
+Only the PDF pictures change; the app keeps its dark look.
+- In the receipt capture stage only:
+  - a **light studio background**: off-white to light-grey (e.g. `#F2F3F5` → `#DCDFE4` vertical gradient, or a flat `#ECEEF1` if a gradient is awkward);
+  - a soft floor (a large light-grey plane with a gentle contact shadow under the build);
+  - **brighter lighting**: higher exposure and a stronger key light, plus a fill light from the front;
+  - no grid lines and no coral back glow.
+- Dark parts must still read on the light background: black items get visible edges, and the screen keeps its navy glow.
+- Check both pictures (PC and desk) for all three presets: nothing washed out, and RGB/accents still visible.
+- Report the PDF size before and after.
+- Save the three receipts as `docs/pi/struk-contoh-*.pdf` plus a PNG of page 1 each, for the PI.
+
+### Phase 20c — Docs, diagrams, handoff
+- `npm run diagrams`:
+  - the ERD gets the new `orders` columns and the `verified_by` → profiles link;
+  - the use case diagram gets Admin "Memverifikasi pesanan";
+  - `aktivitas-simulasi-pembayaran.png` gets the admin verification lane/step after "Paid";
+  - add a short activity or sequence for verification if it reads better on its own.
+- `docs/pi/angka.md`: new counts (migrations, rls checks, tests), and the receipt example images.
+- `docs/demo-script.md`: the checkout segment ends with the admin verifying the order and the receipt showing the name (two browsers, or admin `/admin/orders/[id]`).
+- `HANDOFF.md`: a Phase 20 section, plus the "two admins" setup step.

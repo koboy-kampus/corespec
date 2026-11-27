@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@/lib/auth/dal";
+import { readSetting } from "@/lib/checkout/config";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { ChatMessageRow } from "@/types/supabase";
 import * as panel from "./panel";
@@ -44,7 +45,7 @@ export async function sendChatMessage(
   if ("ok" in s) return s;
   // The bot needs the server's secret (ORDER_WRITE_SECRET); without it the
   // chat still works, the admin just answers everything.
-  const secret = process.env.ORDER_WRITE_SECRET || null;
+  const secret = readSetting("ORDER_WRITE_SECRET") || null;
   return service.sendChatMessage(
     {
       store: supabaseChatStore(s.supabase, secret),

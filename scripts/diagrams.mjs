@@ -3,8 +3,8 @@
 //   docs/diagrams/  English, for the repo docs: erd, use-cases
 //   docs/pi/        Indonesian, for the PI write-up (PNG, sized for a Word
 //                   page): erd, use-case, aktivitas-cek-kompatibilitas,
-//                   aktivitas-admin-ubah-listing, aktivitas-simulasi-pembayaran,
-//                   aktivitas-live-chat
+//                   aktivitas-admin-ubah-listing, aktivitas-pembayaran,
+//                   aktivitas-verifikasi-admin, aktivitas-live-chat
 //
 // Everything is drawn here as plain SVG (UML notation: crow's feet in the ERD,
 // actors and «include»/«extend» in the use case diagram, swimlanes in the
@@ -198,7 +198,8 @@ const ERD_TABLES = [
       ["updated_by", "uuid", "FK"],
     ],
   ],
-  // Phase 17a: the checkout simulation. Wider, for midtrans_transaction_id.
+  // Phase 17a: checkout (Midtrans Sandbox). Wider, for midtrans_transaction_id.
+  // Phase 20a: the admin verification columns.
   [
     "orders",
     3,
@@ -220,13 +221,16 @@ const ERD_TABLES = [
       ["created_at", "timestamptz", ""],
       ["updated_at", "timestamptz", ""],
       ["paid_at", "timestamptz", ""],
+      ["verified_at", "timestamptz", ""],
+      ["verified_by", "uuid", "FK"],
+      ["verified_by_name", "text", ""],
     ],
     380,
   ],
   [
     "payment_config",
     3,
-    800,
+    890,
     [
       ["id", "boolean", "PK"],
       ["secret_hash", "text", ""],
@@ -275,6 +279,7 @@ const ERD_TEXT = {
     made: "made",
     contains: "has",
     orders: "places",
+    verifies: "verifies",
     chats: "has",
     holds: "holds",
     legend: [
@@ -283,6 +288,7 @@ const ERD_TEXT = {
       "Dashed line: no foreign key (the audit log outlives deleted accounts).",
       "payment_config: one row, linked to nothing; it holds only the SHA-256 of the server's ORDER_WRITE_SECRET.",
       "chat_messages.sender_id: the user or admin who wrote it (null for the bot); no foreign key, so a thread survives a deleted admin account.",
+      "orders.verified_by_name: the admin's name when they verified the order; it stays if that account is deleted (verified_by becomes null).",
     ],
   },
   id: {
@@ -293,6 +299,7 @@ const ERD_TEXT = {
     made: "melakukan",
     contains: "memiliki",
     orders: "memesan",
+    verifies: "memverifikasi",
     chats: "memiliki",
     holds: "berisi",
     legend: [
@@ -301,6 +308,7 @@ const ERD_TEXT = {
       "Garis putus-putus: tanpa kunci tamu (log audit tetap ada setelah akun dihapus).",
       "payment_config: satu baris, tanpa relasi; hanya berisi SHA-256 dari ORDER_WRITE_SECRET milik server.",
       "chat_messages.sender_id: pengguna atau admin penulisnya (kosong untuk bot); tanpa kunci tamu, jadi percakapan tetap utuh bila akun admin dihapus.",
+      "orders.verified_by_name: nama admin saat memverifikasi pesanan; tetap ada bila akun admin itu dihapus (verified_by menjadi kosong).",
     ],
   },
 };
@@ -437,7 +445,7 @@ function erdSvg(lang) {
     [
       "profiles",
       "t",
-      COL_X[1] + TABLE_W - 40,
+      COL_X[1] + TABLE_W - 30,
       "orders",
       "t",
       COL_X[3] + 60,
@@ -447,10 +455,25 @@ function erdSvg(lang) {
       false,
       178,
     ],
+    // Phase 20a: the admin who verified an order (nullable, on delete set
+    // null). Between the orders line and the chat line, so none cross.
     [
       "profiles",
       "t",
-      COL_X[1] + TABLE_W - 70,
+      COL_X[1] + TABLE_W - 55,
+      "orders",
+      "t",
+      COL_X[3] + 260,
+      "01",
+      "0n",
+      t.verifies,
+      false,
+      165,
+    ],
+    [
+      "profiles",
+      "t",
+      COL_X[1] + TABLE_W - 80,
       "conversations",
       "t",
       null,
@@ -547,12 +570,13 @@ const USE_CASES = {
         ["import", "Import builds from this browser"],
         ["profile", "Change name or password"],
         ["delete", "Delete the account"],
-        ["checkout", "Checkout (simulation)"],
+        ["checkout", "Pay for a build (checkout)"],
         ["receipt", "Download receipt (PDF)"],
         ["chat", "Chat with the admin / bot"],
       ],
       admin: [
         ["orders", "View orders"],
+        ["verify", "Verify paid orders"],
         ["items", "Manage catalogue items"],
         ["listings", "Manage checked listings"],
         ["users", "Manage users and roles"],
@@ -580,12 +604,13 @@ const USE_CASES = {
         ["import", "Mengimpor build dari browser"],
         ["profile", "Mengubah nama atau kata sandi"],
         ["delete", "Menghapus akun"],
-        ["checkout", "Checkout (simulasi pembayaran)"],
+        ["checkout", "Melakukan pembayaran"],
         ["receipt", "Mengunduh struk (PDF)"],
         ["chat", "Chat dengan admin / bot"],
       ],
       admin: [
         ["orders", "Melihat semua pesanan"],
+        ["verify", "Memverifikasi pesanan"],
         ["items", "Mengelola item katalog"],
         ["listings", "Mengelola listing yang dicek"],
         ["users", "Mengelola pengguna & peran"],
@@ -680,6 +705,7 @@ function drawUseCases(lang) {
   dep("build", "check", "«include»"); // building always runs the check
   dep("sync", "save", "«extend»"); // syncing extends saving in the browser
   dep("receipt", "checkout", "«extend»"); // a receipt is for an order
+  dep("verify", "orders", "«extend»"); // verifying starts from the order list
   return svgDoc(boxR + 30, H, parts.join("\n"));
 }
 
@@ -950,14 +976,18 @@ const ACT_LISTING = {
 ACT_LISTING.edges.find((e) => e[0] === "sure" && e[2] === "write")[5] =
   undefined;
 
-/** The checkout simulation (Phase 17a), from the button to the receipt. */
+/**
+ * Aktivitas Pembayaran (Phase 17a, Phase 20): from the Checkout button to the
+ * receipt, via Midtrans Sandbox, with the admin's verification of a paid order.
+ */
 const ACT_CHECKOUT = {
-  width: 1400,
+  width: 1720,
   lanes: [
     ["Pengguna", 10, 330],
-    ["Server (Next.js)", 330, 780],
-    ["Basis data (Supabase)", 780, 1090],
-    ["Midtrans Sandbox", 1090, 1390],
+    ["Admin", 330, 650],
+    ["Server (Next.js)", 650, 1100],
+    ["Basis data (Supabase)", 1100, 1410],
+    ["Midtrans Sandbox", 1410, 1710],
   ],
   nodes: [
     ["start", "start", 170, 0, ""],
@@ -966,23 +996,23 @@ const ACT_CHECKOUT = {
       "action",
       170,
       1,
-      "Menekan Checkout\n(simulation), lalu Pay\nwith Midtrans (sandbox)",
+      "Menekan Checkout,\nlalu Pay with Midtrans",
       280,
     ],
     [
       "recalc",
       "action",
-      555,
+      875,
       2,
       "Menghitung ulang harga dari\nkatalog (bukan dari browser)",
       340,
     ],
-    ["empty", "decision", 555, 3, "Build kosong atau\nada error?¹", 250],
+    ["empty", "decision", 875, 3, "Build kosong atau\nada error?¹", 250],
     ["fix", "action", 170, 4, "Memperbaiki build", 260],
     [
       "create",
       "action",
-      935,
+      1255,
       4,
       "create_order²:\npesanan baru,\nstatus pending",
       260,
@@ -990,7 +1020,7 @@ const ACT_CHECKOUT = {
     [
       "token",
       "action",
-      1240,
+      1560,
       5,
       "Membuat token Snap³\n(berlaku 60 menit)",
       260,
@@ -1006,38 +1036,55 @@ const ACT_CHECKOUT = {
     [
       "process",
       "action",
-      1240,
+      1560,
       7,
-      "Memproses pembayaran\n(sandbox: tanpa\nuang nyata)",
+      "Memproses pembayaran\n(mode uji: tanpa\nuang sungguhan)",
       260,
     ],
     [
       "refresh",
       "action",
-      555,
+      875,
       8,
       "Menanyakan status ke Midtrans⁴;\nmencocokkan jumlah\ndengan total pesanan",
       360,
     ],
-    ["save", "action", 935, 9, "set_order_payment⁵:\nmenyimpan status", 260],
+    ["save", "action", 1255, 9, "set_order_payment⁵:\nmenyimpan status", 260],
     [
       "view",
       "action",
-      170,
+      185,
       10,
       "Membuka /orders/[id]:\nstatus, item, total",
+      250,
+    ],
+    ["status", "decision", 185, 11, "Status\npesanan?⁶", 160],
+    [
+      "open",
+      "action",
+      490,
+      12,
+      "Membuka /admin/orders\n(Perlu verifikasi)",
       280,
     ],
-    ["pending", "decision", 170, 11, "Masih pending?", 180],
+    ["verify", "action", 490, 13, "Menekan Verify dan\nmengonfirmasi", 280],
+    [
+      "stamp",
+      "action",
+      1255,
+      14,
+      "verify_order⁷: menyimpan\nnama admin dan waktu;\nmenulis log audit",
+      280,
+    ],
     [
       "receipt",
       "action",
-      170,
-      12,
-      "Mengunduh struk PDF\n(SIMULASI — bukan\nbukti transaksi)",
-      280,
+      185,
+      15,
+      "Mengunduh struk PDF:\n“Diverifikasi oleh {admin}”\ndan cap VERIFIED",
+      270,
     ],
-    ["end", "end", 170, 13, ""],
+    ["end", "end", 185, 16, ""],
   ],
   edges: [
     ["start", "b", "push", "t"],
@@ -1052,18 +1099,113 @@ const ACT_CHECKOUT = {
     ["process", "l", "refresh", "t"],
     ["refresh", "r", "save", "t"],
     ["save", "l", "view", "t"],
-    ["view", "b", "pending", "t"],
-    ["pending", "l", "refresh", "l", "ya", 30, [-10, -12]],
-    ["pending", "b", "receipt", "t", "tidak"],
+    ["view", "b", "status", "t"],
+    ["status", "l", "refresh", "l", "pending", 30, [-10, -12]],
+    ["status", "r", "open", "t", "paid"],
+    ["open", "b", "verify", "t"],
+    ["verify", "r", "stamp", "t"],
+    ["stamp", "l", "receipt", "t"],
     ["receipt", "b", "end", "t"],
   ],
   notes: [
+    "Pembayaran via Midtrans Sandbox (mode uji).",
     "¹ Aturan kompatibilitas yang sama dengan di builder. Warning dan slot yang belum diisi tidak menghalangi checkout.",
     "² Fungsi security definer yang hanya jalan dengan ORDER_WRITE_SECRET milik server; maksimal 5 pesanan pending per jam.",
     "³ Yang dikirim ke Midtrans: nomor pesanan, nama dan harga item, total, nama tampilan. Email tidak dikirim.",
     "⁴ Dari tombol Check payment status atau saat halaman dibuka. Di produksi Midtrans juga mengirim notifikasi",
     "   (webhook) yang tanda tangan SHA-512-nya diperiksa lebih dulu, lalu statusnya dikonfirmasi dengan cara yang sama.",
     "⁵ Aturan status: paid bersifat final; pending tidak pernah menggantikan status lain.",
+    "⁶ failed, expired atau cancelled: pesanan berhenti di sini; pengguna dapat checkout lagi.",
+    "⁷ Hanya admin, hanya pesanan paid, hanya sekali. Rinciannya di diagram Aktivitas Verifikasi Admin.",
+  ],
+};
+
+/** Admin verification of a paid order (Phase 20a), on its own. */
+const ACT_VERIFY = {
+  width: 1260,
+  lanes: [
+    ["Admin", 10, 400],
+    ["Server (Next.js)", 400, 830],
+    ["Basis data (Supabase)", 830, 1250],
+  ],
+  nodes: [
+    ["start", "start", 205, 0, ""],
+    [
+      "open",
+      "action",
+      205,
+      1,
+      "Membuka /admin/orders;\nfilter Perlu verifikasi¹",
+      320,
+    ],
+    [
+      "press",
+      "action",
+      205,
+      2,
+      "Menekan Verify, lalu\nmengonfirmasi “Verify order\nCS-… as {nama}?”",
+      320,
+    ],
+    [
+      "action",
+      "action",
+      615,
+      3,
+      "Server Action: memeriksa\nlagi bahwa pemanggil admin",
+      340,
+    ],
+    [
+      "check",
+      "decision",
+      1040,
+      4,
+      "Admin, paid, dan\nbelum diverifikasi?²",
+      290,
+    ],
+    [
+      "write",
+      "action",
+      1040,
+      5,
+      "Menyimpan verified_at,\nverified_by, verified_by_name;\nmenulis log audit (order.verify)",
+      360,
+    ],
+    [
+      "refuse",
+      "action",
+      615,
+      5,
+      "Pesan ramah, mis. “Already\nverified by {admin}”",
+      320,
+    ],
+    ["refresh", "action", 615, 6, "refresh(): daftar\ndimuat ulang", 300],
+    [
+      "toast",
+      "action",
+      205,
+      7,
+      "Toast “Verified CS-… as\n{nama}”; pesanan keluar\ndari Perlu verifikasi",
+      320,
+    ],
+    ["end", "end", 205, 8, ""],
+  ],
+  edges: [
+    ["start", "b", "open", "t"],
+    ["open", "b", "press", "t"],
+    ["press", "r", "action", "t"],
+    ["action", "r", "check", "t"],
+    ["check", "b", "write", "t", "ya"],
+    ["check", "l", "refuse", "t", "tidak"],
+    ["write", "l", "refresh", "r"],
+    ["refuse", "b", "refresh", "t"],
+    ["refresh", "l", "toast", "t"],
+    ["toast", "b", "end", "t"],
+  ],
+  notes: [
+    "¹ Pesanan paid yang belum diverifikasi; filter ini terbuka otomatis bila ada.",
+    "² Fungsi verify_order (security definer). Tidak ada pembatalan verifikasi di aplikasi.",
+    "Setelah itu struk pesanan menampilkan “Diverifikasi oleh: {nama}”, waktu verifikasi (WIB) dan cap VERIFIED;",
+    "nama tetap ada walaupun akun admin itu kemudian dihapus.",
   ],
 };
 
@@ -1185,10 +1327,8 @@ const jobs = [
     svg: activitySvg(ACT_LISTING),
     out: "docs/pi/aktivitas-admin-ubah-listing",
   },
-  {
-    svg: activitySvg(ACT_CHECKOUT),
-    out: "docs/pi/aktivitas-simulasi-pembayaran",
-  },
+  { svg: activitySvg(ACT_CHECKOUT), out: "docs/pi/aktivitas-pembayaran" },
+  { svg: activitySvg(ACT_VERIFY), out: "docs/pi/aktivitas-verifikasi-admin" },
   { svg: activitySvg(ACT_CHAT), out: "docs/pi/aktivitas-live-chat" },
 ];
 

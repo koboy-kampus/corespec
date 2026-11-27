@@ -8,7 +8,6 @@ import {
   PDFRef,
 } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { SIMULATION_STAMP } from "@/lib/checkout/sandbox";
 import { formatIDR } from "@/lib/format";
 import type { OrderItem } from "@/types/supabase";
 import { buildReceiptPdf, drawable, FOOTER_NOTE } from "./pdf";
@@ -55,6 +54,21 @@ async function pageTexts(bytes: Uint8Array): Promise<string[][]> {
       decodeHex(m[1]),
     );
   });
+}
+
+/** Page 1's raw drawing operators. */
+async function pageOps(bytes: Uint8Array): Promise<string> {
+  const doc = await PDFDocument.load(bytes);
+  const contents = doc.getPages()[0].node.get(PDFName.of("Contents"));
+  const refs = contents instanceof PDFArray ? contents.asArray() : [contents];
+  return refs
+    .map((ref) => {
+      const stream = doc.context.lookup(ref as PDFRef);
+      return stream instanceof PDFRawStream
+        ? Buffer.from(decodePDFRawStream(stream).decode()).toString("latin1")
+        : "";
+    })
+    .join("\n");
 }
 
 /** The size of every image in the PDF. */
@@ -149,6 +163,8 @@ function order(
     paymentType: "credit_card",
     transactionId: "3f1a2b4c-0000-4000-8000-000000000000",
     paidAt: "2026-11-19T03:07:00.000Z",
+    verifiedByName: null,
+    verifiedAt: null,
     items,
     pcIDR,
     setupIDR,
@@ -180,13 +196,19 @@ describe("buildReceiptPdf", () => {
     expect(pages).toHaveLength(1);
     const all = pages.flat();
     expect(all).toContain("CS-20261119-7K3F9Q");
-    expect(all).toContain("Receipt — payment simulation");
+    expect(all).toContain("Receipt");
+    // Phase 20: one grey test-mode line in the footer, no simulation stamp,
+    // subtitle or watermark.
+    expect(FOOTER_NOTE).toBe(
+      "Midtrans Sandbox (test mode) — not proof of a real purchase.",
+    );
+    expect(all.filter((t) => /SIMULASI|simulation/i.test(t))).toEqual([]);
     expect(all).toContain(formatIDR(d.totalIDR));
     expect(all).toContain("Rp 14.950.000".replace(" ", " "));
     expect(all).toContain("Paid");
     expect(all).toContain("Card");
     expect(all).toContain("19 Nov 2026, 10:05 WIB");
-    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+    expectOnEveryPage(pages, FOOTER_NOTE);
     // No setup: only the PC picture, and it says it's unavailable.
     expect(all.filter((t) => t === "3D preview unavailable")).toHaveLength(1);
     expect(all).not.toContain("Desk setup");
@@ -225,7 +247,7 @@ describe("buildReceiptPdf", () => {
     expect(all).toContain("Not chosen yet");
     expect(all).toContain("Desk setup");
     expect(all).not.toContain("3D preview unavailable");
-    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+    expectOnEveryPage(pages, FOOTER_NOTE);
     expect(await imageSizes(bytes)).toEqual(["1200x900", "1200x900"]);
   });
 
@@ -250,7 +272,7 @@ describe("buildReceiptPdf", () => {
     const bytes = await buildReceiptPdf(d);
     const pages = await pageTexts(bytes);
     expect(pages.length).toBeGreaterThanOrEqual(2);
-    expectOnEveryPage(pages, SIMULATION_STAMP, FOOTER_NOTE);
+    expectOnEveryPage(pages, FOOTER_NOTE);
     const all = pages.flat();
     expect(all).toContain("CS-20261119-7K3F9Q");
     expect(all).toContain(formatIDR(d.totalIDR));
@@ -281,10 +303,70 @@ describe("buildReceiptPdf", () => {
         ],
       },
       pictures: { pc: png(1200, 900), desk: png(1200, 900) },
+      // Verified: the tallest header (two verification lines).
+      verifiedByName: "Admin Rei",
+      verifiedAt: "2026-11-19T03:20:00.000Z",
     });
     const pages = await pageTexts(await buildReceiptPdf(d));
     expect(pages).toHaveLength(1);
     expect(pages[0]).toContain(formatIDR(d.totalIDR));
+  });
+
+  it("a verified order names the admin and the time, with the VERIFIED stamp", async () => {
+    const d = order(PC, {
+      verifiedByName: "Admin Rei",
+      verifiedAt: "2026-11-19T03:20:00.000Z",
+    });
+    const pages = await pageTexts(await buildReceiptPdf(d));
+    expect(pages).toHaveLength(1);
+    const all = pages.flat();
+    expect(all).toContain("Diverifikasi oleh: Admin Rei");
+    expect(all).toContain("Waktu verifikasi: 19 Nov 2026, 10:20 WIB");
+    expect(all).toContain("VERIFIED");
+    expect(all).not.toContain("Belum diverifikasi admin");
+    // The footer's test-mode note stays.
+    expectOnEveryPage(pages, FOOTER_NOTE);
+  });
+
+  it("an unverified order says so, without the stamp", async () => {
+    for (const status of ["paid", "pending"] as const) {
+      const all = (
+        await pageTexts(await buildReceiptPdf(order(PC, { status })))
+      ).flat();
+      expect(all, status).toContain("Belum diverifikasi admin");
+      expect(all, status).not.toContain("VERIFIED");
+      expect(
+        all.some((t) => t.startsWith("Diverifikasi oleh")),
+        status,
+      ).toBe(false);
+    }
+  });
+
+  it("embeds the studio's JPEG pictures as they are, on a light box (Phase 20b)", async () => {
+    // A valid 1 × 1 JPEG.
+    const jpeg = new Uint8Array(
+      Buffer.from(
+        "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=",
+        "base64",
+      ),
+    );
+    const bytes = await buildReceiptPdf(order(PC, { pictures: { pc: jpeg } }));
+    const all = (await pageTexts(bytes)).flat();
+    expect(all).not.toContain("3D preview unavailable");
+    const doc = await PDFDocument.load(bytes);
+    const jpegs = doc.context
+      .enumerateIndirectObjects()
+      .map(([, o]) => o)
+      .filter(
+        (o) =>
+          o instanceof PDFRawStream &&
+          o.dict.get(PDFName.of("Filter")) === PDFName.of("DCTDecode"),
+      );
+    expect(jpegs).toHaveLength(1);
+    // The box behind the picture is the studio's light grey, not the app's black.
+    const ops = await pageOps(bytes);
+    expect(ops).toContain("0.906 0.914 0.925 rg");
+    expect(ops).not.toContain("0.059 0.055 0.055 rg");
   });
 
   it("a broken picture becomes 'unavailable' rather than failing the PDF", async () => {

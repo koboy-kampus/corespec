@@ -1,9 +1,28 @@
-import { formatDateWIB } from "@/lib/checkout/when";
-import type { CompatSummary } from "./types";
+import { formatDateWIB, formatWIB } from "@/lib/checkout/when";
+import type { CompatSummary, ReceiptData } from "./types";
 
 /** The receipt's download name. */
 export const receiptFileName = (orderNo: string) =>
   `corespec-receipt-${orderNo}.pdf`;
+
+/**
+ * The admin verification lines under the status (Phase 20a), in Indonesian
+ * like the stamp: who verified it and when, or that nobody has yet.
+ */
+export function verificationLines(
+  d: Pick<ReceiptData, "verifiedByName" | "verifiedAt">,
+): { verified: boolean; lines: string[] } {
+  if (!d.verifiedAt)
+    return { verified: false, lines: ["Belum diverifikasi admin"] };
+  return {
+    verified: true,
+    lines: [
+      `Diverifikasi oleh: ${d.verifiedByName || "Admin"}`,
+      // formatWIB ends in " WIB".
+      `Waktu verifikasi: ${formatWIB(d.verifiedAt)}`,
+    ],
+  };
+}
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 

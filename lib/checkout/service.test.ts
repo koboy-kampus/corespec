@@ -79,6 +79,9 @@ class MemoryStore implements OrderStore {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       paid_at: null,
+      verified_at: null,
+      verified_by: null,
+      verified_by_name: null,
     };
     this.rows.push(row);
     return { ...row };

@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { BoxGeometry, CanvasTexture, type Group, type Texture } from "three";
+import { BoxGeometry, type Group, type Texture } from "three";
 import type { CompatResult } from "@/lib/compat/rules";
 import {
   chairFadeTargets,
@@ -39,6 +39,13 @@ import { ModelBlock, SuspendModelsUp } from "./model-block";
 import { screenTexture } from "./screen-texture";
 import { DESK_TONES, WARN } from "./palette";
 import { PartTooltip } from "./part-tooltip";
+import { radialMap } from "./radial-map";
+import {
+  DeskStudioLights,
+  StudioProvider,
+  STUDIO_DESK_FRAMING,
+  STUDIO_FLOOR,
+} from "./studio";
 import { hasWebGL, usePresence } from "./scene-common";
 
 export interface DeskSceneProps {
@@ -60,6 +67,8 @@ export interface DeskSceneProps {
   onCapture?: (png: string | null) => void;
   /** A fixed pixel ratio (the receipt's capture), instead of the screen's. */
   pixelRatio?: number;
+  /** The receipt's light studio look (Phase 20b); see SceneProps.studio. */
+  studio?: boolean;
 }
 
 const ITEM_DROP = 160; // mm
@@ -114,40 +123,6 @@ function DeskLights() {
       />
     </>
   );
-}
-
-/** e^(−k·r²), shifted and scaled so it's 1 in the middle (r = 0) and 0 at the edge (r = 1). */
-const gauss = (r: number, k: number) =>
-  (Math.exp(-k * r * r) - Math.exp(-k)) / (1 - Math.exp(-k));
-
-/**
- * A round greyscale alpha map: `peak · gauss(r, k)` from the middle out, 0 at the
- * edge. Grey on black, not white with alpha: three.js reads an alphaMap's green
- * channel, so transparency in the canvas itself would be ignored (a hard disc).
- */
-function radialMap(px: number, k: number, peak: number): Texture {
-  const c = document.createElement("canvas");
-  c.width = px;
-  c.height = px;
-  const g = c.getContext("2d")!;
-  g.fillStyle = "#000";
-  g.fillRect(0, 0, px, px);
-  const grad = g.createRadialGradient(
-    px / 2,
-    px / 2,
-    0,
-    px / 2,
-    px / 2,
-    px / 2,
-  );
-  for (let i = 0; i <= 16; i++) {
-    const r = i / 16;
-    const v = Math.round(255 * peak * gauss(r, k));
-    grad.addColorStop(r, `rgb(${v},${v},${v})`);
-  }
-  g.fillStyle = grad;
-  g.fillRect(0, 0, px, px);
-  return new CanvasTexture(c);
 }
 
 let floorMap: Texture | null = null;
@@ -381,6 +356,7 @@ function DeskCanvas({
   skipIntro = false,
   onCapture,
   pixelRatio,
+  studio = false,
 }: DeskSceneProps) {
   const layout = useMemo(() => layoutDesk(setup, pcCase), [setup, pcCase]);
   const highlights = useMemo(
@@ -414,11 +390,12 @@ function DeskCanvas({
         const { target, dist } = seatedHome(layout, aspect, fov);
         return {
           target: target.map((v) => v * MM_TO_UNITS) as Vec3,
-          dist: dist * MM_TO_UNITS,
+          // The receipt's picture comes in closer, so the setup fills it.
+          dist: dist * MM_TO_UNITS * (studio ? STUDIO_DESK_FRAMING : 1),
         };
       },
     }),
-    [layout],
+    [layout, studio],
   );
 
   const chairTargets = useMemo(() => chairFadeTargets(layout), [layout]);
@@ -531,7 +508,7 @@ function DeskCanvas({
       fallback={fallback}
       aria-hidden
     >
-      <DeskLights />
+      {studio ? <DeskStudioLights /> : <DeskLights />}
       <group scale={MM_TO_UNITS}>
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
@@ -540,19 +517,22 @@ function DeskCanvas({
         >
           <planeGeometry args={[floorSize, floorSize]} />
           <meshBasicMaterial
-            color="#221f23"
+            color={studio ? STUDIO_FLOOR : "#221f23"}
             alphaMap={floorTexture()}
             transparent
             depthWrite={false}
+            toneMapped={!studio}
           />
         </mesh>
         {onCapture ? (
           // The receipt's capture: draw nothing until every model is in.
           <SuspendModelsUp.Provider value>
-            <Suspense fallback={null}>
-              {items.map((i) => render(i, false))}
-              <CaptureFrame onCapture={onCapture} />
-            </Suspense>
+            <StudioProvider on={studio}>
+              <Suspense fallback={null}>
+                {items.map((i) => render(i, false))}
+                <CaptureFrame onCapture={onCapture} />
+              </Suspense>
+            </StudioProvider>
           </SuspendModelsUp.Provider>
         ) : (
           [

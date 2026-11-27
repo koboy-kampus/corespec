@@ -10,7 +10,7 @@ export interface CompatSummary {
   warnings: string[];
 }
 
-/** A captured 3D picture (PNG bytes), or null when it couldn't be made. */
+/** A captured 3D picture (JPEG or PNG bytes), or null when it couldn't be made. */
 export type Picture = Uint8Array | null;
 
 /** Everything the PDF receipt prints. Pure data: no catalogue, no DOM. */
@@ -26,6 +26,10 @@ export interface ReceiptData {
   transactionId: string | null;
   /** ISO time it was paid, if it was. */
   paidAt: string | null;
+  /** The admin who verified the paid order (a snapshot of their name), or null. */
+  verifiedByName: string | null;
+  /** ISO time an admin verified it, or null when not verified (Phase 20a). */
+  verifiedAt: string | null;
   /** The snapshot from checkout. */
   items: readonly OrderItem[];
   pcIDR: number;

@@ -142,6 +142,27 @@ Never add a service-role or secret key: nothing uses one.
 9. **Check it.** Log out and log in again. The account menu now has **Admin**,
    and `/admin` opens. From now on, promote others in **Admin → Users**.
 
+### Two admins and the demo buyer (Phase 20)
+
+Since Phase 20 an admin **verifies** each paid order, and the receipt prints
+the verifying admin's **display name**. So the names matter, and the app needs
+at least two admins.
+
+1. **Admins' display names.** In **Account**, give each admin a name that
+   reads well on a receipt. On the real project they are **Admin CoreSpec 1**
+   and **Admin CoreSpec 2**. The receipt keeps the name as it was when the
+   order was verified, so renaming later doesn't change old receipts.
+2. **The second admin.** Register a second account (a second email of yours,
+   or a friend's), set its display name, then promote it in **Admin → Users**
+   (not by SQL: the first admin does it from the site).
+3. **The demo buyer.** Register a separate, ordinary account named
+   **Pelanggan Demo** for the recorded demo (`docs/demo-script.md`). Leave it a
+   user: it's the buyer, and the admins verify its orders. Don't use an admin
+   account as the buyer in the recording.
+4. **Check it.** As Pelanggan Demo, pay for an order with the test card; as
+   Admin CoreSpec 1, open `/admin/orders` (it opens on **Needs verification**),
+   verify it, and download its receipt: "Diverifikasi oleh: Admin CoreSpec 1".
+
 ## The catalogue in the database (16b)
 
 ### How it works
@@ -336,8 +357,10 @@ lock the database side at once: `update public.payment_config set secret_hash = 
 - [ ] Builder, empty build: the button is disabled, "Add a part to check out."
 - [ ] Two incompatible parts: "Fix 1 compatibility error to check out."
 - [ ] Logged out, Budget 1080p: Checkout goes to the login page, then `/checkout`.
-- [ ] `/checkout` shows the banner, "SIMULASI — bukan bukti transaksi", the
-      items with Checked/Estimate, both subtotals and the total.
+- [ ] `/checkout` shows the items with Checked/Estimate, both subtotals, the
+      total, and one grey line under the pay button: "Payments run on Midtrans
+      Sandbox (test mode). No real money is charged." (Phase 20: no other
+      simulation wording, no test card shown.)
 - [ ] Pay → the Snap pop-up opens. Card `4811 1111 1111 1114`, any future
       expiry, CVV `123`, OTP `112233` → the order page shows **Paid**, the
       method and the Midtrans transaction id.
@@ -356,8 +379,16 @@ lock the database side at once: `update public.payment_config set secret_hash = 
 - [ ] **Receipt (17b):** on a paid and on a pending order, **Download receipt
       (PDF)** saves `corespec-receipt-<order_no>.pdf`, with the status, the
       payment method, the PC and desk pictures, the items, "Compatibility
-      (checked <today>)", the QR code (scan it: it opens the share page) and
-      "SIMULASI — bukan bukti transaksi" on every page.
+      (checked <today>)", the QR code (scan it: it opens the share page) and,
+      since Phase 20, the title "Receipt" and one grey footer line on every
+      page: "Midtrans Sandbox (test mode) — not proof of a real purchase."
+- [ ] **Admin verification (Phase 20a):** a paid order shows "Paid · awaiting
+      admin verification"; Admin → Orders opens on **Needs verification**;
+      **Verify** asks "Verify order CS-… as {your name}?"; afterwards the order
+      shows "Verified by {name} · {date} WIB", the receipt has "Diverifikasi
+      oleh: {name}", the time and a VERIFIED box, and `/admin` lists "Verified
+      order CS-… by {name}". Verifying the same order from a second admin
+      browser says "Already verified by …". Checked on the preview, 25 Nov 2026.
 - [ ] The same from a phone: the pictures look the same as from the laptop.
 
 ## Live chat (Phase 18)

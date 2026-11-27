@@ -77,7 +77,7 @@ export function useSnap() {
     <Script
       id="midtrans-snap"
       src={SNAP_JS_URL}
-      data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+      data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY?.trim()}
       strategy="afterInteractive"
       onReady={() => ready.current?.resolve()}
       onError={() => {

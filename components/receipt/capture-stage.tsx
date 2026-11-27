@@ -14,13 +14,48 @@ import type { ResolvedBuild, ResolvedSetup } from "@/types/parts";
 
 /**
  * Renders the order's PC and desk scenes off screen, one after the other, and
- * hands back a PNG of each (Phase 17b). The box is a fixed 600 × 450 CSS pixels
- * at pixel ratio 2, so every capture is 1200 × 900 whatever the screen (a
- * phone gets the same picture as a desktop). The assembled home view, no glow,
- * no animation. Loaded only when "Download receipt" is clicked.
+ * hands back a picture of each (Phase 17b). The box is a fixed 600 × 450 CSS
+ * pixels at pixel ratio 2, so every capture is 1200 × 900 whatever the screen
+ * (a phone gets the same picture as a desktop). The assembled home view, no
+ * glow, no animation. Loaded only when "Download receipt" is clicked.
+ *
+ * Phase 20b: the scenes render in their light "studio" look (see
+ * components/viewer/studio.tsx) on a transparent canvas, which is then laid
+ * over a light grey gradient here and saved as a JPEG (smaller than a PNG of
+ * the same picture, and no transparency is needed any more).
  */
 
 export const CAPTURE = { width: 600, height: 450, pixelRatio: 2 } as const;
+
+/** The studio background, top to bottom (off-white to light grey). */
+export const STUDIO_BACKGROUND = ["#f2f3f5", "#dcdfe4"] as const;
+/** JPEG quality for the receipt's pictures: lower this (not the size) to shrink the PDF. */
+export const JPEG_QUALITY = 0.85;
+
+/** The scene's transparent PNG over the studio gradient, as a JPEG data URL (or null). */
+async function onStudioBackground(png: string | null): Promise<string | null> {
+  if (!png) return null;
+  try {
+    const img = new Image();
+    img.src = png;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const g = c.getContext("2d");
+    if (!g) return null;
+    const grad = g.createLinearGradient(0, 0, 0, c.height);
+    grad.addColorStop(0, STUDIO_BACKGROUND[0]);
+    grad.addColorStop(1, STUDIO_BACKGROUND[1]);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0);
+    const jpeg = c.toDataURL("image/jpeg", JPEG_QUALITY);
+    return jpeg.startsWith("data:image/jpeg") ? jpeg : null;
+  } catch {
+    return null;
+  }
+}
 /** Give up on a picture after this long (slow phone, stuck model). */
 const CAPTURE_TIMEOUT_MS = 20_000;
 
@@ -79,18 +114,26 @@ export function CaptureStage({
   const finished = useRef<Set<string>>(new Set());
 
   const finish = useCallback(
-    (which: "pc" | "desk", png: string | null) => {
+    (which: "pc" | "desk", picture: string | null) => {
       if (finished.current.has(which)) return;
       finished.current.add(which);
       if (which === "pc") {
-        got.current.pc = png;
+        got.current.pc = picture;
         setStep(setup ? "desk" : "done");
       } else {
-        got.current.desk = png;
+        got.current.desk = picture;
         setStep("done");
       }
     },
     [setup],
+  );
+  // The scene's PNG, on the studio background (finish() ignores it if the
+  // step already timed out meanwhile).
+  const captured = useCallback(
+    (which: "pc" | "desk", png: string | null) => {
+      void onStudioBackground(png).then((jpeg) => finish(which, jpeg));
+    },
+    [finish],
   );
 
   useEffect(() => {
@@ -129,7 +172,8 @@ export function CaptureStage({
             skipIntro
             fallback={fallback}
             pixelRatio={CAPTURE.pixelRatio}
-            onCapture={(png) => finish("pc", png)}
+            studio
+            onCapture={(png) => captured("pc", png)}
           />
         ) : (
           <DeskScene
@@ -140,7 +184,8 @@ export function CaptureStage({
             skipIntro
             fallback={fallback}
             pixelRatio={CAPTURE.pixelRatio}
-            onCapture={(png) => finish("desk", png)}
+            studio
+            onCapture={(png) => captured("desk", png)}
           />
         )}
       </CaptureBoundary>

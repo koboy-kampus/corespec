@@ -288,6 +288,26 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
     await db.close();
   });
 
+  // Admin verification (Phase 20a).
+  it("catch a non-admin being able to verify an order", async () => {
+    const db = await freshDb();
+    // verify_order() without its admin check.
+    const fn = read("migrations/20261125000100_order_verification.sql").match(
+      /create or replace function public\.verify_order[\s\S]*?\n\$\$;/,
+    )?.[0];
+    expect(fn).toBeTruthy();
+    const broken = fn!.replace(
+      "if me is null or not public.is_admin() then",
+      "if me is null then",
+    );
+    expect(broken).not.toBe(fn);
+    await db.exec(broken);
+    await expect(db.exec(read("tests/rls.sql"))).rejects.toThrow(
+      /a user verifies her own order/,
+    );
+    await db.close();
+  });
+
   // Chat (Phase 18a).
   it("catch a policy that shows other people's chat messages", async () => {
     const db = await freshDb();
@@ -476,6 +496,7 @@ describe("supabase migrations and RLS", { timeout: 60_000 }, () => {
       "set_conversation_status",
       "set_order_payment",
       "set_role",
+      "verify_order",
     ]);
     for (const r of rows) expect(r.config, r.name).toContain('search_path=""');
     // …and none of them can be run by anon (nor the sign-up trigger by anyone).

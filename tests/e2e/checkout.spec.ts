@@ -12,7 +12,7 @@ import { openPreset, watchErrors } from "./helpers";
  *   manual checklist in docs/accounts.md).
  */
 const checkoutOn = !!process.env.E2E_CHECKOUT;
-const BUTTON = "Checkout (simulation)";
+const BUTTON = "Checkout";
 
 /** Opens the builder with this build saved in localStorage. */
 async function openSaved(page: Page, parts: Record<string, string>) {
@@ -46,8 +46,12 @@ test.describe("checkout off (no Midtrans settings)", () => {
 
   test("the builder has no Checkout button", async ({ page }) => {
     await openPreset(page, "budget-1080p");
-    await expect(page.getByRole("button", { name: BUTTON })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: BUTTON })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: BUTTON, exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: BUTTON, exact: true }),
+    ).toHaveCount(0);
   });
 
   test("the checkout and order pages are a 404, and so is the notification URL", async ({
@@ -79,7 +83,10 @@ test.describe("checkout on (dummy settings)", () => {
   test("empty build: the button is disabled and says why", async ({ page }) => {
     const errors = watchErrors(page);
     await page.goto("/builder");
-    const button = summary(page).getByRole("button", { name: BUTTON });
+    const button = summary(page).getByRole("button", {
+      name: BUTTON,
+      exact: true,
+    });
     await expect(button).toBeDisabled();
     await expect(button).toHaveAccessibleDescription(
       "Add a part to check out.",
@@ -94,7 +101,10 @@ test.describe("checkout on (dummy settings)", () => {
       cpu: "cpu-amd-ryzen-5-5600", // AM4
       motherboard: "motherboard-msi-b650m-gaming-plus-wifi", // AM5
     });
-    const button = summary(page).getByRole("button", { name: BUTTON });
+    const button = summary(page).getByRole("button", {
+      name: BUTTON,
+      exact: true,
+    });
     await expect(button).toBeDisabled();
     await expect(button).toHaveAccessibleDescription(
       "Fix 1 compatibility error to check out.",
@@ -107,7 +117,7 @@ test.describe("checkout on (dummy settings)", () => {
       psu: "psu-cooler-master-mwe-550-bronze-v2",
     });
     await expect(
-      summary(page).getByRole("link", { name: BUTTON }),
+      summary(page).getByRole("link", { name: BUTTON, exact: true }),
     ).toBeVisible();
   });
 
@@ -119,7 +129,7 @@ test.describe("checkout on (dummy settings)", () => {
       if (/midtrans/.test(new URL(r.url()).hostname)) outside.push(r.url());
     });
     await openPreset(page, "budget-1080p");
-    const link = summary(page).getByRole("link", { name: BUTTON });
+    const link = summary(page).getByRole("link", { name: BUTTON, exact: true });
     await expect(link).toHaveAttribute("href", "/login?next=/checkout");
     await link.click();
     await expect(page).toHaveURL(/\/login\?next=(%2F|\/)checkout$/);
