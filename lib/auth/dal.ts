@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { io } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { createSupabase, type Supabase } from "@/lib/supabase/server";
 import type { Role } from "@/types/supabase";
@@ -26,10 +27,18 @@ export interface Session {
  * The logged-in visitor, or null. The access token is verified (signature and
  * expiry) by `getClaims()`, which first renews it if it has expired; the role
  * comes from the database, not from the token.
+ *
+ * `await io()` first: getClaims() reads the clock (Date.now()) to check the
+ * token's expiry, and with Cache Components a session page can be prerendered
+ * with its cookies (prefetches), where that read is refused ("unstable value
+ * `Date.now()` while prerendering" on /checkout, /orders, ...). io() stops the
+ * prerender here, so the session is always read at request time; on real
+ * requests and in Server Actions it resolves immediately.
  */
 export const getSession = cache(async (): Promise<Session | null> => {
   const supabase = await createSupabase();
   if (!supabase) return null;
+  await io();
   const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (error || !claims?.sub) return null;
